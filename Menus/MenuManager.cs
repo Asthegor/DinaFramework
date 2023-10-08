@@ -17,8 +17,9 @@ namespace DinaFramework.Menus
         private const int DEFAULT_SPACING = 5;
         private int _iconSpacing = DEFAULT_SPACING;
         private readonly List<IElement> _elements;
+        private readonly List<object> _titles;
+        private readonly Group _itemsGroup = null;
         private readonly List<MenuItem> _items;
-        private readonly Group _group = null;
         private readonly int _itemspacing;
         private ControllerKey _next_item_key;
         private ControllerKey _previous_item_key;
@@ -38,10 +39,11 @@ namespace DinaFramework.Menus
         public MenuManager(int itemspacing = DEFAULT_SPACING, Action cancellation = null, int currentitemindex = -1)
         {
             _elements = new List<IElement>();
+            _titles = new List<object>();
             _items = new List<MenuItem>();
             _itemspacing = itemspacing;
-            _group = new Group();
-            _elements.Add(_group);
+            _itemsGroup = new Group();
+            _elements.Add(_itemsGroup);
             Visible = true;
             Cancellation = cancellation;
             Reset(currentitemindex);
@@ -49,11 +51,11 @@ namespace DinaFramework.Menus
 
 
         // Propriétés
-        public Vector2 ItemsDimensions => _group.Dimensions;
+        public Vector2 ItemsDimensions => _itemsGroup.Dimensions;
         public Vector2 ItemsPosition
         {
-            get => _group.Position;
-            set => _group.Position = value;
+            get => _itemsGroup.Position;
+            set => _itemsGroup.Position = value;
         }
         public MenuItem CurrentItem
         {
@@ -71,12 +73,12 @@ namespace DinaFramework.Menus
                 if (_iconRight != null)
                     _iconRight.Visible = value;
                 // Mise à jour des dimensions du groupe
-                Vector2 groupDim = _group.Dimensions;
+                Vector2 groupDim = _itemsGroup.Dimensions;
                 if (_iconLeft != null)
                     groupDim.X += (_iconLeft.Dimensions.X + _iconSpacing) * (value ? 1 : -1);
                 if (_iconRight != null)
                     groupDim.X += (_iconRight.Dimensions.X + _iconSpacing) * (value ? 1 : -1);
-                _group.Dimensions = groupDim;
+                _itemsGroup.Dimensions = groupDim;
                 // Mise à jour de la position des items
                 foreach (var item in _items)
                 {
@@ -102,15 +104,40 @@ namespace DinaFramework.Menus
         // Titres
         public void AddTitle(SpriteFont font, string text, Vector2 position, Color color, int zorder = 0)
         {
-            _elements.Add(new Text(font, text, color, position, default, default, zorder));
+            Text title = new Text(font, text, color, position, default, default, zorder);
+            _elements.Add(title);
+            _titles.Add(title);
             SortElements();
         }
         public void AddTitle(SpriteFont font, string text, Vector2 position, Color color, Color shadowcolor, Vector2 shadowOffset, int zorder = 0)
         {
-            _elements.Add(new ShadowText(font, text, color, position, shadowcolor, shadowOffset, default, default, zorder));
+            ShadowText title = new ShadowText(font, text, color, position, shadowcolor, shadowOffset, default, default, zorder);
+            _elements.Add(title);
+            _titles.Add(title);
             SortElements();
         }
-
+        public void CenterTitles(Vector2 screendimensions)
+        {
+            foreach (var title in _titles)
+            {
+                Vector2 titleDim;
+                Vector2 titlePos;
+                if (title is Text titleText)
+                {
+                    titleDim = titleText.Dimensions;
+                    titlePos = titleText.Position;
+                    titlePos.X = (screendimensions.X - titleDim.X) / 2.0f;
+                    titleText.Position = titlePos;
+                }
+                else if (title is ShadowText titleShadow)
+                {
+                    titleDim = titleShadow.Dimensions;
+                    titlePos = titleShadow.Position;
+                    titlePos.X = (screendimensions.X - titleDim.X) / 2.0f;
+                    titleShadow.Position = titlePos;
+                }
+            }
+        }
 
         // Icones
         public void SetIconItems(Texture2D iconLeft = null, Texture2D iconRight = null, IconMenuAlignment iconAlignment = IconMenuAlignment.Left, int iconSpacing = DEFAULT_SPACING)
@@ -118,7 +145,7 @@ namespace DinaFramework.Menus
             IconAlignment = iconAlignment;
             _iconSpacing = iconSpacing;
             // Création des Sprites des icones et mise à jour des dimensions du groupe
-            Vector2 groupDim = _group.Dimensions;
+            Vector2 groupDim = _itemsGroup.Dimensions;
             if (iconLeft != null)
             {
                 _iconLeft = new Sprite(iconLeft, Color.White);
@@ -129,7 +156,7 @@ namespace DinaFramework.Menus
                 _iconRight = new Sprite(iconRight, Color.White);
                 groupDim.X += _iconLeft.Dimensions.X + _iconSpacing;
             }
-            _group.Dimensions = groupDim;
+            _itemsGroup.Dimensions = groupDim;
             // Mise à jour des positions des items
             foreach (var item in _items)
             {
@@ -139,17 +166,17 @@ namespace DinaFramework.Menus
                 item.Position = itemPos;
             }
             if (_background != null)
-                _background.Dimensions = _group.Dimensions;
+                _background.Dimensions = _itemsGroup.Dimensions;
         }
 
 
         // Items
         public MenuItem AddItem(SpriteFont font, string text, Color color, Func<MenuItem, MenuItem> selection = null, Func<MenuItem, MenuItem> deselection = null, Func<MenuItem, MenuItem> activation = null, HorizontalAlignment halign = HorizontalAlignment.Left, VerticalAlignment valign = VerticalAlignment.Top)
         {
-            float item_pos_y = _group.Dimensions.Y + (_group.Count() > 0 ? _itemspacing : 0.0f);
-            MenuItem menuitem = new MenuItem(font, text, color, selection, deselection, activation, new Vector2(_group.Position.X, item_pos_y), halign, valign);
-            _group.Add(menuitem);
-            _group.Dimensions = new Vector2(_group.Dimensions.X, item_pos_y + menuitem.Dimensions.Y);
+            float item_pos_y = _itemsGroup.Dimensions.Y + (_itemsGroup.Count() > 0 ? _itemspacing : 0.0f);
+            MenuItem menuitem = new MenuItem(font, text, color, selection, deselection, activation, new Vector2(_itemsGroup.Position.X, item_pos_y), halign, valign);
+            _itemsGroup.Add(menuitem);
+            _itemsGroup.Dimensions = new Vector2(_itemsGroup.Dimensions.X, item_pos_y + menuitem.Dimensions.Y);
             _items.Add(menuitem);
             SortElements();
             if (_currentitemindex >= 0 && _currentitemindex == _items.Count - 1)
@@ -172,27 +199,27 @@ namespace DinaFramework.Menus
         public void SetCancelMenuKey(ControllerKey key) { _cancel_menu_key = key; }
 
 
-        // Background
-        public void SetBackground(Panel panel, int borderSpacing)
+        // Items Background
+        public void SetItemsBackground(Panel panel, int borderSpacing)
         {
             bool bkgnotexist = (_background == null);
             _background = panel;
             _borderSpacing = borderSpacing;
             if (bkgnotexist)
-                _group.Add(_background);
+                _itemsGroup.Add(_background);
             _background.Visible = true;
 
             // Mise à jour de la position du panneau
-            _background.Position = _group.Position;
+            _background.Position = _itemsGroup.Position;
 
             // Mise à jour des dimensions du panneau
-            _group.Dimensions = new Vector2(_group.Dimensions.X + borderSpacing * 2.0f, _group.Dimensions.Y + borderSpacing * 2.0f);
-            _background.Dimensions = _group.Dimensions;
+            _itemsGroup.Dimensions = new Vector2(_itemsGroup.Dimensions.X + borderSpacing * 2.0f, _itemsGroup.Dimensions.Y + borderSpacing * 2.0f);
+            _background.Dimensions = _itemsGroup.Dimensions;
 
             // Mise à jour du ZOrder du panneau
             int index = 0;
             int min_zorder = 0;
-            foreach (var item in _group)
+            foreach (var item in _itemsGroup)
             {
                 if (item.GetType() != typeof(Panel))
                 {
@@ -205,8 +232,7 @@ namespace DinaFramework.Menus
                 index++;
             }
             _background.ZOrder = min_zorder - 1;
-            _group.SortElements();
-
+            _itemsGroup.SortElements();
         }
         public void SetBackgroundVisible(bool visible)
         {
@@ -276,7 +302,7 @@ namespace DinaFramework.Menus
                         if (_background != null)
                             iconRightPos = _background.Position.X + _background.Dimensions.X - _iconRight.Dimensions.X - _borderSpacing;
                         else
-                            iconRightPos = _group.Position.X + _group.Dimensions.X - _iconRight.Dimensions.X;
+                            iconRightPos = _itemsGroup.Position.X + _itemsGroup.Dimensions.X - _iconRight.Dimensions.X;
 
                         _iconRight.Position = new Vector2(iconRightPos,
                                                           _items[_currentitemindex].Position.Y + (_items[_currentitemindex].Dimensions.Y / 2.0f) - (_iconRight.Dimensions.Y / 2.0f));
