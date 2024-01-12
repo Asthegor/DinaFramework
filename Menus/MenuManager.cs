@@ -18,7 +18,7 @@ namespace DinaFramework.Menus
         private int _iconSpacing = DEFAULT_SPACING;
         private readonly List<IElement> _elements;
         private readonly List<object> _titles;
-        private readonly Group _itemsGroup = null;
+        private readonly Group _itemsGroup;
         private readonly List<MenuItem> _items;
         private readonly int _itemspacing;
         private ControllerKey _next_item_key;
@@ -99,7 +99,6 @@ namespace DinaFramework.Menus
             get => _visible;
             set => _visible = value;
         }
-
 
         // Titres
         public void AddTitle(SpriteFont font, string text, Vector2 position, Color color, int zorder = 0)

@@ -1,12 +1,15 @@
 ﻿using DinaFramework.Enums;
 using DinaFramework.Interfaces;
+using DinaFramework.Translation;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
+using System;
+
 namespace DinaFramework.Core.Fixed
 {
-    public class ShadowText : Base, IUpdate, IDraw, IColor, IVisible
+    public class ShadowText : Base, IUpdate, IDraw, IColor, IVisible, IText
     {
         readonly Text _text;
         readonly Text _shadow;
@@ -20,6 +23,8 @@ namespace DinaFramework.Core.Fixed
         }
         public ShadowText(ShadowText shadowtext)
         {
+            ArgumentNullException.ThrowIfNull(shadowtext);
+
             _text = new Text(shadowtext._text);
             _shadow = new Text(shadowtext._shadow);
             Offset = shadowtext.Offset;
@@ -41,7 +46,7 @@ namespace DinaFramework.Core.Fixed
         }
         public string Content
         {
-            get { return _text.Content; }
+            get { return TranslationManager.GetTranslation(_text.Content); }
             set
             {
                 _shadow.Content = value;
@@ -58,23 +63,26 @@ namespace DinaFramework.Core.Fixed
             _shadow.Draw(spritebatch);
             _text.Draw(spritebatch);
         }
-        public new Vector2 Position
+        public override Vector2 Position
         {
             get { return _text.Position; }
             set
             {
-                _text.Position = value;
-                _shadow.Position = value + Offset;
+                if (_text != null)
+                    _text.Position = value;
+                if (_shadow != null)
+                    _shadow.Position = value + Offset;
             }
         }
-        public new Vector2 Dimensions
+        public override Vector2 Dimensions
         {
             get { return _text.Dimensions + Offset; }
             set
             {
-
-                _text.Dimensions = value;
-                _shadow.Dimensions = value;
+                if (_text != null)
+                    _text.Dimensions = value;
+                if (_shadow != null)
+                    _shadow.Dimensions = value;
             }
         }
         public Vector2 Offset

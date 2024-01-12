@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 using System;
 using System.Collections.Generic;
+using System.Reflection.Metadata.Ecma335;
 
 namespace DinaFramework.Core.Animated
 {
@@ -26,6 +27,8 @@ namespace DinaFramework.Core.Animated
                          Vector2 position, Vector2 dimensions, float rotation = default, Vector2 origin = default,
                          Vector2 flip = default, int zorder = default) : base(position, dimensions, zorder)
         {
+            ArgumentNullException.ThrowIfNull(content);
+
             _speed = speed;
             _nbRepetitions = nbRepetitions;
             _currentrepetition = nbRepetitions;
@@ -40,6 +43,8 @@ namespace DinaFramework.Core.Animated
                          Vector2 position, float rotation, Vector2 origin = default, Vector2 scale = default,
                          Vector2 flip = default, int zorder = default) : base(position, default, zorder)
         {
+            ArgumentNullException.ThrowIfNull(content);
+
             _speed = speed;
             _nbRepetitions = nbRepetitions;
             _currentrepetition = nbRepetitions;
@@ -52,6 +57,8 @@ namespace DinaFramework.Core.Animated
         }
         public Animation(Animation animation, bool duplicate = true)
         {
+            ArgumentNullException.ThrowIfNull(animation);
+
             _frames = new List<Sprite>();
             foreach (Sprite item in animation._frames)
             {
@@ -75,10 +82,13 @@ namespace DinaFramework.Core.Animated
         }
         private void AddFrames(ContentManager content, string prefix, int nbframes, int start, Vector2 dimensions, float rotation, Vector2 origin)
         {
+            ArgumentNullException.ThrowIfNull(content);
+
             Texture2D texture;
             for (int index = start; index < nbframes + start; index++)
             {
-                texture = content.Load<Texture2D>(prefix + index.ToString());
+                string strIndex = index.ToString();
+                texture = content.Load<Texture2D>(prefix + strIndex);
                 if (dimensions == Vector2.Zero)
                 {
                     dimensions = new Vector2(texture.Width, texture.Height);
@@ -98,7 +108,7 @@ namespace DinaFramework.Core.Animated
                 _frames.Add(new Sprite(texture, Color, Position, rotation, origin, scale, Flip, ZOrder));
             }
         }
-        public new Vector2 Position
+        public override Vector2 Position
         {
             get { return base.Position; }
             set
@@ -109,7 +119,7 @@ namespace DinaFramework.Core.Animated
                 _rect.Location = new Point(Convert.ToInt32(value.X), Convert.ToInt32(value.Y));
             }
         }
-        public new Vector2 Dimensions
+        public override Vector2 Dimensions
         {
             get { return base.Dimensions; }
             set
@@ -171,6 +181,8 @@ namespace DinaFramework.Core.Animated
         {
             if (_currentrepetition != 0)
             {
+                ArgumentNullException.ThrowIfNull(gameTime);
+
                 _currentframe += Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds) * _speed;
                 if (_currentframe >= _frames.Count)
                 {
@@ -192,6 +204,9 @@ namespace DinaFramework.Core.Animated
         }
         public bool Collide(ICollide item)
         {
+            if ( (item == null))
+                return false;
+
             return Rectangle.Intersects(item.Rectangle);
         }
         public bool IsFinished() => _currentrepetition == 0;

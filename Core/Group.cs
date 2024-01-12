@@ -11,18 +11,17 @@ namespace DinaFramework.Core
 {
     public class Group : Base, IDraw, IVisible, IEnumerator, IEnumerable, ICollide
     {
-        readonly List<IElement> _elements;
+        readonly List<IElement> _elements = new List<IElement>();
         private int index;
         private Rectangle _rect;
         private bool _visible;
 
-        public Group(Vector2 position = default, Vector2 dimensions = default) : base(position, dimensions)
+        public Group(Vector2 position = default, Vector2 dimensions = default, int zorder = 0) : base(position, dimensions, zorder)
         {
-            _elements = new List<IElement>();
         }
         public Group(Group group, bool duplicate = true)
         {
-            _elements = new List<IElement>();
+            ArgumentNullException.ThrowIfNull(group);
             foreach (var item in group._elements)
             {
                 if (duplicate)
@@ -40,23 +39,14 @@ namespace DinaFramework.Core
         public object Current => _elements[index];
         public Rectangle Rectangle => _rect;
 
-
         public void Add(IElement element)
         {
             _elements.Add(element);
-            if (element is IDimensions item)
-            {
-                Vector2 newDim = Dimensions;
-                Vector2 dim = item.Dimensions;
-                if (newDim.X < dim.X)
-                    newDim.X = dim.X;
-                if (newDim.Y < dim.Y)
-                    newDim.Y = dim.Y;
-                Dimensions = newDim;
-            }
+            if (element is IDimensions)
+                UpdateDimensions();
             SortElements();
         }
-        public new Vector2 Position
+        public override Vector2 Position
         {
             get => base.Position;
             set
@@ -71,7 +61,7 @@ namespace DinaFramework.Core
                 _rect.Location = new Point(Convert.ToInt32(value.X), Convert.ToInt32(value.Y));
             }
         }
-        public new Vector2 Dimensions
+        public override Vector2 Dimensions
         {
             get => base.Dimensions;
             set
@@ -79,7 +69,7 @@ namespace DinaFramework.Core
                 float width = 0.0f;
                 foreach (var element in _elements)
                 {
-                    if (element is IDimensions item)
+                    if (element is IDimensions item && width < item.Dimensions.X)
                         width = item.Dimensions.X;
                 }
                 if (width < base.Dimensions.X)
@@ -111,7 +101,13 @@ namespace DinaFramework.Core
             Reset();
             return this;
         }
-        public bool Collide(ICollide item) => Rectangle.Intersects(item.Rectangle);
+        public bool Collide(ICollide item)
+        {
+            if (item == null)
+                return false;
+            return Rectangle.Intersects(item.Rectangle);
+        }
+
         public void Draw(SpriteBatch spritebatch)
         {
             foreach (var element in _elements)
@@ -131,6 +127,40 @@ namespace DinaFramework.Core
                 return 0;
             });
         }
+        private void UpdateDimensions()
+        {
+            float x, y, w, h;
+            x = float.MaxValue;
+            y = float.MaxValue;
+            w = -1;
+            h = -1;
+            foreach (var element in _elements)
+            {
+                if (element is Base ebase)
+                {
+                    Vector2 elemPos = ebase.Position;
+                    Vector2 elemDim = ebase.Dimensions;
 
+                    if (elemPos.X < x)
+                        x = elemPos.X;
+                    if (elemPos.Y < y)
+                        y = elemPos.Y;
+                    Vector2 flip = Vector2.One;
+                    if (element is IFlip eflip)
+                    {
+                        // TODO: à corriger dès que la classe Image sera implémentée
+                        //flip = eflip.GetFlip();
+                    }
+                    float cfvx = flip.X > 0 ? 1 : 0;
+                    if (w < elemPos.X + elemDim.X * cfvx)
+                        w = elemPos.X + elemDim.X * cfvx;
+                    float cfvy = flip.Y > 0 ? 1 : 0;
+                    if (h < elemPos.Y + elemDim.Y * cfvy)
+                        h = elemPos.Y + elemDim.Y * cfvy;
+                }
+            } //foreach
+            if (x < float.MaxValue && y < float.MaxValue && w > -1 && h > -1)
+                Dimensions = new Vector2(w - x, h - y);
+        }
     }
 }

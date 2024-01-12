@@ -57,12 +57,12 @@ namespace DinaFramework.Menus
             get { return _text.Content; }
             set { _text.Content = value; }
         }
-        public bool Visible 
-        { 
+        public bool Visible
+        {
             get { return _visible; }
             set { _visible = value; }
         }
-        public MenuItem(SpriteFont font, string text, Color color, 
+        public MenuItem(SpriteFont font, string text, Color color,
                         Func<MenuItem, MenuItem> selection = null,
                         Func<MenuItem, MenuItem> deselection = null,
                         Func<MenuItem, MenuItem> activation = null,

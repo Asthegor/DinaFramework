@@ -6,13 +6,14 @@ using Microsoft.Xna.Framework.Graphics;
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace DinaFramework.Core.Fixed
 {
     public class ProgressBar : Base, IUpdate, IDraw, IVisible
     {
         public enum PBType { Color, Image2Parts, Image3Parts }
-        public PBType _PBType;
+        private PBType _pbtype;
         private bool _visible;
         private float _value;
         private readonly float _maxValue;
@@ -67,7 +68,7 @@ namespace DinaFramework.Core.Fixed
                 if (value > _maxValue)
                     value = _maxValue;
                 _value = value;
-                switch (_PBType)
+                switch (_pbtype)
                 {
                     case PBType.Color:
                         UpdateColorRectangle();
@@ -78,8 +79,6 @@ namespace DinaFramework.Core.Fixed
                     case PBType.Image3Parts:
                         Update3ImagesRectangle();
                         break;
-                    default:
-                        throw new Exception("Unknown ProgressBarType");
                 }
 
             }
@@ -87,17 +86,17 @@ namespace DinaFramework.Core.Fixed
 
         public ProgressBarMode Mode { get => _mode; set => _mode = value; }
 
-        public float GetMaxValue() => _maxValue;
+        public float MaxValue => _maxValue;
         public void SetImages(Texture2D backImage, Texture2D frontImage, int offset = 0)
         {
-            _PBType = PBType.Image2Parts;
+            _pbtype = PBType.Image2Parts;
             if (_textures.Count == 0) _textures.Add(backImage); else _textures[0] = backImage;
             if (_textures.Count == 1) _textures.Add(frontImage); else _textures[1] = frontImage;
             Update2ImagesRectangle(offset);
         }
         public void SetImages(Texture2D leftImage, Texture2D centerImage, Texture2D rightImage)
         {
-            _PBType = PBType.Image3Parts;
+            _pbtype = PBType.Image3Parts;
             if (_textures.Count == 0) _textures.Add(leftImage); else _textures[0] = leftImage;
             if (_textures.Count == 1) _textures.Add(centerImage); else _textures[1] = centerImage;
             if (_textures.Count == 2) _textures.Add(rightImage); else _textures[2] = rightImage;
@@ -105,7 +104,7 @@ namespace DinaFramework.Core.Fixed
         }
         public void SetColors(Color frontColor, Color borderColor, Color backColor, int borderThickness = 1)
         {
-            _PBType = PBType.Color;
+            _pbtype = PBType.Color;
             _frontColor = frontColor;
             _backColor = backColor;
             _borderColor = borderColor;
@@ -125,7 +124,9 @@ namespace DinaFramework.Core.Fixed
         {
             if (Visible)
             {
-                switch (_PBType)
+                ArgumentNullException.ThrowIfNull(spritebatch);
+
+                switch (_pbtype)
                 {
                     case PBType.Color:
                         if (_textures.Count == 0)
@@ -147,7 +148,7 @@ namespace DinaFramework.Core.Fixed
                         spritebatch.Draw(_textures[2], _rectangles[2], _rectanglesSource[2], Color.White);
                         break;
                     default:
-                        throw new Exception("Unknown type of ProgressBar");
+                        throw new InvalidEnumArgumentException("Unknown type of ProgressBar");
                 }
             }
         }
@@ -192,7 +193,7 @@ namespace DinaFramework.Core.Fixed
                     height = _rectangles[1].Height * ratio;
                     break;
                 default:
-                    throw new Exception("Unknown mode.");
+                    throw new InvalidEnumArgumentException("Unknown mode.");
             }
             _rectangles[2] = new Rectangle(Convert.ToInt32(posX), Convert.ToInt32(posY), Convert.ToInt32(width), Convert.ToInt32(height));
         }
@@ -230,7 +231,7 @@ namespace DinaFramework.Core.Fixed
                     posY = _rectangles[0].Y + _rectangles[0].Height - height - offset;
                     break;
                 default:
-                    throw new Exception("Unknown mode.");
+                    throw new InvalidEnumArgumentException("Unknown mode.");
             }
             _rectangles[1] = new Rectangle(Convert.ToInt32(posX), Convert.ToInt32(posY), Convert.ToInt32(width), Convert.ToInt32(height));
         }
@@ -492,7 +493,7 @@ namespace DinaFramework.Core.Fixed
                     }
                     break;
                 default:
-                    throw new Exception("Unknown mode.");
+                    throw new InvalidEnumArgumentException("Unknown mode.");
             }
 
         }

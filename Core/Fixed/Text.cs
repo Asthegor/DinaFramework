@@ -1,12 +1,15 @@
 ﻿using DinaFramework.Enums;
 using DinaFramework.Interfaces;
+using DinaFramework.Translation;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
+using System;
+
 namespace DinaFramework.Core.Fixed
 {
-    public class Text : Base, IUpdate, IDraw, IColor, IVisible
+    public class Text : Base, IUpdate, IDraw, IColor, IVisible, IText
     {
         readonly SpriteFont _font;
         string _content;
@@ -31,7 +34,7 @@ namespace DinaFramework.Core.Fixed
             set
             {
                 _content = value;
-                Dimensions = _font.MeasureString(value);
+                Dimensions = _font.MeasureString(TranslationManager.GetTranslation(value));
             }
         }
         public Color Color
@@ -41,10 +44,10 @@ namespace DinaFramework.Core.Fixed
         }
         public bool Visible
         {
-            get { return _visible; } 
+            get { return _visible; }
             set { _visible = value; }
         }
-        public new Vector2 Position
+        public override Vector2 Position
         {
             get { return base.Position; }
             set
@@ -53,9 +56,9 @@ namespace DinaFramework.Core.Fixed
                 UpdateDisplayPosition();
             }
         }
-        public new Vector2 Dimensions
+        public override Vector2 Dimensions
         {
-            get { return base.Dimensions; }
+            get { return TextDimensions; }
             set
             {
                 base.Dimensions = value;
@@ -73,12 +76,13 @@ namespace DinaFramework.Core.Fixed
             _wait = false;
             _displayposition = position;
             Position = position;
-            Dimensions = font.MeasureString(Content);
+            Dimensions = _font.MeasureString(TranslationManager.GetTranslation(Content));
             ZOrder = zorder;
             Visible = true;
         }
         public Text(Text text)
         {
+            ArgumentNullException.ThrowIfNull(text);
             _font = text._font;
             Content = text._content;
             Color = text.Color;
@@ -108,19 +112,23 @@ namespace DinaFramework.Core.Fixed
             else if (waitTime > 0.0f)
                 _wait = true;
         }
-        public Vector2 TextDimensions { get { return _font.MeasureString(Content); } }
-        public void SetAlignments(HorizontalAlignment halign,  VerticalAlignment valign)
+        public Vector2 TextDimensions => _font.MeasureString(TranslationManager.GetTranslation(Content));
+        public void SetAlignments(HorizontalAlignment halign, VerticalAlignment valign)
         {
             _halign = halign;
             _valign = valign;
+            UpdateDisplayPosition();
         }
         public void Draw(SpriteBatch spritebatch)
         {
+            ArgumentNullException.ThrowIfNull(spritebatch);
             if (_visible)
-                spritebatch.DrawString(_font, Content, _displayposition, _color);
+                spritebatch.DrawString(_font, TranslationManager.GetTranslation(Content), _displayposition, _color);
         }
         public void Update(GameTime gameTime)
         {
+            ArgumentNullException.ThrowIfNull(gameTime);
+
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
             if (_wait)
             {
@@ -150,21 +158,37 @@ namespace DinaFramework.Core.Fixed
                 }
             }
         }
-        private void UpdateDisplayPosition()
+        public void UpdateDisplayPosition()
         {
             Vector2 offset = new Vector2();
 
             if (_halign == HorizontalAlignment.Center)
-                offset.X = (Dimensions.X - TextDimensions.X) / 2.0f;
+                offset.X = (base.Dimensions.X - TextDimensions.X) / 2.0f;
             else if (_halign == HorizontalAlignment.Right)
-                offset.X = Dimensions.X - TextDimensions.X;
+                offset.X = base.Dimensions.X - TextDimensions.X;
 
             if (_valign == VerticalAlignment.Center)
-                offset.Y = (Dimensions.Y - TextDimensions.Y) / 2.0f;
+                offset.Y = (base.Dimensions.Y - TextDimensions.Y) / 2.0f;
             else if (_valign == VerticalAlignment.Bottom)
-                offset.Y = Dimensions.Y - TextDimensions.Y;
+                offset.Y = base.Dimensions.Y - TextDimensions.Y;
 
             _displayposition = base.Position + offset;
         }
+        //public Vector2 CalculateTextPosition()
+        //{
+        //    Vector2 offset = new Vector2();
+
+        //    if (_halign == HorizontalAlignment.Center)
+        //        offset.X = (base.Dimensions.X - TextDimensions.X) / 2.0f;
+        //    else if (_halign == HorizontalAlignment.Right)
+        //        offset.X = base.Dimensions.X - TextDimensions.X;
+
+        //    if (_valign == VerticalAlignment.Center)
+        //        offset.Y = (base.Dimensions.Y - TextDimensions.Y) / 2.0f;
+        //    else if (_valign == VerticalAlignment.Bottom)
+        //        offset.Y = base.Dimensions.Y - TextDimensions.Y;
+
+        //    return base.Position + offset;
+        //}
     }
 }
