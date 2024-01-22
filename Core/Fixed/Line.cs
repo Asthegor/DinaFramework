@@ -40,6 +40,8 @@ namespace DinaFramework.Core.Fixed
 
         public void Draw(SpriteBatch spritebatch)
         {
+            if (spritebatch == null) return;
+
             if (_texture == null)
             {
                 _texture = new Texture2D(spritebatch.GraphicsDevice, 1, 1);

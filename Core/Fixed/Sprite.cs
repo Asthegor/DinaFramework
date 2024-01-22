@@ -51,6 +51,8 @@ namespace DinaFramework.Core.Fixed
         }
         public Sprite(Sprite sprite)
         {
+            ArgumentNullException.ThrowIfNull(sprite);
+
             Texture = sprite.Texture;
             Rectangle = sprite.Rectangle;
             Color = sprite.Color;
@@ -87,7 +89,7 @@ namespace DinaFramework.Core.Fixed
                 _rectangle.Location = new Point(Convert.ToInt32(value.X - Origin.X), Convert.ToInt32(value.Y - Origin.Y));
             }
         }
-        public new Vector2 Dimensions
+        public override Vector2 Dimensions
         {
             get
             {
@@ -131,19 +133,23 @@ namespace DinaFramework.Core.Fixed
                 _flip = value;
             }
         }
-        public void Draw(SpriteBatch spriteBatch)
+        public void Draw(SpriteBatch spritebatch)
         {
             if (Visible)
             {
+                ArgumentNullException.ThrowIfNull(spritebatch);
+
                 if (Dimensions == default)
-                    spriteBatch.Draw(Texture, Position, new Rectangle(0, 0, _texture.Width, _texture.Height), Color, Rotation, Origin, Scale, _effects, ZOrder);
+                    spritebatch.Draw(Texture, Position, new Rectangle(0, 0, _texture.Width, _texture.Height), Color, Rotation, Origin, Scale, _effects, ZOrder);
                 else
-                    spriteBatch.Draw(Texture, Rectangle, new Rectangle(0, 0, _texture.Width, _texture.Height), Color, Rotation, Origin, _effects, ZOrder);
+                    spritebatch.Draw(Texture, Rectangle, new Rectangle(0, 0, _texture.Width, _texture.Height), Color, Rotation, Origin, _effects, ZOrder);
             }
         }
 
         public bool Collide(ICollide item)
         {
+            if (item == null)
+                return false;
             return Rectangle.Intersects(item.Rectangle);
         }
     }

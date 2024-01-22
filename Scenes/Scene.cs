@@ -9,8 +9,9 @@ namespace DinaFramework.Scenes
     public abstract class Scene : ILoad, IUpdate, IDraw, IValue
     {
         public bool Loaded { get; set; }
-        protected SceneManager _sceneManager;
-        public Scene(SceneManager sceneManager)
+        private readonly SceneManager _sceneManager;
+        protected SceneManager SceneManager => _sceneManager;
+        protected Scene(SceneManager sceneManager)
         {
             _sceneManager = sceneManager;
         }

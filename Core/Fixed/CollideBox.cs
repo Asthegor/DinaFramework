@@ -39,6 +39,8 @@ namespace DinaFramework.Core.Fixed
         }
         public bool Collide(ICollide item)
         {
+            ArgumentNullException.ThrowIfNull(item);
+
             return Rectangle.Intersects(item.Rectangle);
         }
     }

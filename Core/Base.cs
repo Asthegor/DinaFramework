@@ -2,6 +2,8 @@
 
 using Microsoft.Xna.Framework;
 
+using System;
+
 namespace DinaFramework.Core
 {
     public abstract class Base : IElement, IPosition, IDimensions
@@ -22,20 +24,22 @@ namespace DinaFramework.Core
         }
         public virtual Vector2 Dimensions
         {
-            get { return _dimensions; } 
+            get { return _dimensions; }
             set { _dimensions = value; }
         }
-        public Base(Vector2 position = new Vector2(), Vector2 dimensions = new Vector2(), int zorder = 0)
+        protected Base(Vector2 position = new Vector2(), Vector2 dimensions = new Vector2(), int zorder = 0)
         {
             Position = position;
             Dimensions = dimensions;
             ZOrder = zorder;
         }
-        public Base(Base b)
+        protected Base(Base @base)
         {
-            Position = b.Position;
-            Dimensions = b.Dimensions;
-            ZOrder = b.ZOrder;
+            ArgumentNullException.ThrowIfNull(@base);
+
+            Position = @base.Position;
+            Dimensions = @base.Dimensions;
+            ZOrder = @base.ZOrder;
         }
     }
 }
