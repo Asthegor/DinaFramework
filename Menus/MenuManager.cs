@@ -247,7 +247,12 @@ namespace DinaFramework.Menus
             if (_currentitemindex >= 0)
                 CurrentItem?.Selection?.Invoke(CurrentItem);
         }
-
+        public void Reset(MenuItem item)
+        {
+            CurrentItem?.Deselection?.Invoke(CurrentItem);
+            CurrentItem = item;
+            CurrentItem?.Selection?.Invoke(CurrentItem);
+        }
 
 
         public void Update(GameTime gameTime)
@@ -257,10 +262,13 @@ namespace DinaFramework.Menus
 
             if (_cancel_menu_key != null && _cancel_menu_key.IsPressed())
             {
-                Cancellation?.Invoke();
-                Reset();
-                Visible = false;
-                return;
+                if (Cancellation != null)
+                {
+                    Reset();
+                    Visible = false;
+                    Cancellation.Invoke();
+                    return;
+                }
             }
             if (_next_item_key != null && _next_item_key.IsPressed())
                 ChangeCurrentItem(1);
