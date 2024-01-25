@@ -22,7 +22,7 @@ namespace DinaFramework.Core.Fixed
             Texture = texture;
             Color = color;
             Visible = true;
-            //Dimensions = new Vector2(_texture.Width, _texture.Height);
+            Dimensions = new Vector2(_texture.Width, _texture.Height);
         }
         public Sprite(Texture2D texture, Color color, Vector2 position, int zorder) : this(texture, color, zorder)
         {

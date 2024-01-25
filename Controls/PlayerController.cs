@@ -1,6 +1,4 @@
-﻿#pragma warning disable CA1854 // Préférer la méthode 'IDictionary.TryGetValue(TKey, out TValue)'
-
-using DinaFramework.Enums;
+﻿using DinaFramework.Enums;
 
 using Microsoft.Xna.Framework;
 
@@ -61,4 +59,3 @@ namespace DinaFramework.Controls
         }
     }
 }
-#pragma warning restore CA1854 // Préférer la méthode 'IDictionary.TryGetValue(TKey, out TValue)'

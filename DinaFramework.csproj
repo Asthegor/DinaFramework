@@ -4,6 +4,9 @@
     <SignAssembly>False</SignAssembly>
     <Authors>Dominique LACOMBE</Authors>
     <AnalysisLevel>latest-all</AnalysisLevel>
+    <Title>DinaFramework</Title>
+    <Description>DinaFramework est un framework développé à partir de MonoGame.</Description>
+    <NeutralLanguage>en-US</NeutralLanguage>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.303">

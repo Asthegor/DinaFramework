@@ -53,7 +53,5 @@ namespace DinaFramework.Interfaces
     {
         public abstract Vector2 Flip { get; set; }
     }
-#pragma warning disable CA1040 // Éviter les interfaces vides
     public interface IText { }
-#pragma warning restore CA1040 // Éviter les interfaces vides
 }
