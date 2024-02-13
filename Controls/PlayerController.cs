@@ -50,6 +50,17 @@ namespace DinaFramework.Controls
                 }
                 return null;
             }
+            set
+            {
+                ArgumentNullException.ThrowIfNull(alias);
+                alias = char.ToUpper(alias[0]) + alias[1..];
+                if (!_keys.ContainsKey(alias))
+                {
+                    _keys[alias] = value;
+                }
+                else if (value == null)
+                    _keys.Remove(alias);
+            }
         }
         public ControllerKey GetKey(string name)
         {

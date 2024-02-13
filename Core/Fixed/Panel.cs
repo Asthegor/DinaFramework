@@ -2,6 +2,7 @@
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.ComponentModel;
 
 namespace DinaFramework.Core.Fixed
 {
-    public class Panel : Base, IDraw, IVisible
+    public class Panel : Base, IDraw, IVisible, IUpdate
     {
         private readonly List<Texture2D> _images = new List<Texture2D>();
         private readonly List<Vector2> _positions = new List<Vector2>();
@@ -19,6 +20,8 @@ namespace DinaFramework.Core.Fixed
         private int _thickness;
         private Color _borderColor;
         private bool _visible;
+        private MouseState _oldMouseState;
+        bool _clicked;
 
         public Panel(Vector2 position, Vector2 dimensions, Color backgroundcolor, int zorder = 0) : base(position, dimensions, zorder)
         {
@@ -91,10 +94,19 @@ namespace DinaFramework.Core.Fixed
                 for (int index = 0; index < _positions.Count; index++)
                     _positions[index] = new Vector2(_positions[index].X + offset.X, _positions[index].Y + offset.Y);
                 base.Position = value;
+                AdjustRectangles();
             }
 
         }
-
+        public override Vector2 Dimensions
+        {
+            get => base.Dimensions;
+            set
+            {
+                base.Dimensions = value;
+                AdjustRectangles();
+            }
+        }
         public Color BackgroundColor { get; set; }
         public Color BorderColor
         {
@@ -274,5 +286,18 @@ namespace DinaFramework.Core.Fixed
         {
             _texture.Dispose();
         }
+
+        public void Update(GameTime gameTime)
+        {
+            MouseState mouseState = Mouse.GetState();
+            _clicked = false;
+            if (_oldMouseState.LeftButton == ButtonState.Released && mouseState.LeftButton == ButtonState.Pressed)
+            {
+                if (_rectangleBackground.Contains(mouseState.Position))
+                    _clicked = true;
+            }
+            _oldMouseState = mouseState;
+        }
+        public bool IsClicked() => _clicked;
     }
 }

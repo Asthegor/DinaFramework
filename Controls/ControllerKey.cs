@@ -29,13 +29,14 @@ namespace DinaFramework.Controls
         }
         public abstract void Reset();
         public abstract bool IsPressed();
+        public abstract bool IsContinuousPressed();
         public abstract bool IsReleased();
         public new abstract string ToString();
     }
     public class KeyboardKey : ControllerKey
     {
-        Keys Key { get; set; }
-        KeyboardState _oldState = Keyboard.GetState();
+        private Keys Key { get; set; }
+        private KeyboardState _oldState = Keyboard.GetState();
 
         public KeyboardKey(Keys key, ControllerAction action = ControllerAction.Pressed, string alias = "")
         {
@@ -60,12 +61,17 @@ namespace DinaFramework.Controls
         }
         public override bool IsReleased() => Keyboard.GetState().IsKeyUp(Key);
         public override string ToString() { return Alias; }
+
+        public override bool IsContinuousPressed()
+        {
+            return Keyboard.GetState().IsKeyDown(Key);
+        }
     }
     public class GamepadButton : ControllerKey
     {
-        readonly PlayerIndex _indexplayer;
-        Buttons Button { get; set; }
-        GamePadState _oldState;
+        private readonly PlayerIndex _indexplayer;
+        private Buttons Button { get; set; }
+        private GamePadState _oldState;
         public GamepadButton(Buttons button, ControllerAction action = ControllerAction.Pressed, PlayerIndex index = PlayerIndex.One, string alias = "")
         {
             Button = button;
@@ -90,5 +96,10 @@ namespace DinaFramework.Controls
         }
         public override bool IsReleased() => GamePad.GetState(_indexplayer).IsButtonUp(Button);
         public override string ToString() { return Alias; }
+
+        public override bool IsContinuousPressed()
+        {
+            return GamePad.GetState(_indexplayer).IsButtonDown(Button);
+        }
     }
 }

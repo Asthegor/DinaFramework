@@ -1,4 +1,5 @@
-﻿using DinaFramework.Core.Fixed;
+﻿using DinaFramework.Core;
+using DinaFramework.Core.Fixed;
 using DinaFramework.Enums;
 using DinaFramework.Interfaces;
 
@@ -9,10 +10,10 @@ using System;
 
 namespace DinaFramework.Menus
 {
-    public class MenuItem : IDraw, IPosition, IDimensions, IElement, IColor, IVisible
+    public class MenuItem : IDraw, IPosition, IDimensions, IElement, IVisible, IColor
     {
         private bool _visible;
-        private readonly Text _text;
+        private readonly object _item;
         Func<MenuItem, MenuItem> _selection;
         Func<MenuItem, MenuItem> _deselection;
         Func<MenuItem, MenuItem> _activation;
@@ -34,28 +35,73 @@ namespace DinaFramework.Menus
 
         public Vector2 Position
         {
-            get { return _text.Position; }
-            set { _text.Position = value; }
+            get
+            {
+                if (_item is IPosition positem)
+                    return positem.Position;
+                return default;
+            }
+            set
+            {
+                if (_item is IPosition positem)
+                    positem.Position = value;
+            }
         }
         public Vector2 Dimensions
         {
-            get { return _text.Dimensions; }
-            set { _text.Dimensions = value; }
+            get
+            {
+                if (_item is IDimensions dimitem)
+                    return dimitem.Dimensions;
+                return default;
+            }
+            set
+            {
+                if (_item is IDimensions dimitem)
+                    dimitem.Dimensions = value;
+            }
         }
         public int ZOrder
         {
-            get { return _text.ZOrder; }
-            set { _text.ZOrder = value; }
+            get
+            {
+                if (_item is Base baseitem)
+                    return baseitem.ZOrder;
+                return default;
+            }
+            set
+            {
+                if (_item is Base baseitem)
+                    baseitem.ZOrder = value;
+            }
         }
         public Color Color
         {
-            get { return _text.Color; }
-            set { _text.Color = value; }
+            get
+            {
+                if (_item is IColor coloritem)
+                    return coloritem.Color;
+                return default;
+            }
+            set
+            {
+                if (_item is IColor coloritem)
+                    coloritem.Color = value;
+            }
         }
         public string Content
         {
-            get { return _text.Content; }
-            set { _text.Content = value; }
+            get
+            {
+                if (_item is Text textitem)
+                    return textitem.Content;
+                return default;
+            }
+            set
+            {
+                if (_item is Text textitem)
+                    textitem.Content = value;
+            }
         }
         public bool Visible
         {
@@ -67,9 +113,19 @@ namespace DinaFramework.Menus
                         Func<MenuItem, MenuItem> deselection = null,
                         Func<MenuItem, MenuItem> activation = null,
                         Vector2 position = default,
-                        HorizontalAlignment halign = HorizontalAlignment.Left, VerticalAlignment valign = VerticalAlignment.Top)
+                        HorizontalAlignment halign = HorizontalAlignment.Left, VerticalAlignment valign = VerticalAlignment.Top) :
+            this(new Text(font, text, color, position, halign, valign, 0), selection, deselection, activation, position)
         {
-            _text = new Text(font, text, color, position, halign, valign, 0);
+        }
+        public MenuItem(object item,
+                        Func<MenuItem, MenuItem> selection = null,
+                        Func<MenuItem, MenuItem> deselection = null,
+                        Func<MenuItem, MenuItem> activation = null,
+                        Vector2 position = default)
+        {
+            _item = item;
+            if (_item is IPosition positem)
+                positem.Position = position;
             Selection = selection;
             Deselection = deselection;
             Activation = activation;
@@ -78,8 +134,10 @@ namespace DinaFramework.Menus
         public void Draw(SpriteBatch spritebatch)
         {
             if (_visible)
-                _text.Draw(spritebatch);
+            {
+                if (_item is IDraw item)
+                    item.Draw(spritebatch);
+            }
         }
-        public override string ToString() => _text.Content;
     }
 }
