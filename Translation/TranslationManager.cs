@@ -1,8 +1,4 @@
-﻿using DinaFramework.Interfaces;
-
-using Microsoft.Xna.Framework.Input;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
@@ -15,14 +11,13 @@ namespace DinaFramework.Translation
         private static Type _values;
         private static bool _loaded;
         private static bool _updated;
-
         public static bool IsLoaded() => _loaded;
         public static bool IsUpdated() => _updated;
         public static void SetValues(Type valueClass)
         {
             _values = valueClass ?? throw new ArgumentNullException(nameof(valueClass));
 
-            _translations.Clear();
+            //_translations.Clear();
             foreach (var method in valueClass.GetRuntimeMethods())
             {
                 if (method.Name.StartsWith("get_", StringComparison.CurrentCulture))

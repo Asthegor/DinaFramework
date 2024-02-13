@@ -58,7 +58,7 @@ namespace DinaFramework.Core.Fixed
         }
         public override Vector2 Dimensions
         {
-            get { return TextDimensions; }
+            get { return base.Dimensions; }
             set
             {
                 base.Dimensions = value;
@@ -71,12 +71,11 @@ namespace DinaFramework.Core.Fixed
             _font = font;
             Content = content;
             _color = color;
-            _halign = horizontalalignment;
-            _valign = verticalalignment;
             _wait = false;
             _displayposition = position;
             Position = position;
             Dimensions = _font.MeasureString(TranslationManager.GetTranslation(Content));
+            SetAlignments(horizontalalignment, verticalalignment);
             ZOrder = zorder;
             Visible = true;
         }

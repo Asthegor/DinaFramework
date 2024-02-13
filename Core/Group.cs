@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace DinaFramework.Core
 {
-    public class Group : Base, IDraw, IVisible, IEnumerator, IEnumerable, ICollide
+    public class Group : Base, IDraw, IVisible, IEnumerator, IEnumerable, ICollide, IUpdate
     {
         readonly List<IElement> _elements = new List<IElement>();
         private int index;
@@ -66,21 +66,21 @@ namespace DinaFramework.Core
             get => base.Dimensions;
             set
             {
-                float width = 0.0f;
-                foreach (var element in _elements)
-                {
-                    if (element is IDimensions item && width < item.Dimensions.X)
-                        width = item.Dimensions.X;
-                }
-                if (width < base.Dimensions.X)
-                    width = base.Dimensions.X;
-                foreach (var element in _elements)
-                {
-                    if (element is IDimensions item)
-                        item.Dimensions = new Vector2(width, item.Dimensions.Y);
-                }
-                if (value.X < width)
-                    value.X = width;
+                //float width = 0.0f;
+                //foreach (var element in _elements)
+                //{
+                //    if (element is IDimensions item && width < item.Dimensions.X)
+                //        width = item.Dimensions.X;
+                //}
+                //if (width < base.Dimensions.X)
+                //    width = base.Dimensions.X;
+                //foreach (var element in _elements)
+                //{
+                //    if (element is IDimensions item)
+                //        item.Dimensions = new Vector2(width, item.Dimensions.Y);
+                //}
+                //if (value.X < width)
+                //    value.X = width;
                 base.Dimensions = value;
                 _rect.Size = new Point(Convert.ToInt32(value.X), Convert.ToInt32(value.Y));
             }
@@ -129,17 +129,18 @@ namespace DinaFramework.Core
         }
         private void UpdateDimensions()
         {
-            float x, y, w, h;
-            x = float.MaxValue;
-            y = float.MaxValue;
+            float x, y;
+            float w, h;
+            x = Position.X;
+            y = Position.Y;
             w = -1;
             h = -1;
             foreach (var element in _elements)
             {
-                if (element is Base ebase)
+                if (element is IDimensions elemdim && element is IPosition elempos)
                 {
-                    Vector2 elemPos = ebase.Position;
-                    Vector2 elemDim = ebase.Dimensions;
+                    Vector2 elemPos = elempos.Position;
+                    Vector2 elemDim = elemdim.Dimensions;
 
                     if (elemPos.X < x)
                         x = elemPos.X;
@@ -161,6 +162,15 @@ namespace DinaFramework.Core
             } //foreach
             if (x < float.MaxValue && y < float.MaxValue && w > -1 && h > -1)
                 Dimensions = new Vector2(w - x, h - y);
+
+        }
+        public void Update(GameTime gameTime)
+        {
+            foreach(var elem in _elements)
+            {
+                if (elem is IUpdate uelem)
+                    uelem.Update(gameTime);
+            }
         }
     }
 }

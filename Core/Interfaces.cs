@@ -22,6 +22,10 @@ namespace DinaFramework.Interfaces
     {
         public abstract void Draw(SpriteBatch spritebatch);
     }
+    public interface IReset
+    {
+        public abstract void Reset();
+    }
     public interface IPosition
     {
         public abstract Vector2 Position { get; set; }

@@ -1,6 +1,4 @@
-﻿#pragma warning disable CA1854 // Préférer la méthode 'IDictionary.TryGetValue(TKey, out TValue)'
-
-using DinaFramework.Controls;
+﻿using DinaFramework.Controls;
 using DinaFramework.Interfaces;
 
 using Microsoft.Xna.Framework;
@@ -70,6 +68,7 @@ namespace DinaFramework.Scenes
         public T GetValue<T>(string name) { return _values.TryGetValue(name, out object value) ? (T)value : default; }
         public void RemoveValue(string name) { _values.Remove(name); }
         public void Exit() { _game.Exit(); }
+        public bool IsMouseVisible { get => _game.IsMouseVisible; set => _game.IsMouseVisible = value; }
 
         // Fonctions génériques
         public void Update(GameTime gameTime) { _currentscene?.Update(gameTime); }
@@ -77,7 +76,7 @@ namespace DinaFramework.Scenes
         {
             if (spritebatch != null)
             {
-                spritebatch.Begin(blendState: BlendState.NonPremultiplied);
+                spritebatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
                 _currentscene?.Draw(spritebatch);
                 spritebatch.End();
             }
@@ -94,4 +93,4 @@ namespace DinaFramework.Scenes
         }
     }
 }
-#pragma warning restore CA1854 // Préférer la méthode 'IDictionary.TryGetValue(TKey, out TValue)'
+
