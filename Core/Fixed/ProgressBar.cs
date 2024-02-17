@@ -57,6 +57,17 @@ namespace DinaFramework.Core.Fixed
             _rectangles[1] = new Rectangle(position.ToPoint(), dimensions.ToPoint());
             SetImages(leftImage, centerImage, rightImage);
         }
+        public ProgressBar(float value, float maxValue, Texture2D leftImage, Texture2D centerImage, Texture2D rightImage, ProgressBarMode mode = ProgressBarMode.LeftToRight, int zorder = 0)
+        {
+            Visible = true;
+            Mode = mode;
+            _maxValue = maxValue;
+            Value = value;
+            Dimensions = new Vector2(leftImage.Width + rightImage.Width + centerImage.Width, leftImage.Height);
+
+            _rectangles[1] = new Rectangle(Vector2.Zero.ToPoint(), Dimensions.ToPoint());
+            SetImages(leftImage, centerImage, rightImage);
+        }
         public bool Visible { get => _visible; set => _visible = value; }
         public float Value
         {
