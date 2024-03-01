@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 
 namespace DinaFramework.Core.Fixed
 {
@@ -55,6 +56,23 @@ namespace DinaFramework.Core.Fixed
             _maxValue = maxValue;
             Value = value;
             _rectangles[1] = new Rectangle(position.ToPoint(), dimensions.ToPoint());
+            SetImages(leftImage, centerImage, rightImage);
+        }
+        public ProgressBar(float value, float maxValue, Texture2D leftImage, Texture2D centerImage, Texture2D rightImage, ProgressBarMode mode = ProgressBarMode.LeftToRight, int zorder = 0)
+        {
+            Debug.Assert(leftImage != null, "'leftImage' could not be null.");
+            Debug.Assert(centerImage != null, "'centerImage' could not be null.");
+            Debug.Assert(rightImage != null, "'rightImage' could not be null.");
+
+            Visible = true;
+            Mode = mode;
+            _maxValue = maxValue;
+            Value = value;
+            Position = Vector2.Zero;
+            Dimensions = new Vector2(leftImage.Width + rightImage.Width + centerImage.Width, leftImage.Height);
+            ZOrder = zorder;
+
+            _rectangles[1] = new Rectangle(Vector2.Zero.ToPoint(), Dimensions.ToPoint());
             SetImages(leftImage, centerImage, rightImage);
         }
         public bool Visible { get => _visible; set => _visible = value; }

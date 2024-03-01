@@ -3,10 +3,13 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 
 using System;
+using System.Runtime.CompilerServices;
 
 namespace DinaFramework.Interfaces
 {
-    public interface IElement
+    public interface IElement : IPosition, IDimensions, IZOrder
+    {}
+    public interface IZOrder
     {
         public abstract int ZOrder { get; set; }
     }
@@ -57,5 +60,12 @@ namespace DinaFramework.Interfaces
     {
         public abstract Vector2 Flip { get; set; }
     }
-    public interface IText { }
+    public interface IClickable
+    {
+        public abstract bool IsClicked();
+    }
+    public interface IText : IPosition, IDimensions
+    {
+        public abstract Vector2 TextDimensions { get; }
+    }
 }

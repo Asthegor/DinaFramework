@@ -10,7 +10,7 @@ using System.ComponentModel;
 
 namespace DinaFramework.Core.Fixed
 {
-    public class Panel : Base, IDraw, IVisible, IUpdate
+    public class Panel : Base, IDraw, IVisible, IUpdate, IClickable
     {
         private readonly List<Texture2D> _images = new List<Texture2D>();
         private readonly List<Vector2> _positions = new List<Vector2>();
@@ -299,5 +299,10 @@ namespace DinaFramework.Core.Fixed
             _oldMouseState = mouseState;
         }
         public bool IsClicked() => _clicked;
+
+        internal void SetVisible(bool visible)
+        {
+            _visible = visible;
+        }
     }
 }

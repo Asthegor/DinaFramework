@@ -16,6 +16,7 @@ namespace DinaFramework.Core.Fixed
         Texture2D _texture;
         SpriteEffects _effects;
         Vector2 _flip;
+        Vector2 _scale;
 
         public Sprite(Texture2D texture, Color color, int zorder = default) : base(default, default, zorder)
         {
@@ -35,7 +36,7 @@ namespace DinaFramework.Core.Fixed
         public Sprite(Texture2D texture, Color color, Vector2 position, Vector2 dimensions, float rotation = default, Vector2 origin = default,
                       Vector2 flip = default, int zorder = default) : this(texture, color, position, dimensions, zorder)
         {
-            Rectangle = new Rectangle(Convert.ToInt32(Position.X), Convert.ToInt32(Position.Y), Convert.ToInt32(Dimensions.X), Convert.ToInt32(Dimensions.Y)); ;
+            Rectangle = new Rectangle(Convert.ToInt32(Position.X), Convert.ToInt32(Position.Y), Convert.ToInt32(Dimensions.X), Convert.ToInt32(Dimensions.Y));
             Rotation = rotation;
             Origin = origin;
             Flip = flip == default ? Vector2.One : flip;
@@ -86,7 +87,8 @@ namespace DinaFramework.Core.Fixed
             set
             {
                 base.Position = value;
-                _rectangle.Location = new Point(Convert.ToInt32(value.X - Origin.X), Convert.ToInt32(value.Y - Origin.Y));
+                _rectangle.Location = value.ToPoint();
+                //_rectangle.Location = new Point(Convert.ToInt32(value.X - Origin.X), Convert.ToInt32(value.Y - Origin.Y));
             }
         }
         public override Vector2 Dimensions
@@ -108,14 +110,24 @@ namespace DinaFramework.Core.Fixed
             get { return _origin; }
             set { _origin = value; }
         }
-        public void CenterOrigin() { _origin = new Vector2(Texture.Width, Texture.Height) * 0.5f; }
+        public void CenterOrigin() { _origin = new Vector2(Texture.Width, Texture.Height) / 2.0f; }
         public bool Visible
         {
             get { return _visible; }
             set { _visible = value; }
         }
+        public void SetVisible(bool value = false)
+        {
+            _visible = value;
+        }
         public float Rotation { get; set; }
-        public Vector2 Scale { get; set; }
+        public Vector2 Scale { get => _scale;
+            set
+            {
+                _scale = value;
+                _rectangle.Size = new Vector2(Dimensions.X * _scale.X, Dimensions.Y * _scale.Y).ToPoint();
+            }
+        }
         public Vector2 Flip
         {
             get { return _flip; }

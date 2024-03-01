@@ -173,21 +173,5 @@ namespace DinaFramework.Core.Fixed
 
             _displayposition = base.Position + offset;
         }
-        //public Vector2 CalculateTextPosition()
-        //{
-        //    Vector2 offset = new Vector2();
-
-        //    if (_halign == HorizontalAlignment.Center)
-        //        offset.X = (base.Dimensions.X - TextDimensions.X) / 2.0f;
-        //    else if (_halign == HorizontalAlignment.Right)
-        //        offset.X = base.Dimensions.X - TextDimensions.X;
-
-        //    if (_valign == VerticalAlignment.Center)
-        //        offset.Y = (base.Dimensions.Y - TextDimensions.Y) / 2.0f;
-        //    else if (_valign == VerticalAlignment.Bottom)
-        //        offset.Y = base.Dimensions.Y - TextDimensions.Y;
-
-        //    return base.Position + offset;
-        //}
     }
 }

@@ -17,8 +17,8 @@ namespace DinaFramework.Functions
             else
             {
                 int posSep = value.IndexOf(sep, StringComparison.CurrentCulture);
-                res = value.Substring(0, posSep);
-                value = value.Substring(posSep + sep.Length);
+                res = value[..posSep];
+                value = value[(posSep + sep.Length)..];
             }
             return res;
         }

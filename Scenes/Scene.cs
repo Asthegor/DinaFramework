@@ -15,10 +15,12 @@ namespace DinaFramework.Scenes
         {
             _sceneManager = sceneManager;
         }
-        public abstract void Draw(SpriteBatch spritebatch);
+
         public abstract void Load(ContentManager content);
-        public abstract void Update(GameTime gameTime);
         public abstract void Reset();
+        public abstract void Update(GameTime gameTime);
+        public abstract void Draw(SpriteBatch spritebatch);
+
         public void AddValue(string name, object value) { _sceneManager.AddValue(name, value); }
         public T GetValue<T>(string name) { return _sceneManager.GetValue<T>(name); }
         public void RemoveValue(string name) { _sceneManager.RemoveValue(name); }
