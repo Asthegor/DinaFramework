@@ -68,5 +68,14 @@ namespace DinaFramework.Messages {
                 return ResourceManager.GetString("SCENE_NAME_MISSING", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à SetCurrentScene can only be called from Game.LoadContent or from the Update function of a Scene instance..
+        /// </summary>
+        internal static string SETCURRENTSCENE_ERROR {
+            get {
+                return ResourceManager.GetString("SETCURRENTSCENE_ERROR", resourceCulture);
+            }
+        }
     }
 }

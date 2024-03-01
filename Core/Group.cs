@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace DinaFramework.Core
 {
-    public class Group : Base, IDraw, IVisible, IEnumerator, IEnumerable, ICollide, IUpdate
+    public class Group : Base, IDraw, IVisible, IEnumerator, IEnumerable, ICollide, IUpdate, IClickable
     {
         readonly List<IElement> _elements = new List<IElement>();
         private int index;
@@ -66,21 +66,6 @@ namespace DinaFramework.Core
             get => base.Dimensions;
             set
             {
-                //float width = 0.0f;
-                //foreach (var element in _elements)
-                //{
-                //    if (element is IDimensions item && width < item.Dimensions.X)
-                //        width = item.Dimensions.X;
-                //}
-                //if (width < base.Dimensions.X)
-                //    width = base.Dimensions.X;
-                //foreach (var element in _elements)
-                //{
-                //    if (element is IDimensions item)
-                //        item.Dimensions = new Vector2(width, item.Dimensions.Y);
-                //}
-                //if (value.X < width)
-                //    value.X = width;
                 base.Dimensions = value;
                 _rect.Size = new Point(Convert.ToInt32(value.X), Convert.ToInt32(value.Y));
             }
@@ -90,6 +75,17 @@ namespace DinaFramework.Core
             get => _visible;
             set => _visible = value;
         }
+        public bool IsClicked()
+        {
+            foreach (var item in _elements)
+            {
+                if (item is IClickable itemclickable)
+                    if (itemclickable.IsClicked() == true)
+                        return true;
+            }
+            return false;
+        }
+
         public int Count() => _elements.Count;
         public bool MoveNext()
         {
@@ -166,7 +162,7 @@ namespace DinaFramework.Core
         }
         public void Update(GameTime gameTime)
         {
-            foreach(var elem in _elements)
+            foreach (var elem in _elements)
             {
                 if (elem is IUpdate uelem)
                     uelem.Update(gameTime);

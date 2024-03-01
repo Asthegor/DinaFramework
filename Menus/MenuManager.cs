@@ -11,6 +11,7 @@ using Microsoft.Xna.Framework.Input;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DinaFramework.Menus
 {
@@ -49,10 +50,10 @@ namespace DinaFramework.Menus
             Visible = true;
             Cancellation = cancellation;
             Reset(currentitemindex);
-            _oldMouseState = Mouse.GetState();
         }
 
 
+        //------------------------------------------------------------------
         // Propriétés
         public Vector2 ItemsDimensions => _itemsGroup.Dimensions;
         public Vector2 ItemsPosition
@@ -66,31 +67,18 @@ namespace DinaFramework.Menus
             get => (_currentitemindex == -1 || _currentitemindex >= _items.Count) ? null : _items[_currentitemindex];
             set => _currentitemindex = _items.IndexOf(value);
         }
-        public IconMenuAlignment IconAlignment { get => _iconAlignment; set => _iconAlignment = value; }
+        public IconMenuAlignment IconAlignment
+        {
+            get => _iconAlignment;
+            set => _iconAlignment = value;
+        }
         public bool IconsVisible
         {
             get => (_iconLeft != null && _iconLeft.Visible) || (_iconRight != null && _iconRight.Visible);
             set
             {
-                if (_iconLeft != null)
-                    _iconLeft.Visible = value;
-                if (_iconRight != null)
-                    _iconRight.Visible = value;
-                // Mise à jour des dimensions du groupe
-                Vector2 groupDim = _itemsGroup.Dimensions;
-                if (_iconLeft != null)
-                    groupDim.X += (_iconLeft.Dimensions.X + _iconSpacing) * (value ? 1 : -1);
-                if (_iconRight != null)
-                    groupDim.X += (_iconRight.Dimensions.X + _iconSpacing) * (value ? 1 : -1);
-                _itemsGroup.Dimensions = groupDim;
-                // Mise à jour de la position des items
-                foreach (var item in _items)
-                {
-                    Vector2 itemPos = item.Position;
-                    if (_iconLeft != null)
-                        itemPos.X += (_iconLeft.Dimensions.X + _iconSpacing) * (value ? 1 : -1);
-                    item.Position = itemPos;
-                }
+                _iconLeft?.SetVisible(value);
+                _iconRight?.SetVisible(value);
             }
         }
         public Action Cancellation
@@ -105,105 +93,83 @@ namespace DinaFramework.Menus
         }
 
         // Titres
-        public void AddTitle(SpriteFont font, string text, Vector2 position, Color color, int zorder = 0)
+        public void AddTitle(SpriteFont font, string text, Vector2 position, Color color, Color? shadowcolor = null, Vector2? shadowoffset = null, int zorder = 0)
         {
-            Text title = new Text(font, text, color, position, default, default, zorder);
-            _elements.Add(title);
-            _titles.Add(title);
-            SortElements();
-        }
-        public void AddTitle(SpriteFont font, string text, Vector2 position, Color color, Color shadowcolor, Vector2 shadowOffset, int zorder = 0)
-        {
-            ShadowText title = new ShadowText(font, text, color, position, shadowcolor, shadowOffset, default, default, zorder);
-            _elements.Add(title);
-            _titles.Add(title);
-            SortElements();
+            var title = (shadowcolor.HasValue && shadowoffset.HasValue)
+                        ? new ShadowText(font, text, color, position, shadowcolor.Value, shadowoffset.Value, zorder: zorder)
+                        : (IElement)new Text(font, text, color, position, zorder: zorder);
+            AddTitleToGroups(title);
         }
         public void CenterTitles(Vector2 screendimensions)
         {
             foreach (var title in _titles)
             {
-                Vector2 titleDim;
-                Vector2 titlePos;
-                if (title is Text titleText)
+                if (title is IText titleText)
                 {
-                    titleDim = titleText.Dimensions;
-                    titlePos = titleText.Position;
-                    titlePos.X = (screendimensions.X - titleDim.X) / 2.0f;
+                    Vector2 titleTextDim = titleText.TextDimensions;
+                    Vector2 titlePos = titleText.Position;
+                    titlePos.X = (screendimensions.X - titleTextDim.X) / 2.0f;
                     titleText.Position = titlePos;
-                }
-                else if (title is ShadowText titleShadow)
-                {
-                    titleDim = titleShadow.Dimensions;
-                    titlePos = titleShadow.Position;
-                    titlePos.X = (screendimensions.X - titleDim.X) / 2.0f;
-                    titleShadow.Position = titlePos;
                 }
             }
         }
 
+        //------------------------------------------------------------------
         // Icones
-        public void SetIconItems(Texture2D iconLeft = null, Texture2D iconRight = null, 
-                                 IconMenuAlignment iconAlignment = IconMenuAlignment.Left, 
+        public void SetIconItems(Texture2D iconLeft = null, Texture2D iconRight = null,
+                                 IconMenuAlignment iconAlignment = IconMenuAlignment.Left,
                                  int iconSpacing = DEFAULT_SPACING,
                                  bool resize = false)
         {
             IconAlignment = iconAlignment;
             _iconSpacing = iconSpacing;
 
-            Vector2 itemDim = _items.Count > 0 ? _items[0].Dimensions : Vector2.Zero;
+            // Calcule les dimensions des icônes si le redimensionnement est activé
+            Vector2 iconLeftDimensions = CalculateIconDimensions(iconLeft, resize);
+            Vector2 iconRightDimensions = CalculateIconDimensions(iconRight, resize);
 
-            // Création des Sprites des icones et mise à jour des dimensions du groupe
-            Vector2 groupDim = _itemsGroup.Dimensions;
-            if (iconLeft != null)
-            {
-                _iconLeft = new Sprite(iconLeft, Color.White);
-                Vector2 iconDim = new Vector2(iconLeft.Width, iconLeft.Height);
-                if (resize == true && itemDim != Vector2.Zero)
-                {
-                    float ratio = iconDim.Y / itemDim.Y;
-                    _iconLeft.Dimensions = iconDim / ratio;
-                }
-                groupDim.X += _iconLeft.Dimensions.X + _iconSpacing;
-            }
-            if (iconRight != null)
-            {
-                _iconRight = new Sprite(iconRight, Color.White);
-                Vector2 iconDim = new Vector2(iconRight.Width, iconRight.Height);
-                if (resize == true && itemDim != Vector2.Zero)
-                {
-                    float ratio = iconDim.Y / itemDim.Y;
-                    _iconRight.Dimensions = iconDim / ratio;
-                }
-                groupDim.X += _iconRight.Dimensions.X + _iconSpacing;
-            }
-            _itemsGroup.Dimensions = groupDim;
-            // Mise à jour des positions des items
-            foreach (var item in _items)
-            {
-                Vector2 itemPos = item.Position;
-                if (iconLeft != null)
-                    itemPos.X += _iconLeft.Dimensions.X + _iconSpacing;
-                item.Position = itemPos;
-            }
+            // Crée les objets Sprite pour les icônes gauche et droite
+            _iconLeft = CreateIconSprite(iconLeft, iconLeftDimensions);
+            _iconRight = CreateIconSprite(iconRight, iconRightDimensions);
+
+            // Met à jour les dimensions du fond si nécessaire
             if (_background != null)
-                _background.Dimensions = _itemsGroup.Dimensions;
+            {
+                Vector2 offset = Vector2.Zero;
+                if (_iconLeft != null)
+                    offset.X += _iconLeft.Dimensions.X + iconSpacing;
+                if (_iconRight != null)
+                    offset.X += _iconRight.Dimensions.X + iconSpacing;
+                _background.Dimensions = _itemsGroup.Dimensions + offset;
+            }
         }
 
 
+        //------------------------------------------------------------------
         // Items
         public MenuItem AddItem(SpriteFont font, string text, Color color, Func<MenuItem, MenuItem> selection = null, Func<MenuItem, MenuItem> deselection = null, Func<MenuItem, MenuItem> activation = null, HorizontalAlignment halign = HorizontalAlignment.Left, VerticalAlignment valign = VerticalAlignment.Top)
         {
-            float item_pos_y = _itemsGroup.Dimensions.Y + (_itemsGroup.Count() > 0 ? _itemspacing : 0.0f);
-            return AddItemToGroups(new MenuItem(font, text, color, selection, deselection, activation, new Vector2(_itemsGroup.Position.X, item_pos_y), halign, valign));
+            return AddItemToGroups(new MenuItem(font, text, color, selection, deselection, activation, new Vector2(_itemsGroup.Position.X, GetNextItemYPosition()), halign, valign));
         }
         public MenuItem AddItem(object item, Func<MenuItem, MenuItem> selection = null, Func<MenuItem, MenuItem> deselection = null, Func<MenuItem, MenuItem> activation = null)
         {
-            float item_pos_y = _itemsGroup.Dimensions.Y + (_itemsGroup.Count() > 0 ? _itemspacing : 0.0f);
-            return AddItemToGroups( new MenuItem(item, selection, deselection, activation, new Vector2(_itemsGroup.Position.X, item_pos_y)));
+            return AddItemToGroups(new MenuItem(item, selection, deselection, activation, new Vector2(_itemsGroup.Position.X, GetNextItemYPosition())));
+        }
+        public void CenterMenuItems(Vector2 screendimensions)
+        {
+            foreach (var item in _items)
+            {
+                if (item is MenuItem)
+                {
+                    Vector2 itemTextDim = item.TextDimensions;
+                    Vector2 itemPos = item.Position;
+                    itemPos.X = (screendimensions.X - itemTextDim.X) / 2.0f;
+                    item.Position = itemPos;
+                }
+            }
         }
 
-
+        //------------------------------------------------------------------
         // Touches
         public void SetKeys(ControllerKey nextItemKey, ControllerKey prevItemKey, ControllerKey activateItemKey, ControllerKey cancelKey = null)
         {
@@ -218,6 +184,7 @@ namespace DinaFramework.Menus
         public void SetCancelMenuKey(ControllerKey key) { _cancel_menu_key = key; }
 
 
+        //------------------------------------------------------------------
         // Items Background
         public void SetItemsBackground(Panel panel, int borderSpacing)
         {
@@ -255,18 +222,13 @@ namespace DinaFramework.Menus
         }
         public void SetBackgroundVisible(bool visible)
         {
-            if (_background != null)
-                _background.Visible = visible;
+            _background?.SetVisible(visible);
         }
 
-
+        //------------------------------------------------------------------
         public void Reset(int value = -1)
         {
-            CurrentItem?.Deselection?.Invoke(CurrentItem);
-            _currentitemindex = value;
-            if (_currentitemindex >= 0)
-                CurrentItem?.Selection?.Invoke(CurrentItem);
-            _oldMouseState = Mouse.GetState();
+            Reset(_items.ElementAtOrDefault(value));
         }
         public void Reset(MenuItem item)
         {
@@ -275,104 +237,43 @@ namespace DinaFramework.Menus
             CurrentItem?.Selection?.Invoke(CurrentItem);
             _oldMouseState = Mouse.GetState();
         }
-
-
         public void Update(GameTime gameTime)
         {
             if (!Visible)
                 return;
-            SceneManager sm = SceneManager.GetInstance();
-            if (sm != null && sm.IsMouseVisible == true)
-            {
-                foreach (MenuItem item in _items)
-                {
-                    MouseState ms = Mouse.GetState();
-                    Rectangle rect = new Rectangle(item.Position.ToPoint(), item.Dimensions.ToPoint());
-                    if (_oldMouseState.Position != ms.Position && rect.Intersects(new Rectangle(new Point(ms.X, ms.Y), Point.Zero)))
-                    {
-                        if (CurrentItem != item)
-                        {
-                            CurrentItem?.Deselection.Invoke(CurrentItem);
-                            item?.Selection.Invoke(item);
-                            CurrentItem = item;
-                        }
-                    }
-                }
-                if (_oldMouseState.LeftButton == ButtonState.Released && Mouse.GetState().LeftButton == ButtonState.Pressed)
-                    CurrentItem?.Activation.Invoke(CurrentItem);
-                if (_oldMouseState.RightButton == ButtonState.Released && Mouse.GetState().RightButton == ButtonState.Pressed)
-                {
-                    if (Cancellation != null)
-                    {
-                        Reset();
-                        Visible = false;
-                        Cancellation.Invoke();
-                        return;
-                    }
-                }
-            }
 
-            if (_cancel_menu_key != null && _cancel_menu_key.IsPressed())
-            {
-                if (Cancellation != null)
-                {
-                    Reset();
-                    Visible = false;
-                    Cancellation.Invoke();
-                    return;
-                }
-            }
-            if (_next_item_key != null && _next_item_key.IsPressed())
-                ChangeCurrentItem(1);
-            if (_previous_item_key != null && _previous_item_key.IsPressed())
-                ChangeCurrentItem(-1);
+            HandleMouseInput();
+            HandleKeyInput();
 
-            if (_active_item_key != null && _active_item_key.IsPressed())
-            {
-                if (_currentitemindex >= 0 && _currentitemindex < _items.Count)
-                    _items[_currentitemindex].Activation?.Invoke(_items[_currentitemindex]);
-            }
             foreach (var element in _elements)
             {
                 if (element is IUpdate update)
                     update.Update(gameTime);
             }
-            _oldMouseState = Mouse.GetState();
         }
         public void Draw(SpriteBatch spritebatch)
         {
-            if (Visible)
-            {
-                foreach (var element in _elements)
-                {
-                    if (element is IDraw draw)
-                        draw.Draw(spritebatch);
-                }
-                if (_currentitemindex >= 0)
-                {
-                    if (_iconLeft != null && (IconAlignment == IconMenuAlignment.Left || IconAlignment == IconMenuAlignment.Both))
-                    {
-                        _iconLeft.Position = new Vector2(_items[_currentitemindex].Position.X - _iconLeft.Dimensions.X - _iconSpacing,
-                                                         _items[_currentitemindex].Position.Y + (_items[_currentitemindex].Dimensions.Y / 2.0f) - (_iconLeft.Dimensions.Y / 2.0f));
-                        _iconLeft.Draw(spritebatch);
-                    }
-                    if (_iconRight != null && (IconAlignment == IconMenuAlignment.Right || IconAlignment == IconMenuAlignment.Both))
-                    {
-                        float iconRightPos;
-                        if (_background != null)
-                            iconRightPos = _background.Position.X + _background.Dimensions.X - _iconRight.Dimensions.X - _borderSpacing;
-                        else
-                            iconRightPos = _itemsGroup.Position.X + _itemsGroup.Dimensions.X - _iconRight.Dimensions.X;
+            if (!Visible)
+                return;
 
-                        _iconRight.Position = new Vector2(iconRightPos,
-                                                          _items[_currentitemindex].Position.Y + (_items[_currentitemindex].Dimensions.Y / 2.0f) - (_iconRight.Dimensions.Y / 2.0f));
-                        _iconRight.Draw(spritebatch);
-                    }
-                }
+            foreach (var element in _elements)
+            {
+                if (element is IDraw draw)
+                    draw.Draw(spritebatch);
             }
+
+            DrawIcons(spritebatch);
         }
 
+
+        //------------------------------------------------------------------
         // Méthodes privées
+        private void AddTitleToGroups(IElement title)
+        {
+            _elements.Add(title);
+            _titles.Add(title);
+            SortElements();
+        }
         private MenuItem AddItemToGroups(MenuItem menuitem)
         {
             _itemsGroup.Add(menuitem);
@@ -381,6 +282,20 @@ namespace DinaFramework.Menus
             if (_currentitemindex >= 0 && _currentitemindex == _items.Count - 1)
                 menuitem.Selection?.Invoke(menuitem);
             return menuitem;
+        }
+        private Vector2 CalculateIconDimensions(Texture2D icon, bool resize)
+        {
+            if (icon == null)
+                return Vector2.Zero;
+
+            Vector2 iconDim = new Vector2(icon.Width, icon.Height);
+            if (resize && _items.Count > 0)
+            {
+                Vector2 itemDim = _items[0].Dimensions;
+                float ratio = iconDim.Y / itemDim.Y;
+                return iconDim / ratio;
+            }
+            return iconDim;
         }
         private void ChangeCurrentItem(int offset)
         {
@@ -395,6 +310,98 @@ namespace DinaFramework.Menus
                 _currentitemindex = _items.Count - 1;
             // Sélection du nouvel item
             _items[_currentitemindex].Selection?.Invoke(_items[_currentitemindex]);
+        }
+        private static Sprite CreateIconSprite(Texture2D texture, Vector2 dimensions)
+        {
+            return texture != null ? new Sprite(texture, Color.White) { Dimensions = dimensions } : null;
+        }
+        private void DrawIcons(SpriteBatch spritebatch)
+        {
+            if (_currentitemindex >= 0)
+            {
+                if (_iconLeft != null && (IconAlignment == IconMenuAlignment.Left || IconAlignment == IconMenuAlignment.Both))
+                {
+                    _iconLeft.Position = new Vector2(_items[_currentitemindex].Position.X - _iconLeft.Dimensions.X - _iconSpacing,
+                                                     _items[_currentitemindex].Position.Y + (_items[_currentitemindex].Dimensions.Y / 2.0f) - (_iconLeft.Dimensions.Y / 2.0f));
+                    _iconLeft.Draw(spritebatch);
+                }
+                if (_iconRight != null && (IconAlignment == IconMenuAlignment.Right || IconAlignment == IconMenuAlignment.Both))
+                {
+                    float iconRightPos = _background != null ? _background.Position.X + _background.Dimensions.X - _iconRight.Dimensions.X - _borderSpacing
+                                                             : _itemsGroup.Position.X + _itemsGroup.Dimensions.X - _iconRight.Dimensions.X;
+
+                    _iconRight.Position = new Vector2(iconRightPos,
+                                                      _items[_currentitemindex].Position.Y + (_items[_currentitemindex].Dimensions.Y / 2.0f) - (_iconRight.Dimensions.Y / 2.0f));
+                    _iconRight.Draw(spritebatch);
+                }
+            }
+
+        }
+        private float GetNextItemYPosition()
+        {
+            return _itemsGroup.Dimensions.Y + (_itemsGroup.Count() > 0 ? DEFAULT_SPACING : 0.0f);
+        }
+        private void HandleMouseInput()
+        {
+            MouseState ms = Mouse.GetState();
+            SceneManager sm = SceneManager.GetInstance();
+            if (sm != null && sm.IsMouseVisible == true)
+            {
+                foreach (MenuItem item in _items)
+                {
+                    Rectangle rect = new Rectangle(item.Position.ToPoint(), item.Dimensions.ToPoint());
+                    if (_oldMouseState.Position != ms.Position && rect.Intersects(new Rectangle(new Point(ms.X, ms.Y), Point.Zero)))
+                    {
+                        if (CurrentItem != item)
+                        {
+                            CurrentItem?.Deselection?.Invoke(CurrentItem);
+                            item?.Selection?.Invoke(item);
+                            CurrentItem = item;
+                        }
+                    }
+                    if (_oldMouseState.LeftButton == ButtonState.Pressed && ms.LeftButton == ButtonState.Released && rect.Intersects(new Rectangle(new Point(ms.X, ms.Y), Point.Zero)))
+                    {
+                        item?.Activation.Invoke(item);
+                        _oldMouseState = ms;
+                        return;
+                    }
+                }
+                if (_oldMouseState.RightButton == ButtonState.Pressed && ms.RightButton == ButtonState.Released)
+                {
+                    if (Cancellation != null)
+                    {
+                        Reset();
+                        Visible = false;
+                        Cancellation.Invoke();
+                        _oldMouseState = ms;
+                        return;
+                    }
+                }
+            }
+            _oldMouseState = ms;
+        }
+        private void HandleKeyInput()
+        {
+            if (_cancel_menu_key != null && _cancel_menu_key.IsPressed() == 1)
+            {
+                if (Cancellation != null)
+                {
+                    Reset();
+                    Visible = false;
+                    Cancellation.Invoke();
+                    return;
+                }
+            }
+            if (_next_item_key != null && _next_item_key.IsPressed() == 1)
+                ChangeCurrentItem(1);
+            if (_previous_item_key != null && _previous_item_key.IsPressed() == 1)
+                ChangeCurrentItem(-1);
+
+            if (_active_item_key != null && _active_item_key.IsPressed() == 1)
+            {
+                if (_currentitemindex >= 0 && _currentitemindex < _items.Count)
+                    _items[_currentitemindex].Activation?.Invoke(_items[_currentitemindex]);
+            }
         }
         private void SortElements()
         {

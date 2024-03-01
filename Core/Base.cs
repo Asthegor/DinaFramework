@@ -6,7 +6,7 @@ using System;
 
 namespace DinaFramework.Core
 {
-    public abstract class Base : IElement, IPosition, IDimensions
+    public abstract class Base : IElement
     {
         int _zorder;
         Vector2 _position;

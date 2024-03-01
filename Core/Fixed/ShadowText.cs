@@ -108,5 +108,7 @@ namespace DinaFramework.Core.Fixed
                 _shadow.Visible = value;
             }
         }
+
+        public Vector2 TextDimensions => _text.TextDimensions;
     }
 }

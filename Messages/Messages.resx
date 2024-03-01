@@ -120,4 +120,7 @@
   <data name="SCENE_NAME_MISSING" xml:space="preserve">
     <value>The 'name' must not be empty.</value>
   </data>
+  <data name="SETCURRENTSCENE_ERROR" xml:space="preserve">
+    <value>SetCurrentScene can only be called from Game.LoadContent or from the Update function of a Scene instance.</value>
+  </data>
 </root>

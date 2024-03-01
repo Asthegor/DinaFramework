@@ -37,28 +37,37 @@ namespace DinaFramework.Menus
         {
             get
             {
-                if (_item is IPosition positem)
-                    return positem.Position;
+                if (_item is IPosition posItem)
+                    return posItem.Position;
                 return default;
             }
             set
             {
-                if (_item is IPosition positem)
-                    positem.Position = value;
+                if (_item is IPosition posItem)
+                    posItem.Position = value;
             }
         }
         public Vector2 Dimensions
         {
             get
             {
-                if (_item is IDimensions dimitem)
-                    return dimitem.Dimensions;
+                if (_item is IDimensions dimItem)
+                    return dimItem.Dimensions;
                 return default;
             }
             set
             {
-                if (_item is IDimensions dimitem)
-                    dimitem.Dimensions = value;
+                if (_item is IDimensions dimItem)
+                    dimItem.Dimensions = value;
+            }
+        }
+        public Vector2 TextDimensions
+        {
+            get
+            {
+                if (_item is IText itemText)
+                    return itemText.TextDimensions;
+                return default;
             }
         }
         public int ZOrder
