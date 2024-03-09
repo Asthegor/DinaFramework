@@ -6,7 +6,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace DinaFramework.Scenes
 {
-    public abstract class Scene : ILoad, IUpdate, IDraw, IReset, IValue
+    public abstract class Scene : IGameObject, IValue
     {
         public bool Loaded { get; set; }
         private readonly SceneManager _sceneManager;

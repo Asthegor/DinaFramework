@@ -73,7 +73,15 @@ namespace DinaFramework.Core
         public bool Visible
         {
             get => _visible;
-            set => _visible = value;
+            set
+            {
+                foreach (var element in _elements)
+                {
+                    if (element is IVisible elemvisible)
+                        elemvisible.Visible = value;
+                }
+                _visible = value;
+            }
         }
         public bool IsClicked()
         {

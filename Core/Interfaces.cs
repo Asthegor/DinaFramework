@@ -7,6 +7,8 @@ using System.Runtime.CompilerServices;
 
 namespace DinaFramework.Interfaces
 {
+    public interface IGameObject : ILoad, IReset, IUpdate, IDraw
+    {}
     public interface IElement : IPosition, IDimensions, IZOrder
     {}
     public interface IZOrder
@@ -67,5 +69,10 @@ namespace DinaFramework.Interfaces
     public interface IText : IPosition, IDimensions
     {
         public abstract Vector2 TextDimensions { get; }
+    }
+    public interface ILoadingScreen
+    {
+        public abstract float Progress { get; set; }
+        public abstract string Text { get; set; }
     }
 }

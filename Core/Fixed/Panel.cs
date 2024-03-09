@@ -10,10 +10,10 @@ using System.ComponentModel;
 
 namespace DinaFramework.Core.Fixed
 {
-    public class Panel : Base, IDraw, IVisible, IUpdate, IClickable
+    public class Panel : Base, IClickable, IDraw, IUpdate, IVisible
     {
-        private readonly List<Texture2D> _images = new List<Texture2D>();
         private readonly List<Vector2> _positions = new List<Vector2>();
+        private List<Texture2D> _images = new List<Texture2D>();
         private Texture2D _texture;
         private Rectangle _rectangleBackground;
         private Rectangle _rectangleBorder;
@@ -42,6 +42,8 @@ namespace DinaFramework.Core.Fixed
             _images.Add(image);
             _positions.Add(position);
             _thickness = borderThickness;
+            if (Dimensions == default)
+                Dimensions = new Vector2(image.Width, image.Height);
             CheckVisibility();
         }
         public Panel(Vector2 position, Vector2 dimensions, Texture2D cornerTopLeft, Texture2D top, Texture2D cornerTopRight, Texture2D right, Texture2D cornerBottomRight, Texture2D bottom, Texture2D cornerBottomLeft, Texture2D left, Texture2D center, int zorder = 0) : base(position, dimensions, zorder)
@@ -159,11 +161,8 @@ namespace DinaFramework.Core.Fixed
                 switch (_images.Count)
                 {
                     case 0:
-                        if (_texture == null)
-                        {
-                            _texture = new Texture2D(spritebatch.GraphicsDevice, 1, 1);
-                            _texture.SetData(new[] { Color.White });
-                        }
+                        _texture ??= new Texture2D(spritebatch.GraphicsDevice, 1, 1);
+                        _texture.SetData(new[] { Color.White });
                         if (_thickness > 0 && BorderColor != BackgroundColor)
                             spritebatch.Draw(_texture, _rectangleBorder, null, BorderColor);
                         spritebatch.Draw(_texture, _rectangleBackground, null, BackgroundColor);
@@ -291,14 +290,17 @@ namespace DinaFramework.Core.Fixed
         {
             MouseState mouseState = Mouse.GetState();
             _clicked = false;
-            if (_oldMouseState.LeftButton == ButtonState.Released && mouseState.LeftButton == ButtonState.Pressed)
+            if (_oldMouseState.LeftButton == ButtonState.Pressed && mouseState.LeftButton == ButtonState.Released)
             {
                 if (_rectangleBackground.Contains(mouseState.Position))
                     _clicked = true;
             }
             _oldMouseState = mouseState;
         }
-        public bool IsClicked() => _clicked;
+        public bool IsClicked()
+        {
+            return _clicked;
+        }
 
         internal void SetVisible(bool visible)
         {

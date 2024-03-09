@@ -1,17 +1,14 @@
-﻿using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
+﻿using DinaFramework.Interfaces;
+
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DinaFramework.Interfaces;
 
 namespace DinaFramework.Core.Fixed
 {
-    public class CheckBox : Base, IUpdate, IDraw
+    public class CheckBox : Base, IUpdate, IDraw, IVisible
     {
         private Rectangle _checkBoxRect;
         private bool _isChecked;
@@ -22,8 +19,8 @@ namespace DinaFramework.Core.Fixed
         private Color _uncheckedColor;
         private Text _label;
         private static Texture2D _pixelTexture;
+        private bool _visible;
 
-        public bool IsChecked { get => _isChecked; set => _isChecked = value; }
         public CheckBox(Color checkedColor, Color uncheckedColor, Vector2 position, Vector2 dimensions, SpriteFont font, string label, int zorder = 0) : base(position, dimensions, zorder)
         {
             _checkedColor = checkedColor;
@@ -68,6 +65,9 @@ namespace DinaFramework.Core.Fixed
             }
         }
 
+        public bool IsChecked { get => _isChecked; set => _isChecked = value; }
+        public bool Visible { get => _visible; set => _visible = value; }
+
         public void Update(GameTime gameTime)
         {
             if (Mouse.GetState().LeftButton == ButtonState.Pressed)
@@ -82,32 +82,35 @@ namespace DinaFramework.Core.Fixed
         }
         public void Draw(SpriteBatch spritebatch)
         {
-            if (spritebatch == null)
-                return;
-            if (_useTextures)
+            ArgumentNullException.ThrowIfNull(spritebatch);
+
+            if (Visible)
             {
-                if (IsChecked)
+                if (_useTextures)
                 {
-                    spritebatch.Draw(_checkedTexture, _checkBoxRect, Color.White);
+                    if (IsChecked)
+                    {
+                        spritebatch.Draw(_checkedTexture, _checkBoxRect, Color.White);
+                    }
+                    else
+                    {
+                        spritebatch.Draw(_uncheckedTexture, _checkBoxRect, Color.White);
+                    }
                 }
                 else
                 {
-                    spritebatch.Draw(_uncheckedTexture, _checkBoxRect, Color.White);
+                    // Dessine un rectangle non plein
+                    if (IsChecked)
+                        DrawRectangle(spritebatch, _checkBoxRect, _checkedColor, isFilled: true);
+                    else
+                        DrawRectangle(spritebatch, _checkBoxRect, _uncheckedColor, isFilled: false);
                 }
-            }
-            else
-            {
-                // Dessine un rectangle non plein
-                if (IsChecked)
-                    DrawRectangle(spritebatch, _checkBoxRect, _checkedColor, isFilled: true);
-                else
-                    DrawRectangle(spritebatch, _checkBoxRect, _uncheckedColor, isFilled: false);
             }
         }
         private static void DrawRectangle(SpriteBatch spritebatch, Rectangle rectangle, Color color, bool isFilled)
         {
-            if (spritebatch == null)
-                return;
+            ArgumentNullException.ThrowIfNull(spritebatch);
+
             _pixelTexture ??= new Texture2D(spritebatch.GraphicsDevice, 1, 1);
             _pixelTexture.SetData(new Color[] { Color.White });
             // Dessine un rectangle non plein

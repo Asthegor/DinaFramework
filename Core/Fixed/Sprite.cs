@@ -9,63 +9,81 @@ namespace DinaFramework.Core.Fixed
 {
     public class Sprite : Base, IColor, IVisible, IDraw, ICollide
     {
-        Rectangle _rectangle;
-        Color _color;
-        Vector2 _origin;
-        bool _visible;
-        Texture2D _texture;
-        SpriteEffects _effects;
-        Vector2 _flip;
-        Vector2 _scale;
+        private Rectangle _rectangle;
+        private Color _color;
+        private Vector2 _origin;
+        private bool _visible;
+        private Texture2D _texture;
+        private SpriteEffects _effects;
+        private Vector2 _flip;
+        private Vector2 _scale;
 
-        public Sprite(Texture2D texture, Color color, int zorder = default) : base(default, default, zorder)
+        public Sprite(Texture2D texture, Color color, Vector2 position, Rectangle? sourceRectangle, Vector2 origin, Vector2 flip, float rotation, Vector2 scale, SpriteEffects effects, int zOrder)
+            : base(position, new Vector2(sourceRectangle?.Width ?? texture?.Width ?? 0, sourceRectangle?.Height ?? texture?.Height ?? 0), zOrder)
         {
-            Texture = texture;
-            Color = color;
-            Visible = true;
-            Dimensions = new Vector2(_texture.Width, _texture.Height);
-        }
-        public Sprite(Texture2D texture, Color color, Vector2 position, int zorder) : this(texture, color, zorder)
-        {
-            Position = position;
-        }
-        public Sprite(Texture2D texture, Color color, Vector2 position, Vector2 dimensions, int zorder) : this(texture, color, position, zorder)
-        {
-            Dimensions = dimensions;
-        }
-        public Sprite(Texture2D texture, Color color, Vector2 position, Vector2 dimensions, float rotation = default, Vector2 origin = default,
-                      Vector2 flip = default, int zorder = default) : this(texture, color, position, dimensions, zorder)
-        {
-            Rectangle = new Rectangle(Convert.ToInt32(Position.X), Convert.ToInt32(Position.Y), Convert.ToInt32(Dimensions.X), Convert.ToInt32(Dimensions.Y));
+            _texture = texture ?? throw new ArgumentNullException(nameof(texture));
+            _color = color;
+            _origin = origin;
+            _visible = true;
             Rotation = rotation;
-            Origin = origin;
-            Flip = flip == default ? Vector2.One : flip;
-        }
-        public Sprite(Texture2D texture, Color color, Vector2 position, float rotation, Vector2 origin = default, Vector2 scale = default,
-                      Vector2 flip = default, int zorder = default) : this(texture, color, position, zorder)
-        {
-            Scale = scale;
-            Rotation = rotation;
-            Origin = origin;
-            Flip = flip == default ? Vector2.One : flip;
-            Rectangle = new Rectangle(Convert.ToInt32(Position.X), Convert.ToInt32(Position.Y), Convert.ToInt32(Dimensions.X), Convert.ToInt32(Dimensions.Y));
-        }
-        public Sprite(Sprite sprite)
-        {
-            ArgumentNullException.ThrowIfNull(sprite);
+            _scale = scale;
+            _effects = effects;
+            Flip = flip;
 
-            Texture = sprite.Texture;
-            Rectangle = sprite.Rectangle;
-            Color = sprite.Color;
-            Position = sprite.Position;
-            Dimensions = sprite.Dimensions;
-            Origin = sprite.Origin;
-            Visible = sprite.Visible;
-            Rotation = sprite.Rotation;
-            Scale = sprite.Scale;
-            Flip = sprite.Flip;
-            _effects = sprite._effects;
+            if (sourceRectangle.HasValue)
+                Rectangle = sourceRectangle.Value;
+            else
+                Rectangle = new Rectangle((int)Position.X, (int)Position.Y, texture.Width, texture.Height);
         }
+
+        //public Sprite(Texture2D texture, Color color, int zorder = default) : base(default, default, zorder)
+        //{
+        //    Texture = texture;
+        //    Color = color;
+        //    Visible = true;
+        //    Dimensions = new Vector2(_texture.Width, _texture.Height);
+        //}
+        //public Sprite(Texture2D texture, Color color, Vector2 position, int zorder) : this(texture, color, zorder)
+        //{
+        //    Position = position;
+        //}
+        //public Sprite(Texture2D texture, Color color, Vector2 position, Vector2 dimensions, int zorder) : this(texture, color, position, zorder)
+        //{
+        //    Dimensions = dimensions;
+        //}
+        //public Sprite(Texture2D texture, Color color, Vector2 position, Vector2 dimensions, float rotation = default, Vector2 origin = default,
+        //              Vector2 flip = default, int zorder = default) : this(texture, color, position, dimensions, zorder)
+        //{
+        //    Rectangle = new Rectangle(Convert.ToInt32(Position.X), Convert.ToInt32(Position.Y), Convert.ToInt32(Dimensions.X), Convert.ToInt32(Dimensions.Y));
+        //    Rotation = rotation;
+        //    Origin = origin;
+        //    Flip = flip == default ? Vector2.One : flip;
+        //}
+        //public Sprite(Texture2D texture, Color color, Vector2 position, float rotation, Vector2 origin = default, Vector2 scale = default,
+        //              Vector2 flip = default, int zorder = default) : this(texture, color, position, zorder)
+        //{
+        //    Scale = scale;
+        //    Rotation = rotation;
+        //    Origin = origin;
+        //    Flip = flip == default ? Vector2.One : flip;
+        //    Rectangle = new Rectangle(Convert.ToInt32(Position.X), Convert.ToInt32(Position.Y), Convert.ToInt32(Dimensions.X), Convert.ToInt32(Dimensions.Y));
+        //}
+        //public Sprite(Sprite sprite)
+        //{
+        //    ArgumentNullException.ThrowIfNull(sprite);
+
+        //    Texture = sprite.Texture;
+        //    Rectangle = sprite.Rectangle;
+        //    Color = sprite.Color;
+        //    Position = sprite.Position;
+        //    Dimensions = sprite.Dimensions;
+        //    Origin = sprite.Origin;
+        //    Visible = sprite.Visible;
+        //    Rotation = sprite.Rotation;
+        //    Scale = sprite.Scale;
+        //    Flip = sprite.Flip;
+        //    _effects = sprite._effects;
+        //}
         public Texture2D Texture
         {
             get { return _texture; }

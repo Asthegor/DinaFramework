@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace DinaFramework.Core.Animated
 {
-    internal class DropDown : Base, IUpdate, IDraw
+    public class DropDown : Base, IUpdate, IDraw, IVisible
     {
         private SpriteFont _font;
         private Texture2D _arrowTexture;
@@ -16,6 +16,7 @@ namespace DinaFramework.Core.Animated
         private int _selectedIndex;
         private Rectangle _dropdownRect;
         private bool _isExpanded;
+        private bool _visible;
 
         public DropDown(SpriteFont font, Texture2D arrowTexture, List<string> options)
         {
@@ -35,6 +36,9 @@ namespace DinaFramework.Core.Animated
 
             _dropdownRect = new Rectangle(x, y, width, height);
         }
+
+        public bool Visible { get => _visible; set => _visible = value; }
+
         public void AddOption(string option, int position = -1)
         {
             if (position >= 0 && position < _options.Count)
@@ -78,16 +82,20 @@ namespace DinaFramework.Core.Animated
 
         public void Draw(SpriteBatch spritebatch)
         {
-            // Dessiner la liste déroulante
-            spritebatch.Draw(_arrowTexture, new Vector2(_dropdownRect.Right - _arrowTexture.Width, _dropdownRect.Y), Color.White);
-            spritebatch.DrawString(_font, _options[_selectedIndex], new Vector2(_dropdownRect.X, _dropdownRect.Y), Color.White);
-
-            // Si la liste déroulante est dépliée, dessinez les options
-            if (_isExpanded)
+            if (Visible)
             {
-                for (int i = 0; i < _options.Count; i++)
+
+                // Dessiner la liste déroulante
+                spritebatch?.Draw(_arrowTexture, new Vector2(_dropdownRect.Right - _arrowTexture.Width, _dropdownRect.Y), Color.White);
+                spritebatch?.DrawString(_font, _options[_selectedIndex], new Vector2(_dropdownRect.X, _dropdownRect.Y), Color.White);
+
+                // Si la liste déroulante est dépliée, dessinez les options
+                if (_isExpanded)
                 {
-                    spritebatch.DrawString(_font, _options[i], new Vector2(_dropdownRect.X, _dropdownRect.Bottom + (i * _font.LineSpacing)), Color.White);
+                    for (int i = 0; i < _options.Count; i++)
+                    {
+                        spritebatch?.DrawString(_font, _options[i], new Vector2(_dropdownRect.X, _dropdownRect.Bottom + (i * _font.LineSpacing)), Color.White);
+                    }
                 }
             }
         }

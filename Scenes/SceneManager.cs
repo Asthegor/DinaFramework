@@ -1,6 +1,5 @@
 ﻿using DinaFramework.Controls;
 using DinaFramework.Interfaces;
-using DinaFramework.Menus;
 
 using DLACrypto;
 
@@ -12,7 +11,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -20,15 +18,17 @@ namespace DinaFramework.Scenes
 {
     public class SceneManager : IValue
     {
+
         private static SceneManager _instance;
-        private static readonly Object _mutex = new Object();
-        private static JsonSerializerOptions _jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-        private readonly Dictionary<string, Object> _values;
+        private static readonly object _mutex = new object();
+        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+        private readonly Dictionary<string, object> _values;
         private readonly Game _game;
         private readonly ContentManager _content;
         private readonly Dictionary<string, Scene> _scenes;
+        private ResourceManager _resourceManager;
         private Scene _currentScene;
-        private LoadingScene _loadingScreen;
+        private Scene _loadingScreen;
         private bool _currentSceneLoaded;
         private float _loadingProgress;
         // Propriétés
@@ -37,6 +37,7 @@ namespace DinaFramework.Scenes
         public Vector2 ScreenDimensions { get; private set; }
         public PlayerController Controller { get; private set; }
         public GraphicsDeviceManager GraphicsDeviceManager { get; private set; }
+        public SpriteBatch SpriteBatch { get; set; }
 
         // Méthodes statiques
         public static SceneManager GetInstance(Game game)
@@ -70,6 +71,10 @@ namespace DinaFramework.Scenes
         }
 
         // Méthodes publiques
+        public void AddResource<T>(string resourceName, T resource)
+        {
+            _resourceManager.AddResource(resourceName, resource);
+        }
         public void AddScene(string name, Type type)
         {
             Debug.Assert(!string.IsNullOrEmpty(name), "The parameter 'name' must not be empty.");
@@ -97,7 +102,17 @@ namespace DinaFramework.Scenes
             }
         }
         public void Exit() { _game.Exit(); }
+        public T GetResource<T>(string resourceName)
+        {
+            return _resourceManager.GetResource<T>(resourceName);
+        }
         public T GetValue<T>(string name) { return _values.TryGetValue(name, out object value) ? (T)value : default; }
+        public void LoadingScreen<T>() where T : Scene, ILoadingScreen
+        {
+            Type type = typeof(T);
+            Debug.Assert(typeof(T).IsSubclassOf(typeof(Scene)), "The type '" + type.Name + "' is not a valid ILoadingScreen type.");
+            _loadingScreen = (Scene)Activator.CreateInstance(type, this);
+        }
         public void RemoveScene(string name)
         {
             Debug.Assert(!string.IsNullOrEmpty(name), "The 'name' must not be empty.");
@@ -105,42 +120,24 @@ namespace DinaFramework.Scenes
 
             _scenes.Remove(name);
         }
-        public void LoadingScreen(Type type)
+        public void RemoveValue(string name) { _values.Remove(name); }
+        public void ResetLoadingScreen(string message)
         {
-            Debug.Assert(type != null, "The parameter 'type' must not be null.");
-            Debug.Assert(typeof(LoadingScene).IsAssignableFrom(type), "The type '" + type.Name + "' is not a valid Scene type.");
-
-            _loadingScreen = (LoadingScene)Activator.CreateInstance(type, this);
+            _loadingScreen.Reset();
+            if (_loadingScreen is ILoadingScreen ls)
+                ls.Text = message;
         }
-        public async void SetCurrentScene(string name)
+        public async void SetCurrentScene(string name, bool withloadingscreen = false)
         {
             Debug.Assert(!string.IsNullOrEmpty(name), Messages.Messages.SCENE_NAME_MISSING);
             Debug.Assert(_scenes.ContainsKey(name), "The scene '" + name + "' does not exists.");
 
-            // Obtenir le dernier élément de la pile d'appels
-            MethodBase method = GetNextMethodFromSetCurrentScene();
-            bool isValid = false;
-            if (typeof(Game).IsAssignableFrom(method.DeclaringType) && method.Name == "LoadContent")
-                isValid = true;
-            if (typeof(Scene).IsAssignableFrom(method.DeclaringType))
-            {
-                if (method.Name == "Update")
-                    isValid = true;
-                else
-                {
-                    if (typeof(MenuItem).IsAssignableFrom(((MethodInfo)method).ReturnType))
-                        isValid = true;
-                    var parameters = ((MethodInfo)method).GetParameters();
-                    if (parameters.Length == 1 && parameters[0].ParameterType == typeof(MenuItem))
-                        isValid = true;
-                }
-            }
+            ControllerKey.ResetAllKeys();
 
-            if (isValid)
-            {
-                ControllerKey.ResetAllKeys();
+            _currentScene = _scenes[name];
 
-                _currentScene = _scenes[name];
+            if (withloadingscreen)
+            {
                 if (!_currentScene.Loaded)
                 {
                     _currentSceneLoaded = false;
@@ -154,7 +151,7 @@ namespace DinaFramework.Scenes
                         _currentScene.Loaded = true;
                     }).ConfigureAwait(false);
                 }
-                // Charger la scène courante de manière asynchrone
+                // Reset de la scène courante de manière asynchrone
                 await Task.Run(() =>
                 {
                     _currentScene.Reset();
@@ -163,16 +160,25 @@ namespace DinaFramework.Scenes
             }
             else
             {
-                throw new InvalidOperationException(Messages.Messages.SETCURRENTSCENE_ERROR);
+                if (!_currentScene.Loaded)
+                {
+                    _currentScene.Load(_content); // Charger la scène courante
+                    _currentScene.Loaded = true;
+                }
+                _currentScene.Reset();
+                _currentSceneLoaded = true;
             }
         }
-        public void RemoveValue(string name) { _values.Remove(name); }
+        public void SetGraphicsDeviceManager(GraphicsDeviceManager graphicsDeviceManager)
+        {
+            GraphicsDeviceManager = graphicsDeviceManager;
+        }
         public void Update(GameTime gameTime)
         {
             if (!_currentSceneLoaded)
             {
-                if (_loadingScreen != null)
-                    _loadingScreen.Progress = _loadingProgress;
+                //if (_loadingScreen != null)
+                //    ((ILoadingScreen)_loadingScreen).Progress = _loadingProgress;
                 _loadingScreen?.Update(gameTime);
             }
             else
@@ -190,26 +196,7 @@ namespace DinaFramework.Scenes
             _loadingScreen = null;
             _values = new Dictionary<string, object>();
             ScreenDimensions = new Vector2(game.GraphicsDevice.Viewport.Width, game.GraphicsDevice.Viewport.Height);
-        }
-        private static MethodBase GetNextMethodFromSetCurrentScene()
-        {
-            int index = 0;
-            StackTrace stackTrace = new StackTrace();
-            var frames = stackTrace.GetFrames();
-            foreach (StackFrame frame in frames)
-            {
-                MethodBase method = frame.GetMethod();
-                if (method.Name == "SetCurrentScene")
-                    break;
-                index++;
-            }
-            if (index >= frames.Length)
-                index = -1;
-            return stackTrace.GetFrame(index + 1).GetMethod();
-        }
-        public void SetGraphicsDeviceManager(GraphicsDeviceManager graphicsDeviceManager)
-        {
-            GraphicsDeviceManager = graphicsDeviceManager;
+            _resourceManager = new ResourceManager();
         }
     }
 }

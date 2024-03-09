@@ -10,10 +10,10 @@ using System.Collections.Generic;
 
 namespace DinaFramework.Core.Animated
 {
-    public class Animation : Base, IUpdate, IDraw, IColor, ICollide
+    public class Animation : Base, IReset, IUpdate, IDraw, IColor, ICollide, IVisible
     {
         private readonly List<Sprite> _frames = new List<Sprite>();
-        private readonly float _speed;
+        private float _speed;
         private float _currentframe;
         private float _rotation;
         private Color _color;
@@ -23,6 +23,9 @@ namespace DinaFramework.Core.Animated
         private readonly int _nbRepetitions = -1;
         private int _currentrepetition = -1;
         private Vector2 _scale;
+        private bool _visible;
+
+        private readonly Rectangle[] _sourceRectangles; // Les rectangles délimitant chaque frame dans l'image principale
 
         public Animation(ContentManager content, string prefix, int nbframes, float speed, int start, int nbRepetitions, Color color,
                          Vector2 position, Vector2 dimensions, float rotation = default, Vector2 origin = default,
@@ -38,6 +41,7 @@ namespace DinaFramework.Core.Animated
             Origin = origin;
             Flip = flip == default ? Vector2.One : flip;
             Scale = Vector2.One;
+            Visible = true;
             AddFrames(content, prefix, nbframes, start, Dimensions, rotation, Origin);
         }
         public Animation(ContentManager content, string prefix, int nbframes, float speed, int start, int nbRepetitions, Color color,
@@ -46,6 +50,31 @@ namespace DinaFramework.Core.Animated
         {
             ArgumentNullException.ThrowIfNull(content);
 
+            Origin = origin;
+            Scale = scale == default ? Vector2.One : scale;
+            AddFrames(content, prefix, nbframes, start, rotation, Origin, Scale);
+            _speed = speed;
+            _nbRepetitions = nbRepetitions;
+            _currentrepetition = nbRepetitions;
+            Color = color == default ? Color.White : color;
+            Rotation = rotation;
+            Flip = flip == default ? Vector2.One : flip;
+            Visible = true;
+        }
+        public Animation(ContentManager content, string[] frameNames, float speed, int startframe, int nbRepetitions, Color color,
+                         Vector2 position, float rotation, Vector2 origin = default, Vector2 scale = default,
+                         Vector2 flip = default, int zorder = default) : base(position, default, zorder)
+        {
+            ArgumentNullException.ThrowIfNull(content);
+            ArgumentNullException.ThrowIfNull(frameNames);
+
+            Flip = flip == default ? Vector2.One : flip;
+            foreach (string name in frameNames)
+            {
+                Texture2D texture = content.Load<Texture2D>(name);
+                //_frames.Add(new Sprite(texture, color, Position, rotation, origin, scale, Flip, ZOrder));
+                _frames.Add(new Sprite(texture, color, Position, null, origin, Flip, rotation, scale, SpriteEffects.None, ZOrder));
+            }
             _speed = speed;
             _nbRepetitions = nbRepetitions;
             _currentrepetition = nbRepetitions;
@@ -53,8 +82,102 @@ namespace DinaFramework.Core.Animated
             Rotation = rotation;
             Origin = origin;
             Scale = scale == default ? Vector2.One : scale;
+            Visible = true;
+
+            _currentframe = startframe >= 0 && startframe <= _frames.Count ? startframe : 0;
+        }
+        public Animation(ContentManager content, string[] frameNames, float speed, int startframe, int nbRepetitions, Color color,
+                         Vector2 position, Vector2 dimensions, float rotation = default, Vector2 origin = default, Vector2 scale = default,
+                         Vector2 flip = default, int zorder = default) : base(position, dimensions, zorder)
+        {
+            ArgumentNullException.ThrowIfNull(content);
+            ArgumentNullException.ThrowIfNull(frameNames);
+
+            Color = color == default ? Color.White : color;
             Flip = flip == default ? Vector2.One : flip;
-            AddFrames(content, prefix, nbframes, start, rotation, Origin, Scale);
+            foreach (string name in frameNames)
+            {
+                Texture2D texture = content.Load<Texture2D>(name);
+                if (dimensions == Vector2.Zero)
+                {
+                    dimensions = new Vector2(texture.Width, texture.Height);
+                }
+                //_frames.Add(new Sprite(texture, Color, Position, dimensions, rotation, origin, Flip, ZOrder));
+                _frames.Add(new Sprite(texture, Color, Position, new Rectangle(Point.Zero, dimensions.ToPoint()), origin, Flip, rotation, Vector2.One, SpriteEffects.None, ZOrder));
+            }
+            _speed = speed;
+            _nbRepetitions = nbRepetitions;
+            _currentrepetition = nbRepetitions;
+            Rotation = rotation;
+            Origin = origin;
+            Scale = scale == default ? Vector2.One : scale;
+            Visible = true;
+
+            _currentframe = startframe >= 0 && startframe <= _frames.Count ? startframe : 0;
+
+            Dimensions = dimensions;
+        }
+        public Animation(ContentManager content, Texture2D spritesheet, int frameWidth, int frameHeight, int frameCount, float speed, int startframe, int nbRepetitions,
+                         Color color, Vector2 position, Vector2 dimensions, float rotation = 0, Vector2 origin = default, Vector2 scale = default,
+                         Vector2 flip = default, int zorder = default) : base(position, dimensions, zorder)
+        {
+            ArgumentNullException.ThrowIfNull(content);
+            ArgumentNullException.ThrowIfNull(spritesheet);
+
+            //_speed = speed;
+            //_nbRepetitions = nbRepetitions;
+            //_currentrepetition = nbRepetitions;
+            //Color = color == default ? Color.White : color;
+            //Rotation = rotation;
+            //Origin = origin;
+            //Scale = scale == default ? Vector2.One : scale;
+            //Flip = flip == default ? Vector2.One : flip;
+            //Visible = true;
+            ArgumentNullException.ThrowIfNull(spritesheet);
+            if (frameCount <= 0)
+                throw new ArgumentException("frameCount must be greater than 0");
+            if (frameWidth <= 0 || frameHeight <= 0)
+                throw new ArgumentException("frameWidth and frameHeight must be greater than 0");
+
+            _speed = speed;
+            _nbRepetitions = nbRepetitions;
+            _currentrepetition = nbRepetitions;
+            _color = color;
+            _origin = origin;
+            _flip = flip == default ? Vector2.One : flip;
+            _scale = Vector2.One;
+            Visible = true;
+            _currentframe = 0;
+
+            // Calcule le nombre de frames dans l'image principale
+            int framesPerRow = spritesheet.Width / frameWidth;
+            int frameRows = spritesheet.Height / frameHeight;
+            int totalFrames = framesPerRow * frameRows;
+
+            if (frameCount > totalFrames)
+                throw new ArgumentException("frameCount exceeds the number of frames in the sprite sheet");
+
+            // Calcule les rectangles source pour chaque frame
+            _sourceRectangles = new Rectangle[frameCount];
+            int frameIndex = 0;
+            for (int row = 0; row < frameRows; row++)
+            {
+                for (int col = 0; col < framesPerRow; col++)
+                {
+                    if (frameIndex >= frameCount)
+                        break;
+
+                    _sourceRectangles[frameIndex] = new Rectangle(col * frameWidth, row * frameHeight, frameWidth, frameHeight);
+
+                    Rectangle sourceRect = new Rectangle(col * frameWidth, row * frameHeight, frameWidth, frameHeight);
+                    //_frames[frameIndex] = new Sprite(spritesheet, color, position, dimensions, rotation, origin, flip, sourceRect, zorder);
+                    //Sprite s = new Sprite(spritesheet, Color.White, position, _sourceRectangles[frameIndex], Vector2.Zero, Vector2.One, 0, Vector2.One, SpriteEffects.None, zorder);
+                    //_frames.Add(s);
+                    _frames.Add(new Sprite(spritesheet, color, position, sourceRect, origin, flip, rotation, Vector2.One, SpriteEffects.None, zorder));
+
+                    frameIndex++;
+                }
+            }
         }
         public Animation(Animation animation, bool duplicate = true)
         {
@@ -81,58 +204,6 @@ namespace DinaFramework.Core.Animated
             Dimensions = animation.Dimensions;
             ZOrder = animation.ZOrder;
         }
-        public Animation(ContentManager content, string[] frameNames, float speed, int startframe, int nbRepetitions, Color color,
-                         Vector2 position, float rotation, Vector2 origin = default, Vector2 scale = default,
-                         Vector2 flip = default, int zorder = default) : base(position, default, zorder)
-        {
-            ArgumentNullException.ThrowIfNull(content);
-            ArgumentNullException.ThrowIfNull(frameNames);
-
-            _speed = speed;
-            _nbRepetitions = nbRepetitions;
-            _currentrepetition = nbRepetitions;
-            Color = color == default ? Color.White : color;
-            Rotation = rotation;
-            Origin = origin;
-            Scale = scale == default ? Vector2.One : scale;
-            Flip = flip == default ? Vector2.One : flip;
-
-            foreach (string name in frameNames)
-            {
-                Texture2D texture = content.Load<Texture2D>(name);
-                _frames.Add(new Sprite(texture, color, Position, rotation, origin, scale, Flip, ZOrder));
-            }
-            _currentframe = startframe >= 0 && startframe <= _frames.Count ? startframe : 0;
-        }
-        public Animation(ContentManager content, string[] frameNames, float speed, int startframe, int nbRepetitions, Color color,
-                         Vector2 position, Vector2 dimensions, float rotation = default, Vector2 origin = default, Vector2 scale = default,
-                         Vector2 flip = default, int zorder = default) : base(position, dimensions, zorder)
-        {
-            ArgumentNullException.ThrowIfNull(content);
-            ArgumentNullException.ThrowIfNull(frameNames);
-
-            _speed = speed;
-            _nbRepetitions = nbRepetitions;
-            _currentrepetition = nbRepetitions;
-            Color = color == default ? Color.White : color;
-            Rotation = rotation;
-            Origin = origin;
-            Scale = scale == default ? Vector2.One : scale;
-            Flip = flip == default ? Vector2.One : flip;
-
-            foreach (string name in frameNames)
-            {
-                Texture2D texture = content.Load<Texture2D>(name);
-                if (dimensions == Vector2.Zero)
-                {
-                    dimensions = new Vector2(texture.Width, texture.Height);
-                }
-                _frames.Add(new Sprite(texture, Color, Position, dimensions, rotation, origin, Flip, ZOrder));
-            }
-            _currentframe = startframe >= 0 && startframe <= _frames.Count ? startframe : 0;
-
-            Dimensions = dimensions;
-        }
         private void AddFrames(ContentManager content, string prefix, int nbframes, int start, Vector2 dimensions, float rotation, Vector2 origin)
         {
             ArgumentNullException.ThrowIfNull(content);
@@ -146,7 +217,8 @@ namespace DinaFramework.Core.Animated
                 {
                     dimensions = new Vector2(texture.Width, texture.Height);
                 }
-                _frames.Add(new Sprite(texture, Color, Position, dimensions, rotation, origin, Flip, ZOrder));
+                //_frames.Add(new Sprite(texture, Color, Position, dimensions, rotation, origin, Flip, ZOrder));
+                _frames.Add(new Sprite(texture, Color, Position, new Rectangle(Point.Zero, dimensions.ToPoint()), origin, Flip, rotation, Vector2.One, SpriteEffects.None, ZOrder));
             }
             Dimensions = dimensions;
         }
@@ -159,7 +231,8 @@ namespace DinaFramework.Core.Animated
                     texture = content.Load<Texture2D>(prefix + index.ToString("00"));
                 else
                     texture = content.Load<Texture2D>(prefix + index.ToString());
-                _frames.Add(new Sprite(texture, Color, Position, rotation, origin, scale, Flip, ZOrder));
+                //_frames.Add(new Sprite(texture, Color, Position, rotation, origin, scale, Flip, ZOrder));
+                _frames.Add(new Sprite(texture, Color, Position, new Rectangle(0, 0, texture.Width, texture.Height), origin, Flip, rotation, scale, SpriteEffects.None, ZOrder));
             }
         }
         private bool ImageExists(ContentManager content, string imageName)
@@ -174,6 +247,7 @@ namespace DinaFramework.Core.Animated
                 return false; // L'image n'existe pas
             }
         }
+        public float Speed { get => _speed; set => _speed = value; }
         public override Vector2 Position
         {
             get { return base.Position; }
@@ -232,7 +306,7 @@ namespace DinaFramework.Core.Animated
             set
             {
                 _scale = value;
-                foreach(Sprite frame in _frames)
+                foreach (Sprite frame in _frames)
                     frame.Scale = value;
             }
         }
@@ -252,29 +326,28 @@ namespace DinaFramework.Core.Animated
         }
         public Rectangle Rectangle { get { return _rect; } }
 
+        public bool Visible { get => _visible; set => _visible = value; }
+
         public void Update(GameTime gameTime)
         {
-            if (_currentrepetition != 0)
+            if (Visible && _currentrepetition != 0)
             {
                 ArgumentNullException.ThrowIfNull(gameTime);
 
                 _currentframe += Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds) * _speed;
                 if (_currentframe >= _frames.Count)
                 {
-                    if (_currentrepetition < 0)
-                        _currentframe = 0;
-                    else
-                    {
+                    _currentframe = 0;
+                    if (_currentrepetition > 0)
                         _currentrepetition--;
-                        if (_currentrepetition > 0)
-                            _currentframe = 0;
-                    }
+                    if (_currentrepetition == 0)
+                        Visible = false;
                 }
             }
         }
         public void Draw(SpriteBatch spritebatch)
         {
-            if (_currentrepetition != 0)
+            if (Visible && _currentrepetition != 0)
                 _frames[(int)_currentframe].Draw(spritebatch);
         }
         public bool Collide(ICollide item)

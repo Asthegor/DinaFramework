@@ -100,17 +100,22 @@ namespace DinaFramework.Menus
                         : (IElement)new Text(font, text, color, position, zorder: zorder);
             AddTitleToGroups(title);
         }
+        public void AddTitle(IElement title)
+        {
+            AddTitleToGroups(title);
+        }
         public void CenterTitles(Vector2 screendimensions)
         {
             foreach (var title in _titles)
             {
-                if (title is IText titleText)
+                if (title is IElement titleElement)
                 {
-                    Vector2 titleTextDim = titleText.TextDimensions;
-                    Vector2 titlePos = titleText.Position;
+                    Vector2 titleTextDim = titleElement.Dimensions;
+                    Vector2 titlePos = titleElement.Position;
                     titlePos.X = (screendimensions.X - titleTextDim.X) / 2.0f;
-                    titleText.Position = titlePos;
+                    titleElement.Position = titlePos;
                 }
+
             }
         }
 
@@ -313,7 +318,7 @@ namespace DinaFramework.Menus
         }
         private static Sprite CreateIconSprite(Texture2D texture, Vector2 dimensions)
         {
-            return texture != null ? new Sprite(texture, Color.White) { Dimensions = dimensions } : null;
+            return texture != null ? new Sprite(texture, Color.White, Vector2.Zero, new Rectangle(Point.Zero, dimensions.ToPoint()), Vector2.Zero, Vector2.One, 0, Vector2.One, SpriteEffects.None, 0) : null;
         }
         private void DrawIcons(SpriteBatch spritebatch)
         {
@@ -339,7 +344,7 @@ namespace DinaFramework.Menus
         }
         private float GetNextItemYPosition()
         {
-            return _itemsGroup.Dimensions.Y + (_itemsGroup.Count() > 0 ? DEFAULT_SPACING : 0.0f);
+            return _itemsGroup.Dimensions.Y + (_itemsGroup.Count() > 0 ? _itemspacing : 0.0f);
         }
         private void HandleMouseInput()
         {
@@ -361,7 +366,7 @@ namespace DinaFramework.Menus
                     }
                     if (_oldMouseState.LeftButton == ButtonState.Pressed && ms.LeftButton == ButtonState.Released && rect.Intersects(new Rectangle(new Point(ms.X, ms.Y), Point.Zero)))
                     {
-                        item?.Activation.Invoke(item);
+                        item?.Activation?.Invoke(item);
                         _oldMouseState = ms;
                         return;
                     }

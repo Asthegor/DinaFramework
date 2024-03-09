@@ -11,15 +11,15 @@ using System.Diagnostics;
 
 namespace DinaFramework.Core.Fixed
 {
-    public class ProgressBar : Base, IUpdate, IDraw, IVisible
+    public class ProgressBar : Base, IDraw, IUpdate, IVisible
     {
         public enum PBType { Color, Image2Parts, Image3Parts }
         private PBType _pbtype;
         private bool _visible;
         private float _value;
-        private readonly float _maxValue;
+        private float _maxValue;
         private int _borderThickness;
-        private readonly int _imgoffset;
+        private readonly int _imgOffset;
         private Color _frontColor;
         private Color _backColor;
         private Color _borderColor;
@@ -27,13 +27,16 @@ namespace DinaFramework.Core.Fixed
         private readonly Rectangle[] _rectanglesSource = new Rectangle[3];
         private ProgressBarMode _mode;
         private readonly List<Texture2D> _textures = new List<Texture2D>();
-
+        private float _timer;
+        private float _delay;
+        private float _increment;
+        private bool _autoIncrement;
 
         public ProgressBar(Vector2 position, Vector2 dimensions, float value, float maxValue, Color frontColor, Color borderColor, Color backColor, int borderThickness = 1, ProgressBarMode mode = ProgressBarMode.LeftToRight, int zorder = 0) : base(position, dimensions, zorder)
         {
             Visible = true;
             Mode = mode;
-            _maxValue = maxValue;
+            MaxValue = maxValue;
             Value = value;
             _rectangles[0] = new Rectangle(position.ToPoint(), dimensions.ToPoint()); // Border
             SetColors(frontColor, borderColor, backColor, borderThickness);
@@ -42,18 +45,17 @@ namespace DinaFramework.Core.Fixed
         {
             Visible = true;
             Mode = mode;
-            _maxValue = maxValue;
+            MaxValue = maxValue;
             Value = value;
-            _imgoffset = offset;
-            //_rectBack = new Rectangle(position.ToPoint(), dimensions.ToPoint());
+            _imgOffset = offset;
             _rectangles[0] = new Rectangle(position.ToPoint(), dimensions.ToPoint());
-            SetImages(backImage, frontImage, _imgoffset);
+            SetImages(backImage, frontImage, _imgOffset);
         }
         public ProgressBar(Vector2 position, Vector2 dimensions, float value, float maxValue, Texture2D leftImage, Texture2D centerImage, Texture2D rightImage, ProgressBarMode mode = ProgressBarMode.LeftToRight, int zorder = 0) : base(position, dimensions, zorder)
         {
             Visible = true;
             Mode = mode;
-            _maxValue = maxValue;
+            MaxValue = maxValue;
             Value = value;
             _rectangles[1] = new Rectangle(position.ToPoint(), dimensions.ToPoint());
             SetImages(leftImage, centerImage, rightImage);
@@ -66,7 +68,7 @@ namespace DinaFramework.Core.Fixed
 
             Visible = true;
             Mode = mode;
-            _maxValue = maxValue;
+            MaxValue = maxValue;
             Value = value;
             Position = Vector2.Zero;
             Dimensions = new Vector2(leftImage.Width + rightImage.Width + centerImage.Width, leftImage.Height);
@@ -75,24 +77,37 @@ namespace DinaFramework.Core.Fixed
             _rectangles[1] = new Rectangle(Vector2.Zero.ToPoint(), Dimensions.ToPoint());
             SetImages(leftImage, centerImage, rightImage);
         }
-        public bool Visible { get => _visible; set => _visible = value; }
+
+        public bool AutoIncrement { get => _autoIncrement; set => _autoIncrement = value; }
+        public float MaxValue { get => _maxValue; set => _maxValue = value; }
+        public ProgressBarMode Mode { get => _mode; set => _mode = value; }
+        public void ProgressInterval(float delay, float increment = 1)
+        {
+            if (delay > 0 && increment != 0)
+            {
+                _delay = delay;
+                _increment = increment;
+                AutoIncrement = true;
+            }
+        }
         public float Value
         {
             get => _value;
             set
             {
-                if (value < 0.0f)
-                    value = 0.0f;
-                if (value > _maxValue)
-                    value = _maxValue;
-                _value = value;
+                if (value <= 0.0f)
+                    _value = 0.0f;
+                else if (value >= MaxValue)
+                    _value = MaxValue;
+                else
+                    _value = value;
                 switch (_pbtype)
                 {
                     case PBType.Color:
                         UpdateColorRectangle();
                         break;
                     case PBType.Image2Parts:
-                        Update2ImagesRectangle(_imgoffset);
+                        Update2ImagesRectangle(_imgOffset);
                         break;
                     case PBType.Image3Parts:
                         Update3ImagesRectangle();
@@ -101,10 +116,7 @@ namespace DinaFramework.Core.Fixed
 
             }
         }
-
-        public ProgressBarMode Mode { get => _mode; set => _mode = value; }
-
-        public float MaxValue => _maxValue;
+        public bool Visible { get => _visible; set => _visible = value; }
         public void SetImages(Texture2D backImage, Texture2D frontImage, int offset = 0)
         {
             _pbtype = PBType.Image2Parts;
@@ -137,49 +149,9 @@ namespace DinaFramework.Core.Fixed
             _rectangles[1] = new Rectangle(pos.ToPoint(), backDimensions.ToPoint()); // Back
             UpdateColorRectangle();
         }
-
-        public void Draw(SpriteBatch spritebatch)
-        {
-            if (Visible)
-            {
-                ArgumentNullException.ThrowIfNull(spritebatch);
-
-                switch (_pbtype)
-                {
-                    case PBType.Color:
-                        if (_textures.Count == 0)
-                        {
-                            _textures.Add(new Texture2D(spritebatch.GraphicsDevice, 1, 1));
-                            _textures[0].SetData(new[] { Color.White });
-                        }
-                        spritebatch.Draw(_textures[0], _rectangles[0], _borderColor);
-                        spritebatch.Draw(_textures[0], _rectangles[1], _backColor);
-                        spritebatch.Draw(_textures[0], _rectangles[2], _frontColor);
-                        break;
-                    case PBType.Image2Parts:
-                        spritebatch.Draw(_textures[0], _rectangles[0], Color.White);
-                        spritebatch.Draw(_textures[1], _rectangles[1], Color.White);
-                        break;
-                    case PBType.Image3Parts:
-                        spritebatch.Draw(_textures[0], _rectangles[0], _rectanglesSource[0], Color.White);
-                        spritebatch.Draw(_textures[1], _rectangles[1], _rectanglesSource[1], Color.White);
-                        spritebatch.Draw(_textures[2], _rectangles[2], _rectanglesSource[2], Color.White);
-                        break;
-                    default:
-                        throw new InvalidEnumArgumentException("Unknown type of ProgressBar");
-                }
-            }
-        }
-
-        public void Update(GameTime gameTime)
-        {
-
-        }
-
-
         private void UpdateColorRectangle()
         {
-            float ratio = _value / _maxValue;
+            float ratio = Value / MaxValue;
             float posX;
             float posY;
             float width;
@@ -217,7 +189,7 @@ namespace DinaFramework.Core.Fixed
         }
         private void Update2ImagesRectangle(int offset = 0)
         {
-            float ratio = _value / _maxValue;
+            float ratio = Value / MaxValue;
             float posX;
             float posY;
             float width;
@@ -255,7 +227,7 @@ namespace DinaFramework.Core.Fixed
         }
         private void Update3ImagesRectangle()
         {
-            float ratio = _value / _maxValue;
+            float ratio = Value / MaxValue;
             switch (Mode)
             {
                 case ProgressBarMode.LeftToRight:
@@ -514,6 +486,57 @@ namespace DinaFramework.Core.Fixed
                     throw new InvalidEnumArgumentException("Unknown mode.");
             }
 
+        }
+        public void Update(GameTime gameTime)
+        {
+            ArgumentNullException.ThrowIfNull(gameTime);
+            if (AutoIncrement)
+            {
+                _timer += Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
+                if (_timer >= _delay)
+                {
+                    _timer = 0;
+                    Value += _increment;
+                }
+            }
+        }
+        public void Draw(SpriteBatch spritebatch)
+        {
+            ArgumentNullException.ThrowIfNull(spritebatch);
+
+            if (Visible)
+            {
+                switch (_pbtype)
+                {
+                    case PBType.Color:
+                        if (_textures.Count == 0)
+                        {
+                            _textures.Add(new Texture2D(spritebatch.GraphicsDevice, 1, 1));
+                            _textures[0].SetData(new[] { Color.White });
+                        }
+                        spritebatch.Draw(_textures[0], _rectangles[0], _borderColor);
+                        spritebatch.Draw(_textures[0], _rectangles[1], _backColor);
+                        spritebatch.Draw(_textures[0], _rectangles[2], _frontColor);
+                        break;
+                    case PBType.Image2Parts:
+                        spritebatch.Draw(_textures[0], _rectangles[0], Color.White);
+                        spritebatch.Draw(_textures[1], _rectangles[1], Color.White);
+                        break;
+                    case PBType.Image3Parts:
+                        spritebatch.Draw(_textures[0], _rectangles[0], _rectanglesSource[0], Color.White);
+                        spritebatch.Draw(_textures[1], _rectangles[1], _rectanglesSource[1], Color.White);
+                        spritebatch.Draw(_textures[2], _rectangles[2], _rectanglesSource[2], Color.White);
+                        break;
+                    default:
+                        throw new InvalidEnumArgumentException("Unknown type of ProgressBar");
+                }
+            }
+        }
+
+        public void Reset(float value = 0)
+        {
+            _timer = 0;
+            Value = value;
         }
     }
 }
