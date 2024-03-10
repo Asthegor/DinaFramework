@@ -17,12 +17,6 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="DLACrypto">
-      <HintPath>..\DLACrypto\bin\Release\DLACrypto.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Update="Messages\Messages.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -37,5 +31,11 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Core\Sounds\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="DLACrypto">
+      <HintPath>DLACrypto.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
 </Project>

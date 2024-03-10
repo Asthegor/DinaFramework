@@ -13,7 +13,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace DinaFramework.Scenes
 {
@@ -27,7 +26,6 @@ namespace DinaFramework.Scenes
         private readonly Game _game;
         private readonly ContentManager _content;
         private readonly Dictionary<string, Scene> _scenes;
-        private ResourceManager _resourceManager;
         private Scene _currentScene;
         private Scene _loadingScreen;
         private bool _currentSceneLoaded;
@@ -195,7 +193,6 @@ namespace DinaFramework.Scenes
             _loadingScreen = null;
             _values = new Dictionary<string, object>();
             ScreenDimensions = new Vector2(game.GraphicsDevice.Viewport.Width, game.GraphicsDevice.Viewport.Height);
-            _resourceManager = new ResourceManager();
         }
     }
 }
