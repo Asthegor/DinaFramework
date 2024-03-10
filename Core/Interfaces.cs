@@ -39,11 +39,11 @@ namespace DinaFramework.Interfaces
     {
         public abstract Vector2 Dimensions { get; set; }
     }
-    public interface IValue
+    public interface IResource
     {
-        public abstract void AddValue(string name, Object value);
-        public abstract T GetValue<T>(string name);
-        public abstract void RemoveValue(string name);
+        public abstract void AddResource<T>(string resourceName, T resource);
+        public abstract T GetResource<T>(string resourceName);
+        public abstract void RemoveResource(string resourceName);
     }
     public interface IColor
     {

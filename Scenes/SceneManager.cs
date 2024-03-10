@@ -13,10 +13,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace DinaFramework.Scenes
 {
-    public class SceneManager : IValue
+    public class SceneManager : IResource
     {
 
         private static SceneManager _instance;
@@ -73,7 +74,9 @@ namespace DinaFramework.Scenes
         // Méthodes publiques
         public void AddResource<T>(string resourceName, T resource)
         {
-            _resourceManager.AddResource(resourceName, resource);
+            if (!_values.TryAdd(resourceName, resource))
+                _values[resourceName] = resource;
+            //_resourceManager.AddResource(resourceName, resource);
         }
         public void AddScene(string name, Type type)
         {
@@ -83,11 +86,6 @@ namespace DinaFramework.Scenes
             Debug.Assert(!_scenes.ContainsKey(name), "The name '" + name + "' already exists.");
 
             _scenes[name] = (Scene)Activator.CreateInstance(type, this);
-        }
-        public void AddValue(string name, Object value)
-        {
-            if (!_values.TryAdd(name, value))
-                _values[name] = value;
         }
         public void Draw(SpriteBatch spritebatch)
         {
@@ -104,9 +102,10 @@ namespace DinaFramework.Scenes
         public void Exit() { _game.Exit(); }
         public T GetResource<T>(string resourceName)
         {
-            return _resourceManager.GetResource<T>(resourceName);
+            if (_values.TryGetValue(resourceName, out object value))
+                return (T)value;
+            throw new KeyNotFoundException($"Resource '{resourceName}' not found in the resource manager.");
         }
-        public T GetValue<T>(string name) { return _values.TryGetValue(name, out object value) ? (T)value : default; }
         public void LoadingScreen<T>() where T : Scene, ILoadingScreen
         {
             Type type = typeof(T);
@@ -120,14 +119,14 @@ namespace DinaFramework.Scenes
 
             _scenes.Remove(name);
         }
-        public void RemoveValue(string name) { _values.Remove(name); }
+        public void RemoveResource(string resourceName) { _values.Remove(resourceName); }
         public void ResetLoadingScreen(string message)
         {
             _loadingScreen.Reset();
             if (_loadingScreen is ILoadingScreen ls)
                 ls.Text = message;
         }
-        public async void SetCurrentScene(string name, bool withloadingscreen = false)
+        public async void SetCurrentScene(string name, bool withLoadingScreen = false)
         {
             Debug.Assert(!string.IsNullOrEmpty(name), Messages.Messages.SCENE_NAME_MISSING);
             Debug.Assert(_scenes.ContainsKey(name), "The scene '" + name + "' does not exists.");
@@ -136,7 +135,7 @@ namespace DinaFramework.Scenes
 
             _currentScene = _scenes[name];
 
-            if (withloadingscreen)
+            if (withLoadingScreen)
             {
                 if (!_currentScene.Loaded)
                 {

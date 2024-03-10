@@ -6,7 +6,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace DinaFramework.Scenes
 {
-    public abstract class Scene : IGameObject, IValue
+    public abstract class Scene : IGameObject, IResource
     {
         public bool Loaded { get; set; }
         private readonly SceneManager _sceneManager;
@@ -21,9 +21,9 @@ namespace DinaFramework.Scenes
         public abstract void Update(GameTime gameTime);
         public abstract void Draw(SpriteBatch spritebatch);
 
-        public void AddValue(string name, object value) { _sceneManager.AddValue(name, value); }
-        public T GetValue<T>(string name) { return _sceneManager.GetValue<T>(name); }
-        public void RemoveValue(string name) { _sceneManager.RemoveValue(name); }
+        public void AddResource<T>(string resourceName, T resource) { _sceneManager.AddResource(resourceName, resource); }
+        public T GetResource<T>(string resourceName) { return _sceneManager.GetResource<T>(resourceName); }
+        public void RemoveResource(string resourceName) { _sceneManager.RemoveResource(resourceName); }
         public void Exit() { _sceneManager.Exit(); }
     }
 }
