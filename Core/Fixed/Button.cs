@@ -8,16 +8,16 @@ using System;
 
 namespace DinaFramework.Core.Fixed
 {
-    public class Button : Base, IUpdate, IDraw
+    public class Button : Base, IUpdate, IDraw, IPosition
     {
         Text _text;
         Panel _background;
         Action _action;
         Vector2 _margin = new Vector2(10, 10);
 
-        public Button(Vector2 position, Vector2 dimensions, SpriteFont font, string content, Color color, Texture2D backgroundimage, Action action, Vector2 margin = default) : base(position, dimensions)
+        public Button(Vector2 position, Vector2 dimensions, SpriteFont font, string content, Color textColor, Texture2D backgroundimage, Action action, Vector2 margin = default) : base(position, dimensions)
         {
-            _text = new Text(font, content, color);
+            _text = new Text(font, content, textColor);
 
             if (margin != default)
                 _margin = margin;
@@ -51,6 +51,11 @@ namespace DinaFramework.Core.Fixed
         {
             get => _text.Color;
             set => _text.Color = value;
+        }
+        public Color BackgroundColor
+        {
+            get => _background.BackgroundColor;
+            set => _background.BackgroundColor = value;
         }
         public void Update(GameTime gameTime)
         {
