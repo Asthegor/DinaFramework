@@ -10,9 +10,9 @@ using System.Collections.Generic;
 
 namespace DinaFramework.Core.Animated
 {
-    public class Animation : Base, IReset, IUpdate, IDraw, IColor, ICollide, IVisible
+    public class Animation : Base, IReset, IUpdate, IDraw, IColor, ICollide, IVisible, ICopyable<Animation>
     {
-        private readonly List<Sprite> _frames = new List<Sprite>();
+        private List<Sprite> _frames = new List<Sprite>();
         private float _speed;
         private float _currentframe;
         private float _rotation;
@@ -20,12 +20,11 @@ namespace DinaFramework.Core.Animated
         private Vector2 _origin;
         private Vector2 _flip;
         private Rectangle _rect;
-        private readonly int _nbRepetitions = -1;
+        private int _nbRepetitions = -1;
         private int _currentrepetition = -1;
         private Vector2 _scale;
         private bool _visible;
-
-        private readonly Rectangle[] _sourceRectangles; // Les rectangles délimitant chaque frame dans l'image principale
+        private Rectangle[] _sourceRectangles; // Les rectangles délimitant chaque frame dans l'image principale
 
         public Animation(ContentManager content, string prefix, int nbframes, float speed, int start, int nbRepetitions, Color color,
                          Vector2 position, Vector2 dimensions, float rotation = default, Vector2 origin = default,
@@ -83,7 +82,7 @@ namespace DinaFramework.Core.Animated
             Origin = origin;
             Scale = scale == default ? Vector2.One : scale;
             Visible = true;
-
+            Dimensions = _frames.Count > 0 ? _frames[0].Dimensions : Vector2.Zero;
             _currentframe = startframe >= 0 && startframe <= _frames.Count ? startframe : 0;
         }
         public Animation(ContentManager content, string[] frameNames, float speed, int startframe, int nbRepetitions, Color color,
@@ -363,5 +362,39 @@ namespace DinaFramework.Core.Animated
             _currentrepetition = _nbRepetitions;
             _currentframe = 0;
         }
+        public Animation Copy()
+        {
+            List<Sprite> copiedFrames = new List<Sprite>();
+            foreach (Sprite sprite in _frames)
+                copiedFrames.Add(sprite.Copy());
+            Rectangle[] copiedRectangles = new Rectangle[_sourceRectangles.Length];
+            Array.Copy(_sourceRectangles, copiedRectangles, _sourceRectangles.Length);
+            return new Animation()
+            {
+                _color = this._color,
+                _currentframe = this._currentframe,
+                _currentrepetition = this._currentrepetition,
+                _frames = copiedFrames,
+                _flip = this._flip,
+                _origin = this._origin,
+                _rect = this._rect,
+                _rotation = this._rotation,
+                _scale = this._scale,
+                _sourceRectangles = copiedRectangles,
+                _speed = this._speed,
+                _visible = this._visible,
+                Color = this.Color,
+                Dimensions = this.Dimensions,
+                Flip = this.Flip,
+                Origin = this.Origin,
+                Position = this.Position,
+                Rotation = this.Rotation,
+                Scale = this.Scale,
+                Speed = this.Speed,
+                Visible = this.Visible,
+                ZOrder = this.ZOrder,
+            };
+        }
+        private Animation() { }
     }
 }

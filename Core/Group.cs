@@ -11,7 +11,7 @@ namespace DinaFramework.Core
 {
     public class Group : Base, IDraw, IVisible, IEnumerator, IEnumerable, ICollide, IUpdate, IClickable
     {
-        readonly List<IElement> _elements = new List<IElement>();
+        List<IElement> _elements = new List<IElement>();
         private int index;
         private Rectangle _rect;
         private bool _visible;
@@ -157,15 +157,21 @@ namespace DinaFramework.Core
                         //flip = eflip.GetFlip();
                     }
                     float cfvx = flip.X > 0 ? 1 : 0;
+                    float cfvy = flip.Y > 0 ? 1 : 0;
                     if (w < elemPos.X + elemDim.X * cfvx)
                         w = elemPos.X + elemDim.X * cfvx;
-                    float cfvy = flip.Y > 0 ? 1 : 0;
                     if (h < elemPos.Y + elemDim.Y * cfvy)
                         h = elemPos.Y + elemDim.Y * cfvy;
+                    //if (w < Math.Abs(elemPos.X) + Math.Abs(elemDim.X * cfvx))
+                    //    w = Math.Abs(elemPos.X) + Math.Abs(elemDim.X * cfvx);
+                    //if (h < Math.Abs(elemPos.Y) + Math.Abs(elemDim.Y * cfvy))
+                    //    h = Math.Abs(elemPos.Y) + Math.Abs(elemDim.Y * cfvy);
                 }
             } //foreach
             if (x < float.MaxValue && y < float.MaxValue && w > -1 && h > -1)
-                Dimensions = new Vector2(w - x, h - y);
+            {
+                Dimensions = new Vector2(w - (x < 0 ? 0 : x), h - (y < 0 ? 0 : y));
+            }
 
         }
         public void Update(GameTime gameTime)

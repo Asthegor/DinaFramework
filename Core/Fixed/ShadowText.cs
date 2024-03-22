@@ -9,10 +9,10 @@ using System;
 
 namespace DinaFramework.Core.Fixed
 {
-    public class ShadowText : Base, IUpdate, IDraw, IColor, IVisible, IText
+    public class ShadowText : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<ShadowText>
     {
-        readonly Text _text;
-        readonly Text _shadow;
+        Text _text;
+        Text _shadow;
         Vector2 _offset;
         public ShadowText(SpriteFont font, string content, Color color, Vector2 position, Color shadowcolor, Vector2 offset,
                           HorizontalAlignment halign = default, VerticalAlignment valign = default, int zorder = 0)
@@ -20,14 +20,6 @@ namespace DinaFramework.Core.Fixed
             _text = new Text(font, content, color, position, halign, valign, zorder);
             _shadow = new Text(font, content, shadowcolor, position + offset, halign, valign, zorder - 1);
             Offset = offset;
-        }
-        public ShadowText(ShadowText shadowtext)
-        {
-            ArgumentNullException.ThrowIfNull(shadowtext);
-
-            _text = new Text(shadowtext._text);
-            _shadow = new Text(shadowtext._shadow);
-            Offset = shadowtext.Offset;
         }
         public Color Color
         {
@@ -108,7 +100,24 @@ namespace DinaFramework.Core.Fixed
                 _shadow.Visible = value;
             }
         }
-
         public Vector2 TextDimensions => _text.TextDimensions;
+        public ShadowText Copy()
+        {
+            return new ShadowText()
+            {
+                _offset = this._offset,
+                _shadow = this._shadow?.Copy(),
+                _text = this._text?.Copy(),
+                Color = this.Color,
+                Content = this.Content,
+                Dimensions = this.Dimensions,
+                Offset = this.Offset,
+                Position = this.Position,
+                ShadowColor = this.ShadowColor,
+                Visible = this.Visible,
+                ZOrder = this.ZOrder
+            };
+        }
+        private ShadowText() { }
     }
 }

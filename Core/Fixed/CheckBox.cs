@@ -8,7 +8,7 @@ using System;
 
 namespace DinaFramework.Core.Fixed
 {
-    public class CheckBox : Base, IUpdate, IDraw, IVisible
+    public class CheckBox : Base, IUpdate, IDraw, IVisible, ICopyable<CheckBox>
     {
         private Rectangle _checkBoxRect;
         private bool _isChecked;
@@ -129,5 +129,27 @@ namespace DinaFramework.Core.Fixed
                 spritebatch.Draw(_pixelTexture, new Rectangle(rectangle.Right - 1, rectangle.Top, 1, rectangle.Height), color);
             }
         }
+
+        public CheckBox Copy()
+        {
+            return new CheckBox()
+            {
+                _checkBoxRect = this._checkBoxRect,
+                _checkedColor = this._checkedColor,
+                _checkedTexture = this._checkedTexture,
+                _isChecked = this._isChecked,
+                _label = this._label?.Copy(),
+                _uncheckedColor = this._uncheckedColor,
+                _uncheckedTexture = this._uncheckedTexture,
+                _useTextures = this._useTextures,
+                _visible = this._visible,
+                Dimensions = this.Dimensions,
+                IsChecked = this.IsChecked,
+                Position = this.Position,
+                Visible = this.Visible,
+                ZOrder = this.ZOrder,
+            };
+        }
+        private CheckBox() { }
     }
 }

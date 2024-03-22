@@ -6,7 +6,7 @@ using System;
 
 namespace DinaFramework.Core.Fixed
 {
-    public class CollideBox : IPosition, IDimensions, ICollide, IElement
+    public class CollideBox : IPosition, IDimensions, ICollide, IElement, ICopyable<CollideBox>
     {
         Vector2 _position;
         Vector2 _dimensions;
@@ -43,5 +43,19 @@ namespace DinaFramework.Core.Fixed
 
             return Rectangle.Intersects(item.Rectangle);
         }
+
+        public CollideBox Copy()
+        {
+            return new CollideBox()
+            {
+                _dimensions = this._dimensions,
+                _position = this._position,
+                _rect = this._rect,
+                Dimensions = this.Dimensions,
+                Position = this.Position,
+                ZOrder = this.ZOrder
+            };
+        }
+        private CollideBox() { }
     }
 }

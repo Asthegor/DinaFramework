@@ -1,8 +1,6 @@
 ﻿using DinaFramework.Controls;
 using DinaFramework.Interfaces;
 
-using DLACrypto;
-
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -18,14 +16,14 @@ namespace DinaFramework.Scenes
 {
     public class SceneManager : IResource
     {
-
+        public static bool HasFocus { get; set; }
         private static SceneManager _instance;
         private static readonly object _mutex = new object();
         private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-        private readonly Dictionary<string, object> _values;
+        private readonly Dictionary<string, object> _values = new Dictionary<string, object>();
         private readonly Game _game;
-        private readonly ContentManager _content;
-        private readonly Dictionary<string, Scene> _scenes;
+        private ContentManager _content;
+        private readonly Dictionary<string, Scene> _scenes = new Dictionary<string, Scene>();
         private Scene _currentScene;
         private Scene _loadingScreen;
         private bool _currentSceneLoaded;
@@ -37,6 +35,8 @@ namespace DinaFramework.Scenes
         public PlayerController Controller { get; private set; }
         public GraphicsDeviceManager GraphicsDeviceManager { get; private set; }
         public SpriteBatch SpriteBatch { get; set; }
+        public ContentManager Content { get => _content; private set => _content = value; }
+        public IServiceProvider Services => _game.Services;
 
         // Méthodes statiques
         public static SceneManager GetInstance(Game game)
@@ -54,19 +54,20 @@ namespace DinaFramework.Scenes
             if (File.Exists(filePath))
             {
                 string encryptString = File.ReadAllText(filePath);
-                string jsonString = Decryptage.Decrypt(encryptString);
-                File.WriteAllText(filePath + ".txt", jsonString);
+                string jsonString = DinaCrypto.DinaCrypto.Decrypt(encryptString);
                 return JsonSerializer.Deserialize<T>(jsonString, _jsonOptions);
             }
 
             return default;
         }
-        public static void SaveObjectToFile<T>(T obj, string filePath)
+        public static void SaveObjectToFile<T>(T obj, string fileFullname, bool overwritten = false)
         {
             string jsonString = JsonSerializer.Serialize(obj, _jsonOptions);
-            //string encryptString = Encryptage.Encrypt(jsonString);
-            string encryptString = jsonString;
-            File.WriteAllText(filePath, encryptString);
+            string encryptString = DinaCrypto.DinaCrypto.Encrypt(jsonString);
+            if (overwritten)
+                File.WriteAllText(fileFullname, encryptString);
+            else
+                File.AppendAllText(fileFullname, encryptString);
         }
 
         // Méthodes publiques
@@ -74,7 +75,7 @@ namespace DinaFramework.Scenes
         {
             if (!_values.TryAdd(resourceName, resource))
                 _values[resourceName] = resource;
-            //_resourceManager.AddResource(resourceName, resource);
+            //_resourceManager.AddStrings(resourceName, resource);
         }
         public void AddScene(string name, Type type)
         {
@@ -126,25 +127,35 @@ namespace DinaFramework.Scenes
         }
         public async void SetCurrentScene(string name, bool withLoadingScreen = false)
         {
-            Debug.Assert(!string.IsNullOrEmpty(name), Messages.Messages.SCENE_NAME_MISSING);
-            Debug.Assert(_scenes.ContainsKey(name), "The scene '" + name + "' does not exists.");
+            if (string.IsNullOrEmpty(name))
+            {
+                Trace.WriteLine(Messages.Messages.SCENE_NAME_MISSING);
+                return;
+            }
+            if (!_scenes.TryGetValue(name, out Scene value))
+            {
+                Trace.WriteLine("The scene '" + name + "' does not exists.");
+                _currentScene = null;
+                return;
+            }
 
             ControllerKey.ResetAllKeys();
 
             _currentScene = _scenes[name];
+            // _currentScene = value;
 
             if (withLoadingScreen)
             {
                 if (!_currentScene.Loaded)
                 {
                     _currentSceneLoaded = false;
-                    _loadingScreen?.Load(_content); // Charger l'écran de chargement, s'il existe
+                    _loadingScreen?.Load(); // Charger l'écran de chargement, s'il existe
                     _loadingScreen?.Reset(); // Réinitialiser l'écran de chargement, s'il existe
 
                     // Charger la scène courante de manière asynchrone
                     await Task.Run(() =>
                     {
-                        _currentScene.Load(_content); // Charger la scène courante
+                        _currentScene.Load(); // Charger la scène courante
                         _currentScene.Loaded = true;
                     }).ConfigureAwait(false);
                 }
@@ -159,7 +170,7 @@ namespace DinaFramework.Scenes
             {
                 if (!_currentScene.Loaded)
                 {
-                    _currentScene.Load(_content); // Charger la scène courante
+                    _currentScene.Load(); // Charger la scène courante
                     _currentScene.Loaded = true;
                 }
                 _currentScene.Reset();
@@ -187,11 +198,9 @@ namespace DinaFramework.Scenes
         private SceneManager(Game game)
         {
             _game = game;
-            _content = game.Content;
-            _scenes = new Dictionary<string, Scene>();
+            Content = game.Content;
             _currentScene = null;
             _loadingScreen = null;
-            _values = new Dictionary<string, object>();
             ScreenDimensions = new Vector2(game.GraphicsDevice.Viewport.Width, game.GraphicsDevice.Viewport.Height);
         }
     }

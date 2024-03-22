@@ -9,9 +9,9 @@ using System;
 
 namespace DinaFramework.Core.Fixed
 {
-    public class Text : Base, IUpdate, IDraw, IColor, IVisible, IText
+    public class Text : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<Text>
     {
-        readonly SpriteFont _font;
+        SpriteFont _font;
         string _content;
         Color _color;
         bool _visible;
@@ -34,7 +34,13 @@ namespace DinaFramework.Core.Fixed
             set
             {
                 _content = value;
-                Dimensions = _font.MeasureString(TranslationManager.GetTranslation(value));
+                Vector2 currentDim = Dimensions;
+                Vector2 textDim = _font.MeasureString(TranslationManager.GetTranslation(value));
+                if (currentDim.X < textDim.X)
+                    currentDim.X = textDim.X;
+                if (currentDim.Y < textDim.Y)
+                    currentDim.Y = textDim.Y;
+                Dimensions = currentDim;
             }
         }
         public Color Color
@@ -79,25 +85,6 @@ namespace DinaFramework.Core.Fixed
             ZOrder = zorder;
             Visible = true;
         }
-        public Text(Text text)
-        {
-            ArgumentNullException.ThrowIfNull(text);
-            _font = text._font;
-            Content = text._content;
-            Color = text.Color;
-            Visible = text.Visible;
-            _halign = text._halign;
-            _valign = text._valign;
-            _displayposition = text._displayposition;
-            _waitTime = text._waitTime;
-            _displayTime = text._displayTime;
-            _nbLoops = text._nbLoops;
-            _timerDisplayTime = text._timerDisplayTime;
-            _wait = text._wait;
-            Position = text.Position;
-            Dimensions = text.Dimensions;
-            ZOrder = text.ZOrder;
-        }
         public void SetTimers(float waitTime = -1.0f, float displayTime = -1.0f, int nbLoops = -1)
         {
             _waitTime = waitTime;
@@ -122,7 +109,10 @@ namespace DinaFramework.Core.Fixed
         {
             ArgumentNullException.ThrowIfNull(spritebatch);
             if (_visible)
-                spritebatch.DrawString(_font, TranslationManager.GetTranslation(Content), _displayposition, _color);
+            {
+                //Vector2 scale = TextDimensions / Dimensions;
+                spritebatch.DrawString(_font, TranslationManager.GetTranslation(Content), _displayposition, _color, 0, Vector2.Zero, Vector2.One, SpriteEffects.None, 0);
+            }
         }
         public void Update(GameTime gameTime)
         {
@@ -173,5 +163,32 @@ namespace DinaFramework.Core.Fixed
 
             _displayposition = base.Position + offset;
         }
+
+        public Text Copy()
+        {
+            return new Text()
+            {
+                _color = this._color,
+                _content = this._content,
+                _displayposition = this._displayposition,
+                _displayTime = this._displayTime,
+                _font = this._font,
+                _halign = this._halign,
+                _valign = this._valign,
+                _nbLoops = this._nbLoops,
+                _timerDisplayTime = this._timerDisplayTime,
+                _timerWaitTime = this._timerWaitTime,
+                _visible = this._visible,
+                _wait = this._wait,
+                _waitTime = this._waitTime,
+                Color = this.Color,
+                Content = this.Content,
+                Dimensions = this.Dimensions,
+                Position = this.Position,
+                Visible = this.Visible,
+                ZOrder = this.ZOrder
+            };
+        }
+        private Text() { }
     }
 }

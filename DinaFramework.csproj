@@ -17,6 +17,11 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="DinaCrypto">
+      <HintPath>DinaCrypto.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
     <Compile Update="Messages\Messages.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -28,14 +33,5 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Messages.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Core\Sounds\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="DLACrypto">
-      <HintPath>DLACrypto.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
   </ItemGroup>
 </Project>

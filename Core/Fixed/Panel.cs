@@ -10,9 +10,9 @@ using System.ComponentModel;
 
 namespace DinaFramework.Core.Fixed
 {
-    public class Panel : Base, IClickable, IDraw, IUpdate, IVisible
+    public class Panel : Base, IClickable, IDraw, IUpdate, IVisible, ICopyable<Panel>
     {
-        private readonly List<Vector2> _positions = new List<Vector2>();
+        private List<Vector2> _positions = new List<Vector2>();
         private List<Texture2D> _images = new List<Texture2D>();
         private Texture2D _texture;
         private Rectangle _rectangleBackground;
@@ -21,8 +21,9 @@ namespace DinaFramework.Core.Fixed
         private Color _borderColor;
         private bool _visible;
         private MouseState _oldMouseState;
-        bool _clicked;
-
+        private bool _clicked;
+        private bool _hover;
+        private Panel() { } // ne sert qu'à la copie d'une instance
         public Panel(Vector2 position, Vector2 dimensions, Color backgroundcolor, int zorder = 0) : base(position, dimensions, zorder)
         {
             BackgroundColor = backgroundcolor;
@@ -278,7 +279,7 @@ namespace DinaFramework.Core.Fixed
                                          BackgroundColor);
                         break;
                     default:
-                        throw new InvalidEnumArgumentException("Images missing for the panel.");
+                        throw new InvalidEnumArgumentException("Images missing for the obj.");
                 }
             }
         }
@@ -292,21 +293,46 @@ namespace DinaFramework.Core.Fixed
         {
             MouseState mouseState = Mouse.GetState();
             _clicked = false;
-            if (_oldMouseState.LeftButton == ButtonState.Pressed && mouseState.LeftButton == ButtonState.Released)
+            if (_rectangleBackground.Contains(mouseState.Position))
             {
-                if (_rectangleBackground.Contains(mouseState.Position))
+                _hover = true;
+                if (_oldMouseState.LeftButton == ButtonState.Pressed && mouseState.LeftButton == ButtonState.Released)
                     _clicked = true;
             }
+            else
+                _hover = false;
             _oldMouseState = mouseState;
         }
-        public bool IsClicked()
-        {
-            return _clicked;
-        }
-
+        public bool IsClicked()=> _clicked;
+        public bool IsHovered() => _hover;
         internal void SetVisible(bool visible)
         {
             _visible = visible;
+        }
+        public Panel Copy()
+        {
+            List<Texture2D> copiedTextures = new List<Texture2D>();
+            foreach (Texture2D texture in _images)
+                copiedTextures.Add(texture);
+            return new Panel()
+            {
+                _borderColor = this._borderColor,
+                _clicked = this._clicked,
+                _images = copiedTextures,
+                _positions = this._positions,
+                _oldMouseState = this._oldMouseState,
+                _rectangleBackground = this._rectangleBackground,
+                _texture = this._texture,
+                _rectangleBorder = this._rectangleBorder,
+                _thickness = this._thickness,
+                _visible = this._visible,
+                BackgroundColor = this.BackgroundColor,
+                BorderColor = this.BorderColor,
+                Dimensions = this.Dimensions,
+                Position = this.Position,
+                Thickness = this.Thickness,
+                ZOrder = this.ZOrder
+            };
         }
     }
 }

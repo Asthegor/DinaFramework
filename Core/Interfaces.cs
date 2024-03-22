@@ -17,7 +17,7 @@ namespace DinaFramework.Interfaces
     }
     public interface ILoad
     {
-        public abstract void Load(ContentManager content);
+        public abstract void Load();
     }
     public interface IUpdate
     {
@@ -74,5 +74,9 @@ namespace DinaFramework.Interfaces
     {
         public abstract float Progress { get; set; }
         public abstract string Text { get; set; }
+    }
+    public interface ICopyable<T>
+    {
+        public abstract T Copy();
     }
 }

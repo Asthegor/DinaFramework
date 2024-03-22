@@ -7,7 +7,7 @@ using System;
 
 namespace DinaFramework.Core.Fixed
 {
-    public class Sprite : Base, IColor, IVisible, IDraw, ICollide
+    public class Sprite : Base, IColor, IVisible, IDraw, ICollide, ICopyable<Sprite>
     {
         private Rectangle _rectangle;
         private Color _color;
@@ -18,6 +18,9 @@ namespace DinaFramework.Core.Fixed
         private Vector2 _flip;
         private Vector2 _scale;
 
+        public Sprite(Texture2D texture, Color color, Vector2 position) :
+            this(texture, color, position, null, Vector2.Zero, Vector2.One, 0, Vector2.One, SpriteEffects.None, 0)
+        { }
         public Sprite(Texture2D texture, Color color, Vector2 position, Rectangle? sourceRectangle, Vector2 origin, Vector2 flip, float rotation, Vector2 scale, SpriteEffects effects, int zOrder)
             : base(position, new Vector2(sourceRectangle?.Width ?? texture?.Width ?? 0, sourceRectangle?.Height ?? texture?.Height ?? 0), zOrder)
         {
@@ -139,7 +142,9 @@ namespace DinaFramework.Core.Fixed
             _visible = value;
         }
         public float Rotation { get; set; }
-        public Vector2 Scale { get => _scale;
+        public Vector2 Scale
+        {
+            get => _scale;
             set
             {
                 _scale = value;
@@ -182,5 +187,32 @@ namespace DinaFramework.Core.Fixed
                 return false;
             return Rectangle.Intersects(item.Rectangle);
         }
+
+        public Sprite Copy()
+        {
+            return new Sprite()
+            {
+                Color = this.Color,
+                Dimensions = this.Dimensions,
+                Flip = this.Flip,
+                Origin = this.Origin,
+                Position = this.Position,
+                Rectangle = this.Rectangle,
+                Rotation = this.Rotation,
+                Scale = this.Scale,
+                Texture = this.Texture,
+                Visible = this.Visible,
+                ZOrder = this.ZOrder,
+                _color = this._color,
+                _effects = this._effects,
+                _origin = this._origin,
+                _flip = this._flip,
+                _scale = this._scale,
+                _rectangle = this._rectangle,
+                _texture = this._texture,
+                _visible = this._visible,
+            };
+        }
+        private Sprite() { }
     }
 }

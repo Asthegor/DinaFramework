@@ -11,7 +11,7 @@ using System.Diagnostics;
 
 namespace DinaFramework.Core.Fixed
 {
-    public class ProgressBar : Base, IDraw, IUpdate, IVisible
+    public class ProgressBar : Base, IDraw, IUpdate, IVisible, ICopyable<ProgressBar>
     {
         public enum PBType { Color, Image2Parts, Image3Parts }
         private PBType _pbtype;
@@ -19,14 +19,14 @@ namespace DinaFramework.Core.Fixed
         private float _value;
         private float _maxValue;
         private int _borderThickness;
-        private readonly int _imgOffset;
+        private int _imgOffset;
         private Color _frontColor;
         private Color _backColor;
         private Color _borderColor;
-        private readonly Rectangle[] _rectangles = new Rectangle[3];
-        private readonly Rectangle[] _rectanglesSource = new Rectangle[3];
+        private Rectangle[] _rectangles = new Rectangle[3];
+        private Rectangle[] _rectanglesSource = new Rectangle[3];
         private ProgressBarMode _mode;
-        private readonly List<Texture2D> _textures = new List<Texture2D>();
+        private List<Texture2D> _textures = new List<Texture2D>();
         private float _timer;
         private float _delay;
         private float _increment;
@@ -97,7 +97,7 @@ namespace DinaFramework.Core.Fixed
             {
                 if (value <= 0.0f)
                     _value = 0.0f;
-                else if (value >= MaxValue)
+                else if (value > MaxValue)
                     _value = MaxValue;
                 else
                     _value = value;
@@ -538,5 +538,45 @@ namespace DinaFramework.Core.Fixed
             _timer = 0;
             Value = value;
         }
+
+        public ProgressBar Copy()
+        {
+            Rectangle[] copiedRectangles = new Rectangle[_rectangles.Length];
+            Array.Copy(this._rectangles, copiedRectangles, _rectangles.Length);
+            Rectangle[] copiedRectanglesSource = new Rectangle[_rectangles.Length];
+            Array.Copy(this._rectanglesSource, copiedRectanglesSource, _rectanglesSource.Length);
+            List<Texture2D> copiedTextures = new List<Texture2D>();
+            foreach(Texture2D texture in _textures)
+                copiedTextures.Add(texture);
+            return new ProgressBar()
+            {
+                _autoIncrement = this._autoIncrement,
+                _backColor = this._backColor,
+                _borderColor = this._borderColor,
+                _borderThickness = this._borderThickness,
+                _delay = this._delay,
+                _frontColor = this._frontColor,
+                _imgOffset = this._imgOffset,
+                _increment = this._increment,
+                _maxValue = this._maxValue,
+                _mode = this._mode,
+                _pbtype = this._pbtype,
+                _rectangles = copiedRectangles,
+                _rectanglesSource = copiedRectanglesSource,
+                _textures = copiedTextures,
+                _timer = this._timer,
+                _value = this._value,                
+                _visible = this._visible,
+                AutoIncrement = this.AutoIncrement,
+                Dimensions = this.Dimensions,
+                MaxValue = this.MaxValue,
+                Mode = this.Mode,
+                Position = this.Position,
+                Value = this.Value,
+                Visible = this.Visible,
+                ZOrder = this.ZOrder,
+            };
+        }
+        private ProgressBar() { }
     }
 }

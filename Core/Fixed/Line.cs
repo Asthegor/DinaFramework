@@ -7,7 +7,7 @@ using System;
 
 namespace DinaFramework.Core.Fixed
 {
-    public class Line : IColor, IDraw
+    public class Line : IColor, IDraw, ICopyable<Line>
     {
         private readonly float _distance;
         private readonly float _angle;
@@ -49,5 +49,18 @@ namespace DinaFramework.Core.Fixed
             }
             spritebatch.Draw(_texture, _position, null, Color, _angle, _origin, _scale, SpriteEffects.None, 0);
         }
+        public Line Copy()
+        {
+            return new Line()
+            {
+                _origin = this._origin,
+                _position = this._position,
+                _scale = this._scale,
+                _texture = this._texture,
+                Color = this.Color,
+                Thickness = this.Thickness,
+            };
+        }
+        private Line() { }
     }
 }
