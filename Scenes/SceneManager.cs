@@ -54,7 +54,9 @@ namespace DinaFramework.Scenes
             if (File.Exists(filePath))
             {
                 string encryptString = File.ReadAllText(filePath);
-                string jsonString = DinaCrypto.DinaCrypto.Decrypt(encryptString);
+                if (string.IsNullOrEmpty(encryptString))
+                    return default;
+                string jsonString = DLACryptographie.EncryptDecrypt.Decrypt(encryptString);
                 return JsonSerializer.Deserialize<T>(jsonString, _jsonOptions);
             }
 
@@ -63,7 +65,7 @@ namespace DinaFramework.Scenes
         public static void SaveObjectToFile<T>(T obj, string fileFullname, bool overwritten = false)
         {
             string jsonString = JsonSerializer.Serialize(obj, _jsonOptions);
-            string encryptString = DinaCrypto.DinaCrypto.Encrypt(jsonString);
+            string encryptString = DLACryptographie.EncryptDecrypt.Encrypt(jsonString);
             if (overwritten)
                 File.WriteAllText(fileFullname, encryptString);
             else
