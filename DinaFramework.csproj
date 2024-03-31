@@ -5,7 +5,7 @@
     <Authors>Dominique LACOMBE</Authors>
     <AnalysisLevel>latest-all</AnalysisLevel>
     <Title>DinaFramework</Title>
-    <Description>DinaFramework est un framework développé à partir de MonoGame.</Description>
+    <Description>DinaFramework est un framework développé par Dominique LACOMBE et réalisé à partir de MonoGame.</Description>
     <NeutralLanguage>en-US</NeutralLanguage>
   </PropertyGroup>
   <ItemGroup>
