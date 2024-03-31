@@ -11,7 +11,7 @@ namespace DinaFramework.Scenes
 {
     public abstract class Scene : IGameObject, IResource
     {
-        private SceneManager _sceneManager;
+        private readonly SceneManager _sceneManager;
         protected SceneManager SceneManager => _sceneManager;
         protected Scene(SceneManager sceneManager)
         {

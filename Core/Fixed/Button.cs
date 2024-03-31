@@ -40,6 +40,7 @@ namespace DinaFramework.Core.Fixed
         public Button(Vector2 position, Vector2 dimensions, SpriteFont font, string content, Color textColor, Texture2D backgroundimage, Action action, Vector2 margin = default, Func<Button, Button> onHover = null)
             : this(position, dimensions, font, content, textColor, action, margin)
         {
+            _onHover = onHover;
             _background = new Panel(Position, Dimensions, backgroundimage, 0);
         }
         public Action Action { get => _action; set => _action = value; }
@@ -141,8 +142,7 @@ namespace DinaFramework.Core.Fixed
         private Button() { }
         private void SaveState()
         {
-            if (_backup == null)
-                _backup = this.Copy();
+            _backup ??= this.Copy();
         }
         private void RestoreState()
         {

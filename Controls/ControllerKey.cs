@@ -77,7 +77,7 @@ namespace DinaFramework.Controls
         private readonly PlayerIndex _indexplayer;
         private readonly float _axisThreshold;
         private readonly Buttons _button;
-        private Buttons Key { get; set; }
+        //private Buttons Key { get; set; }
         private GamePadState _oldState;
         public GamepadButton(Buttons button, ControllerAction action = ControllerAction.Pressed, PlayerIndex index = PlayerIndex.One, string alias = "", float axisThreshold = 0.5f)
         {

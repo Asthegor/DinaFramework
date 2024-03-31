@@ -162,15 +162,15 @@ namespace DinaFramework.Menus
         }
         public void CenterMenuItems(Vector2 screendimensions)
         {
-            foreach (var item in _items)
+            foreach (MenuItem item in _items)
             {
-                if (item is MenuItem)
-                {
-                    Vector2 itemTextDim = item.TextDimensions;
-                    Vector2 itemPos = item.Position;
-                    itemPos.X = (screendimensions.X - itemTextDim.X) / 2.0f;
-                    item.Position = itemPos;
-                }
+                if (item is null)
+                    continue;
+
+                Vector2 itemTextDim = item.TextDimensions;
+                Vector2 itemPos = item.Position;
+                itemPos.X = (screendimensions.X - itemTextDim.X) / 2.0f;
+                item.Position = itemPos;
             }
         }
 

@@ -19,8 +19,6 @@
   <ItemGroup>
     <Reference Include="DLACrypto">
       <HintPath>DLACrypto.dll</HintPath>
-      <Private>True</Private>
-      <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
   </ItemGroup>
   <ItemGroup>
