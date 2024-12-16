@@ -1,4 +1,5 @@
-﻿using DinaFramework.Interfaces;
+﻿using DinaFramework.Core;
+using DinaFramework.Interfaces;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -6,7 +7,7 @@ using Microsoft.Xna.Framework.Input;
 
 using System;
 
-namespace DinaFramework.Core.Fixed
+namespace DinaFramework.Graphics
 {
     public class CheckBox : Base, IUpdate, IDraw, IVisible, ICopyable<CheckBox>
     {
@@ -68,16 +69,14 @@ namespace DinaFramework.Core.Fixed
         public bool IsChecked { get => _isChecked; set => _isChecked = value; }
         public bool Visible { get => _visible; set => _visible = value; }
 
-        public void Update(GameTime gameTime)
+        public void Update(GameTime gametime)
         {
             if (Mouse.GetState().LeftButton == ButtonState.Pressed)
             {
                 Point mousePosition = new Point(Mouse.GetState().X, Mouse.GetState().Y);
 
                 if (_checkBoxRect.Contains(mousePosition))
-                {
                     IsChecked = !IsChecked;
-                }
             }
         }
         public void Draw(SpriteBatch spritebatch)
@@ -89,9 +88,7 @@ namespace DinaFramework.Core.Fixed
                 if (_useTextures)
                 {
                     if (IsChecked)
-                    {
                         spritebatch.Draw(_checkedTexture, _checkBoxRect, Color.White);
-                    }
                     else
                     {
                         spritebatch.Draw(_uncheckedTexture, _checkBoxRect, Color.White);
@@ -115,9 +112,7 @@ namespace DinaFramework.Core.Fixed
             _pixelTexture.SetData(new Color[] { Color.White });
             // Dessine un rectangle non plein
             if (isFilled)
-            {
                 spritebatch.Draw(_pixelTexture, rectangle, color);
-            }
             else
             {
                 // Lignes horizontales
@@ -134,20 +129,20 @@ namespace DinaFramework.Core.Fixed
         {
             return new CheckBox()
             {
-                _checkBoxRect = this._checkBoxRect,
-                _checkedColor = this._checkedColor,
-                _checkedTexture = this._checkedTexture,
-                _isChecked = this._isChecked,
-                _label = this._label?.Copy(),
-                _uncheckedColor = this._uncheckedColor,
-                _uncheckedTexture = this._uncheckedTexture,
-                _useTextures = this._useTextures,
-                _visible = this._visible,
-                Dimensions = this.Dimensions,
-                IsChecked = this.IsChecked,
-                Position = this.Position,
-                Visible = this.Visible,
-                ZOrder = this.ZOrder,
+                _checkBoxRect = _checkBoxRect,
+                _checkedColor = _checkedColor,
+                _checkedTexture = _checkedTexture,
+                _isChecked = _isChecked,
+                _label = _label?.Copy(),
+                _uncheckedColor = _uncheckedColor,
+                _uncheckedTexture = _uncheckedTexture,
+                _useTextures = _useTextures,
+                _visible = _visible,
+                Dimensions = Dimensions,
+                IsChecked = IsChecked,
+                Position = Position,
+                Visible = Visible,
+                ZOrder = ZOrder,
             };
         }
         private CheckBox() { }

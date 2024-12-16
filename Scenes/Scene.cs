@@ -26,12 +26,12 @@ namespace DinaFramework.Scenes
             set => _sceneManager.LoadingProgress = value;
         }
         protected ContentManager Content => _sceneManager.Content;
-        bool _visible;
+        private bool _visible;
         public bool Visible { get => _visible; set => _visible = value; }
 
         public abstract void Load();
         public abstract void Reset();
-        public abstract void Update(GameTime gameTime);
+        public abstract void Update(GameTime gametime);
         public abstract void Draw(SpriteBatch spritebatch);
 
         public void AddResource<T>(string resourceName, T resource) { _sceneManager.AddResource(resourceName, resource); }

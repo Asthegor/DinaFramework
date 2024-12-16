@@ -1,4 +1,5 @@
-﻿using DinaFramework.Interfaces;
+﻿using DinaFramework.Core;
+using DinaFramework.Interfaces;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -6,7 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 
-namespace DinaFramework.Core.Animated
+namespace DinaFramework.Graphics
 {
     public class Animation : Base, IReset, IUpdate, IDraw, IColor, ICollide, IVisible
     {
@@ -109,13 +110,13 @@ namespace DinaFramework.Core.Animated
 
         public bool Visible { get => _visible; set => _visible = value; }
 
-        public void Update(GameTime gameTime)
+        public void Update(GameTime gametime)
         {
             if (Visible && _currentRepetition != 0)
             {
-                ArgumentNullException.ThrowIfNull(gameTime);
+                ArgumentNullException.ThrowIfNull(gametime);
 
-                _currentFrame += Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds) * _speed;
+                _currentFrame += Convert.ToSingle(gametime.ElapsedGameTime.TotalSeconds) * _speed;
                 if (_currentFrame >= _frames.Count)
                 {
                     _currentFrame = 0;
@@ -165,7 +166,7 @@ namespace DinaFramework.Core.Animated
 }
 
 
-//using DinaFramework.Core.Fixed;
+//using DinaFramework.Graphics;
 //using DinaFramework.Interfaces;
 
 //using Microsoft.Xna.Framework;
@@ -175,7 +176,7 @@ namespace DinaFramework.Core.Animated
 //using System;
 //using System.Collections.Generic;
 
-//namespace DinaFramework.Core.Animated
+//namespace DinaFramework.Graphics
 //{
 //    public class Animation : Base, IReset, IUpdate, IDraw, IColor, ICollide, IVisible, ICopyable<Animation>
 //    {
@@ -481,13 +482,13 @@ namespace DinaFramework.Core.Animated
 
 //        public bool Visible { get => _visible; set => _visible = value; }
 
-//        public void Update(GameTime gameTime)
+//        public void Update(GameTime gametime)
 //        {
 //            if (Visible && _currentrepetition != 0)
 //            {
-//                ArgumentNullException.ThrowIfNull(gameTime);
+//                ArgumentNullException.ThrowIfNull(gametime);
 
-//                _currentframe += Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds) * _speed;
+//                _currentframe += Convert.ToSingle(gametime.ElapsedGameTime.TotalSeconds) * _speed;
 //                if (_currentframe >= _frames.Count)
 //                {
 //                    _currentframe = 0;

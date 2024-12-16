@@ -9,15 +9,17 @@ using System.Collections.Generic;
 
 namespace DinaFramework.Core
 {
-    public class Group : Base, IDraw, IVisible, IEnumerator, IEnumerable, ICollide, IUpdate, IClickable
+    public class Group : Base, IDraw, IVisible, IEnumerator, IEnumerable, ICollide, IUpdate, IClickable, IColor
     {
         readonly List<IElement> _elements = new List<IElement>();
         private int index;
         private Rectangle _rect;
         private bool _visible;
+        private Color _color;
 
         public Group(Vector2 position = default, Vector2 dimensions = default, int zorder = 0) : base(position, dimensions, zorder)
         {
+            _color = Color.White;
         }
         public Group(Group group, bool duplicate = true)
         {
@@ -34,6 +36,7 @@ namespace DinaFramework.Core
             ZOrder = group.ZOrder;
             Visible = group.Visible;
             index = 0;
+            _color = Color.White;
         }
 
         public object Current => _elements[index];
@@ -83,6 +86,21 @@ namespace DinaFramework.Core
                 _visible = value;
             }
         }
+
+        public Color Color
+        {
+            get => _color;
+            set
+            {
+                foreach(var element in _elements)
+                {
+                    if (element is IColor elemcolor)
+                        elemcolor.Color = value;
+                }
+                _color = value;
+            }
+        }
+
         public bool IsClicked()
         {
             foreach (var item in _elements)
@@ -105,6 +123,7 @@ namespace DinaFramework.Core
             Reset();
             return this;
         }
+
         public bool Collide(ICollide item)
         {
             if (item == null)
@@ -174,12 +193,12 @@ namespace DinaFramework.Core
             }
 
         }
-        public void Update(GameTime gameTime)
+        public void Update(GameTime gametime)
         {
             foreach (var elem in _elements)
             {
                 if (elem is IUpdate uelem)
-                    uelem.Update(gameTime);
+                    uelem.Update(gametime);
             }
         }
     }

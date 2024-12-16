@@ -1,4 +1,5 @@
-﻿using DinaFramework.Interfaces;
+﻿using DinaFramework.Core;
+using DinaFramework.Interfaces;
 using DinaFramework.Menus;
 
 using Microsoft.Xna.Framework;
@@ -6,7 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 using System;
 
-namespace DinaFramework.Core.Fixed
+namespace DinaFramework.Graphics
 {
     public class Button : Base, IUpdate, IDraw, IPosition, ICopyable<Button>
     {
@@ -43,6 +44,18 @@ namespace DinaFramework.Core.Fixed
             _onHover = onHover;
             _background = new Panel(Position, Dimensions, backgroundimage, 0);
         }
+        public Button(Vector2 position, Texture2D backgroundimage, Action action, Func<Button, Button> onHover = null)
+        {
+            ArgumentNullException.ThrowIfNull(backgroundimage);
+
+            _backup = null;
+            Dimensions = new Vector2(backgroundimage.Width, backgroundimage.Height);
+            Position = position;
+            _action = action;
+            _onHover = onHover;
+            _background = new Panel(Position, Dimensions, backgroundimage, 0);
+
+        }
         public Action Action { get => _action; set => _action = value; }
         public Func<Button, Button> OnHover { get => _onHover; set => _onHover = value; }
         public string Content { get => _text.Content; set => _text.Content = value; }
@@ -51,11 +64,15 @@ namespace DinaFramework.Core.Fixed
             get => base.Position;
             set
             {
-                if (_background != null) _background.Position = value;
-                if (_lockedSprite != null) _lockedSprite.Position = value;
+                if (_background != null)
+                    _background.Position = value;
+                if (_lockedSprite != null)
+                    _lockedSprite.Position = value;
                 if (_text != null && _background != null)
+                {
                     _text.Position = new Vector2(_background.Position.X + (_background.Dimensions.X - _text.TextDimensions.X) / 2,
                                                  _background.Position.Y + (_background.Dimensions.Y - _text.TextDimensions.Y) / 2);
+                }
                 base.Position = value;
             }
         }
@@ -63,6 +80,8 @@ namespace DinaFramework.Core.Fixed
         public Color TextColor { get => _text.Color; set => _text.Color = value; }
         public Color BackgroundColor { get => _background.BackgroundColor; set => _background.BackgroundColor = value; }
         public bool Locked { get => _locked; set => _locked = value; }
+        public SpriteFont Font { get => _text.Font; set => _text.Font = value; }
+
         public void LockedImage(Texture2D lockedTexture, Color lockedColor)
         {
             if (lockedTexture != null)
@@ -76,9 +95,9 @@ namespace DinaFramework.Core.Fixed
 
             _lockedColor = lockedColor;
         }
-        public void Update(GameTime gameTime)
+        public void Update(GameTime gametime)
         {
-            _background?.Update(gameTime);
+            _background?.Update(gametime);
             if (Locked == false)
             {
                 if (_onHover != null)
@@ -124,25 +143,25 @@ namespace DinaFramework.Core.Fixed
         {
             return new Button()
             {
-                _action = this._action,
-                _background = this._background?.Copy(),
-                _locked = this._locked,
-                _lockedColor = this._lockedColor,
-                _lockedSprite = this._lockedSprite?.Copy(),
-                _margin = this._margin,
-                _text = this._text?.Copy(),
-                BackgroundColor = this.BackgroundColor,
-                Content = this.Content,
-                Dimensions = this.Dimensions,
-                Position = this.Position,
-                TextColor = this.TextColor,
-                ZOrder = this.ZOrder,
+                _action = _action,
+                _background = _background?.Copy(),
+                _locked = _locked,
+                _lockedColor = _lockedColor,
+                _lockedSprite = _lockedSprite?.Copy(),
+                _margin = _margin,
+                _text = _text?.Copy(),
+                BackgroundColor = BackgroundColor,
+                Content = Content,
+                Dimensions = Dimensions,
+                Position = Position,
+                TextColor = TextColor,
+                ZOrder = ZOrder,
             };
         }
         private Button() { }
         private void SaveState()
         {
-            _backup ??= this.Copy();
+            _backup ??= Copy();
         }
         private void RestoreState()
         {

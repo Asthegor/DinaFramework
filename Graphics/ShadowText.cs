@@ -1,4 +1,5 @@
-﻿using DinaFramework.Enums;
+﻿using DinaFramework.Core;
+using DinaFramework.Enums;
 using DinaFramework.Interfaces;
 using DinaFramework.Translation;
 
@@ -7,7 +8,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 using System;
 
-namespace DinaFramework.Core.Fixed
+namespace DinaFramework.Graphics
 {
     public class ShadowText : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<ShadowText>
     {
@@ -45,10 +46,10 @@ namespace DinaFramework.Core.Fixed
                 _text.Content = value;
             }
         }
-        public void Update(GameTime gameTime)
+        public void Update(GameTime gametime)
         {
-            _shadow.Update(gameTime);
-            _text.Update(gameTime);
+            _shadow.Update(gametime);
+            _text.Update(gametime);
         }
         public void Draw(SpriteBatch spritebatch)
         {
@@ -105,17 +106,17 @@ namespace DinaFramework.Core.Fixed
         {
             return new ShadowText()
             {
-                _offset = this._offset,
-                _shadow = this._shadow?.Copy(),
-                _text = this._text?.Copy(),
-                Color = this.Color,
-                Content = this.Content,
-                Dimensions = this.Dimensions,
-                Offset = this.Offset,
-                Position = this.Position,
-                ShadowColor = this.ShadowColor,
-                Visible = this.Visible,
-                ZOrder = this.ZOrder
+                _offset = _offset,
+                _shadow = _shadow?.Copy(),
+                _text = _text?.Copy(),
+                Color = Color,
+                Content = Content,
+                Dimensions = Dimensions,
+                Offset = Offset,
+                Position = Position,
+                ShadowColor = ShadowColor,
+                Visible = Visible,
+                ZOrder = ZOrder
             };
         }
         private ShadowText() { }

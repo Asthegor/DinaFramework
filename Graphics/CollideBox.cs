@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework;
 
 using System;
 
-namespace DinaFramework.Core.Fixed
+namespace DinaFramework.Graphics
 {
     public class CollideBox : IPosition, IDimensions, ICollide, IElement, ICopyable<CollideBox>
     {
@@ -48,12 +48,12 @@ namespace DinaFramework.Core.Fixed
         {
             return new CollideBox()
             {
-                _dimensions = this._dimensions,
-                _position = this._position,
-                _rect = this._rect,
-                Dimensions = this.Dimensions,
-                Position = this.Position,
-                ZOrder = this.ZOrder
+                _dimensions = _dimensions,
+                _position = _position,
+                _rect = _rect,
+                Dimensions = Dimensions,
+                Position = Position,
+                ZOrder = ZOrder
             };
         }
         private CollideBox() { }

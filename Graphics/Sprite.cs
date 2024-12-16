@@ -1,11 +1,12 @@
-﻿using DinaFramework.Interfaces;
+﻿using DinaFramework.Core;
+using DinaFramework.Interfaces;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using System;
 
-namespace DinaFramework.Core.Fixed
+namespace DinaFramework.Graphics
 {
     public class Sprite : Base, IColor, IVisible, IDraw, ICollide, ICopyable<Sprite>
     {
@@ -192,25 +193,25 @@ namespace DinaFramework.Core.Fixed
         {
             return new Sprite()
             {
-                Color = this.Color,
-                Dimensions = this.Dimensions,
-                Flip = this.Flip,
-                Origin = this.Origin,
-                Position = this.Position,
-                Rectangle = this.Rectangle,
-                Rotation = this.Rotation,
-                Scale = this.Scale,
-                Texture = this.Texture,
-                Visible = this.Visible,
-                ZOrder = this.ZOrder,
-                _color = this._color,
-                _effects = this._effects,
-                _origin = this._origin,
-                _flip = this._flip,
-                _scale = this._scale,
-                _rectangle = this._rectangle,
-                _texture = this._texture,
-                _visible = this._visible,
+                Color = Color,
+                Dimensions = Dimensions,
+                Flip = Flip,
+                Origin = Origin,
+                Position = Position,
+                Rectangle = Rectangle,
+                Rotation = Rotation,
+                Scale = Scale,
+                Texture = Texture,
+                Visible = Visible,
+                ZOrder = ZOrder,
+                _color = _color,
+                _effects = _effects,
+                _origin = _origin,
+                _flip = _flip,
+                _scale = _scale,
+                _rectangle = _rectangle,
+                _texture = _texture,
+                _visible = _visible,
             };
         }
         private Sprite() { }

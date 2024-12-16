@@ -62,10 +62,11 @@ namespace DinaFramework.Scenes
 
             return default;
         }
-        public static void SaveObjectToFile<T>(T obj, string fileFullname, bool overwritten = false)
+        public static void SaveObjectToFile<T>(T obj, string fileFullname, bool overwritten = true)
         {
             string jsonString = JsonSerializer.Serialize(obj, _jsonOptions);
             string encryptString = DLACryptographie.EncryptDecrypt.Encrypt(jsonString);
+
             if (overwritten)
                 File.WriteAllText(fileFullname, encryptString);
             else
@@ -77,7 +78,6 @@ namespace DinaFramework.Scenes
         {
             if (!_values.TryAdd(resourceName, resource))
                 _values[resourceName] = resource;
-            //_resourceManager.AddStrings(resourceName, resource);
         }
         public void AddScene(string name, Type type)
         {
@@ -144,7 +144,6 @@ namespace DinaFramework.Scenes
             ControllerKey.ResetAllKeys();
 
             _currentScene = _scenes[name];
-            // _currentScene = value;
 
             if (withLoadingScreen)
             {
@@ -163,10 +162,10 @@ namespace DinaFramework.Scenes
                 }
                 // Reset de la scène courante de manière asynchrone
                 await Task.Run(() =>
-                {
-                    _currentScene.Reset();
-                    _currentSceneLoaded = true;
-                }).ConfigureAwait(false);
+                    {
+                        _currentScene.Reset();
+                        _currentSceneLoaded = true;
+                    }).ConfigureAwait(false);
             }
             else
             {
@@ -186,11 +185,7 @@ namespace DinaFramework.Scenes
         public void Update(GameTime gameTime)
         {
             if (!_currentSceneLoaded)
-            {
-                //if (_loadingScreen != null)
-                //    ((ILoadingScreen)_loadingScreen).Progress = _loadingProgress;
                 _loadingScreen?.Update(gameTime);
-            }
             else
                 _currentScene?.Update(gameTime);
         }

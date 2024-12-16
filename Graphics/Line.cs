@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 using System;
 
-namespace DinaFramework.Core.Fixed
+namespace DinaFramework.Graphics
 {
     public class Line : IColor, IDraw, ICopyable<Line>
     {
@@ -40,7 +40,8 @@ namespace DinaFramework.Core.Fixed
 
         public void Draw(SpriteBatch spritebatch)
         {
-            if (spritebatch == null) return;
+            if (spritebatch == null)
+                return;
 
             if (_texture == null)
             {
@@ -53,14 +54,15 @@ namespace DinaFramework.Core.Fixed
         {
             return new Line()
             {
-                _origin = this._origin,
-                _position = this._position,
-                _scale = this._scale,
-                _texture = this._texture,
-                Color = this.Color,
-                Thickness = this.Thickness,
+                _origin = _origin,
+                _position = _position,
+                _scale = _scale,
+                _texture = _texture,
+                Color = Color,
+                Thickness = Thickness,
             };
         }
+
         private Line() { }
     }
 }

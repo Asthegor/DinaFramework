@@ -1,6 +1,6 @@
 ﻿using DinaFramework.Core;
-using DinaFramework.Core.Fixed;
 using DinaFramework.Enums;
+using DinaFramework.Graphics;
 using DinaFramework.Interfaces;
 
 using Microsoft.Xna.Framework;
@@ -117,6 +117,22 @@ namespace DinaFramework.Menus
             get { return _visible; }
             set { _visible = value; }
         }
+
+        public SpriteFont Font
+        {
+            get
+            {
+                if (_item is Text textitem)
+                    return textitem.Font;
+                return null;
+            }
+            set
+            {
+                if (_item is Text textitem)
+                    textitem.Font = value;
+            }
+        }
+
         public MenuItem(SpriteFont font, string text, Color color,
                         Func<MenuItem, MenuItem> selection = null,
                         Func<MenuItem, MenuItem> deselection = null,

@@ -1,4 +1,5 @@
-﻿using DinaFramework.Interfaces;
+﻿using DinaFramework.Core;
+using DinaFramework.Interfaces;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -8,9 +9,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 
-namespace DinaFramework.Core.Fixed
+namespace DinaFramework.Graphics
 {
-    public class Panel : Base, IClickable, IDraw, IUpdate, IVisible, ICopyable<Panel>
+    public class Panel : Base, IClickable, IColor, IDraw, IUpdate, IVisible, ICopyable<Panel>
     {
         private List<Vector2> _positions = new List<Vector2>();
         private List<Texture2D> _images = new List<Texture2D>();
@@ -24,19 +25,23 @@ namespace DinaFramework.Core.Fixed
         private bool _clicked;
         private bool _hover;
         private Panel() { } // ne sert qu'à la copie d'une instance
-        public Panel(Vector2 position, Vector2 dimensions, Color backgroundcolor, int zorder = 0) : base(position, dimensions, zorder)
+        public Panel(Vector2 position, Vector2 dimensions, Color backgroundcolor, int zorder = 0) : 
+            base(position, dimensions, zorder)
         {
             BackgroundColor = backgroundcolor;
             BorderColor = backgroundcolor;
             Thickness = 0;
             CheckVisibility();
         }
-        public Panel(Vector2 position, Vector2 dimensions, Color backgroundcolor, Color bordercolor, int thickness, int zorder = 0) : this(position, dimensions, backgroundcolor, zorder)
+        public Panel(Vector2 position, Vector2 dimensions, Color backgroundcolor, Color bordercolor, int thickness, int zorder = 0) :
+            this(position, dimensions, backgroundcolor, zorder)
         {
             BorderColor = bordercolor;
             Thickness = thickness;
+            CheckVisibility();
         }
-        public Panel(Vector2 position, Vector2 dimensions, Texture2D image, int borderThickness, int zorder = 0) : base(position, dimensions, zorder)
+        public Panel(Vector2 position, Vector2 dimensions, Texture2D image, int borderThickness, int zorder = 0) : 
+            base(position, dimensions, zorder)
         {
             ArgumentNullException.ThrowIfNull(image);
 
@@ -154,6 +159,12 @@ namespace DinaFramework.Core.Fixed
         {
             get { return _visible; }
             set { _visible = value; }
+        }
+
+        public Color Color
+        {
+            get { return BackgroundColor; }
+            set { BackgroundColor = value; }
         }
         public void Draw(SpriteBatch spritebatch)
         {
@@ -289,7 +300,7 @@ namespace DinaFramework.Core.Fixed
             _texture.Dispose();
         }
 
-        public void Update(GameTime gameTime)
+        public void Update(GameTime gametime)
         {
             MouseState mouseState = Mouse.GetState();
             _clicked = false;
@@ -303,7 +314,7 @@ namespace DinaFramework.Core.Fixed
                 _hover = false;
             _oldMouseState = mouseState;
         }
-        public bool IsClicked()=> _clicked;
+        public bool IsClicked() => _clicked;
         public bool IsHovered() => _hover;
         internal void SetVisible(bool visible)
         {
@@ -316,22 +327,22 @@ namespace DinaFramework.Core.Fixed
                 copiedTextures.Add(texture);
             return new Panel()
             {
-                _borderColor = this._borderColor,
-                _clicked = this._clicked,
+                _borderColor = _borderColor,
+                _clicked = _clicked,
                 _images = copiedTextures,
-                _positions = this._positions,
-                _oldMouseState = this._oldMouseState,
-                _rectangleBackground = this._rectangleBackground,
-                _texture = this._texture,
-                _rectangleBorder = this._rectangleBorder,
-                _thickness = this._thickness,
-                _visible = this._visible,
-                BackgroundColor = this.BackgroundColor,
-                BorderColor = this.BorderColor,
-                Dimensions = this.Dimensions,
-                Position = this.Position,
-                Thickness = this.Thickness,
-                ZOrder = this.ZOrder
+                _positions = _positions,
+                _oldMouseState = _oldMouseState,
+                _rectangleBackground = _rectangleBackground,
+                _texture = _texture,
+                _rectangleBorder = _rectangleBorder,
+                _thickness = _thickness,
+                _visible = _visible,
+                BackgroundColor = BackgroundColor,
+                BorderColor = BorderColor,
+                Dimensions = Dimensions,
+                Position = Position,
+                Thickness = Thickness,
+                ZOrder = ZOrder
             };
         }
     }

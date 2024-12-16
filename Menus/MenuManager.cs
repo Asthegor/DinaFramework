@@ -1,7 +1,7 @@
 ﻿using DinaFramework.Controls;
 using DinaFramework.Core;
-using DinaFramework.Core.Fixed;
 using DinaFramework.Enums;
+using DinaFramework.Graphics;
 using DinaFramework.Interfaces;
 using DinaFramework.Scenes;
 
@@ -37,6 +37,10 @@ namespace DinaFramework.Menus
         private Panel _background;
         private int _borderSpacing = DEFAULT_SPACING;
         private MouseState _oldMouseState;
+        private bool _centeredItems;
+        private bool _centeredTitles;
+        private Vector2 _titleScreenDimensions;
+        private Vector2 _itemsScreenDimensions;
 
         // Construteurs
         public MenuManager(int itemspacing = DEFAULT_SPACING, Action cancellation = null, int currentitemindex = -1)
@@ -49,6 +53,10 @@ namespace DinaFramework.Menus
             _elements.Add(_itemsGroup);
             Visible = true;
             Cancellation = cancellation;
+            _centeredItems = false;
+            _centeredTitles = false;
+            _titleScreenDimensions = Vector2.Zero;
+            _itemsScreenDimensions = Vector2.Zero;
             Reset(currentitemindex);
         }
 
@@ -65,7 +73,12 @@ namespace DinaFramework.Menus
         public MenuItem CurrentItem
         {
             get => (_currentitemindex == -1 || _currentitemindex >= _items.Count) ? null : _items[_currentitemindex];
-            set => _currentitemindex = _items.IndexOf(value);
+            set
+            {
+                CurrentItem?.Deselection?.Invoke(CurrentItem);
+                _currentitemindex = _items.IndexOf(value);
+                CurrentItem?.Selection?.Invoke(CurrentItem);
+            }
         }
         public IconMenuAlignment IconAlignment
         {
@@ -93,19 +106,23 @@ namespace DinaFramework.Menus
         }
 
         // Titres
-        public void AddTitle(SpriteFont font, string text, Vector2 position, Color color, Color? shadowcolor = null, Vector2? shadowoffset = null, int zorder = 0)
+        public IElement AddTitle(SpriteFont font, string text, Vector2 position, Color color, Color? shadowcolor = null, Vector2? shadowoffset = null, int zorder = 0)
         {
             var title = (shadowcolor.HasValue && shadowoffset.HasValue)
                         ? new ShadowText(font, text, color, position, shadowcolor.Value, shadowoffset.Value, zorder: zorder)
                         : (IElement)new Text(font, text, color, position, zorder: zorder);
             AddTitleToGroups(title);
+            return title;
         }
-        public void AddTitle(IElement title)
+        public IElement AddTitle(IElement title)
         {
             AddTitleToGroups(title);
+            return title;
         }
         public void CenterTitles(Vector2 screendimensions)
         {
+            _centeredTitles = true;
+            _titleScreenDimensions = screendimensions;
             foreach (var title in _titles)
             {
                 if (title is IElement titleElement)
@@ -117,6 +134,16 @@ namespace DinaFramework.Menus
                 }
 
             }
+        }
+        public void SetTitleFont(SpriteFont font)
+        {
+            foreach (var title in _titles)
+            {
+                if (title is Text titletext)
+                    titletext.Font = font;
+            }
+            if (_centeredTitles)
+                CenterTitles(_titleScreenDimensions);
         }
 
         //------------------------------------------------------------------
@@ -158,10 +185,14 @@ namespace DinaFramework.Menus
         }
         public MenuItem AddItem(object item, Func<MenuItem, MenuItem> selection = null, Func<MenuItem, MenuItem> deselection = null, Func<MenuItem, MenuItem> activation = null)
         {
-            return AddItemToGroups(new MenuItem(item, selection, deselection, activation, new Vector2(_itemsGroup.Position.X, GetNextItemYPosition())));
+            ArgumentNullException.ThrowIfNull(item, "Parameter 'item' must not be null.");
+
+            return AddItemToGroups(new MenuItem(item, selection, deselection, activation, (item as IPosition).Position));
         }
         public void CenterMenuItems(Vector2 screendimensions)
         {
+            _centeredItems = true;
+            _itemsScreenDimensions = screendimensions;
             foreach (MenuItem item in _items)
             {
                 if (item is null)
@@ -172,6 +203,17 @@ namespace DinaFramework.Menus
                 itemPos.X = (screendimensions.X - itemTextDim.X) / 2.0f;
                 item.Position = itemPos;
             }
+        }
+        public void SetItemFont(SpriteFont font)
+        {
+            foreach (MenuItem item in _items)
+            {
+                if (item is null)
+                    continue;
+                item.Font = font;
+            }
+            if (_centeredItems)
+                CenterMenuItems(_itemsScreenDimensions);
         }
 
         //------------------------------------------------------------------
@@ -242,7 +284,7 @@ namespace DinaFramework.Menus
             CurrentItem?.Selection?.Invoke(CurrentItem);
             _oldMouseState = Mouse.GetState();
         }
-        public void Update(GameTime gameTime)
+        public void Update(GameTime gametime)
         {
             if (!Visible)
                 return;
@@ -253,7 +295,7 @@ namespace DinaFramework.Menus
             foreach (var element in _elements)
             {
                 if (element is IUpdate update)
-                    update.Update(gameTime);
+                    update.Update(gametime);
             }
         }
         public void Draw(SpriteBatch spritebatch)

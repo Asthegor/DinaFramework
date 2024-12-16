@@ -21,7 +21,7 @@ namespace DinaFramework.Interfaces
     }
     public interface IUpdate
     {
-        public abstract void Update(GameTime gameTime);
+        public abstract void Update(GameTime gametime);
     }
     public interface IDraw
     {
