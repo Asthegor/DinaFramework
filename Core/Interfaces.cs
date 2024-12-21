@@ -79,4 +79,8 @@ namespace DinaFramework.Interfaces
     {
         public abstract T Copy();
     }
+    public interface ILocked
+    {
+        public abstract bool Locked { get; set; }
+    }
 }

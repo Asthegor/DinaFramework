@@ -9,7 +9,7 @@ using System;
 
 namespace DinaFramework.Graphics
 {
-    public class Button : Base, IUpdate, IDraw, IPosition, ICopyable<Button>
+    public class Button : Base, IUpdate, IDraw, IPosition, ICopyable<Button>, ILocked
     {
         Text _text;
         Panel _background;
@@ -124,7 +124,6 @@ namespace DinaFramework.Graphics
                 _background.BackgroundColor = _lockedColor;
 
             _background?.Draw(spritebatch);
-            _text?.Draw(spritebatch);
 
             if (Locked)
             {
@@ -133,6 +132,7 @@ namespace DinaFramework.Graphics
                     _background.BackgroundColor = backupColor;
             }
 
+            _text?.Draw(spritebatch);
         }
         public void SetBackground(Texture2D backgroundimg)
         {

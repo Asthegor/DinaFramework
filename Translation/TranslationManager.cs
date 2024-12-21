@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 
 namespace DinaFramework.Translation
@@ -10,12 +12,15 @@ namespace DinaFramework.Translation
     public static class TranslationManager
     {
         private readonly static List<Type> _listStrings = new List<Type>();
+        private static string[] _availableLanguages;
         private static bool _loaded;
         private static bool _updated;
         public static bool IsLoaded() => _loaded;
         public static bool IsUpdated() => _updated;
         public static void SetValues(Type valueClass)
         {
+            ArgumentNullException.ThrowIfNull(valueClass, nameof(valueClass));
+
             _listStrings.Add(valueClass);
 
             _loaded = true;
@@ -44,6 +49,9 @@ namespace DinaFramework.Translation
                 _updated = true;
             }
         }
+
+        public static string[] GetAvailableLanguages() { return _availableLanguages; }
+
         public static string GetTranslation(string key)
         {
             if (_listStrings.Count == 0)
@@ -66,8 +74,8 @@ namespace DinaFramework.Translation
 
             bool found = false;
             string res = key;
-            
-            CultureInfo ciCurrentCulture = CultureInfo.CurrentCulture;
+
+            string previouslanguage = CurrentLanguage;
 
             CultureInfo.CurrentCulture = new CultureInfo(culture);
             foreach (var strings in _listStrings)
@@ -84,7 +92,8 @@ namespace DinaFramework.Translation
                 if (found)
                     break;
             }
-            CultureInfo.CurrentCulture = ciCurrentCulture;
+            CurrentLanguage = previouslanguage;
+
             return res;
         }
 
@@ -118,6 +127,41 @@ namespace DinaFramework.Translation
 
             return cultures;
         }
+        public static Vector2 GetTranslationMaxLength(string key, SpriteFont font)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(key);
+            ArgumentNullException.ThrowIfNull(font);
 
+            CheckAvailableLanguages();
+
+            Vector2 maxlength = Vector2.Zero;
+
+            foreach (string language in _availableLanguages)
+            {
+                string translation = GetTranslation(key, language);
+
+                Vector2 length = font.MeasureString(translation);
+
+                if (maxlength.X < length.X)
+                    maxlength.X = length.X;
+                if (maxlength.Y < length.Y)
+                    maxlength.Y = length.Y;
+            }
+            return maxlength;
+        }
+
+        private static void CheckAvailableLanguages()
+        {
+            if (_availableLanguages == null || _availableLanguages.Length == 0)
+                _availableLanguages = ["en"];
+        }
+
+        public static void SetAvailableLanguages(params string[] languages)
+        {
+            if (languages == null || languages.Length == 0)
+                languages = ["en"];
+
+            _availableLanguages = languages;
+        }
     }
 }

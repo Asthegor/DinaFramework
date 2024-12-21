@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace DinaFramework.Graphics
 {
-    public class InputText : IUpdate, IDraw, IVisible
+    public class InputText : IUpdate, IDraw, IVisible, IElement
     {
         private const float DELAY_KEY_STROKE = 0.5f;
         private const float REPEAT_INTERVAL = 0.25f;  // Intervalle entre les répétitions
@@ -22,7 +22,7 @@ namespace DinaFramework.Graphics
         private Text _cursor;
         private bool _visible;
         private bool _isActive;
-        
+
         private bool _onlyDigit;
 
         private MouseState _oldMouseState;
@@ -65,32 +65,19 @@ namespace DinaFramework.Graphics
             _keyTimers = new Dictionary<Keys, float>();
             _isActive = false;
         }
-        public string Content
-        {
-            get => _text.Content;
-            set => _text.Content = value;
-        }
-        public Color BackgroundColor
-        {
-            get => _panel.BackgroundColor;
-            set => _panel.BackgroundColor = value;
-        }
-        public Color Color
-        {
-            get => _text.Color;
-            set => _text.Color = value;
-        }
-        public Color BorderColor
-        {
-            get => _panel.BorderColor;
-            set => _panel.BorderColor = value;
-        }
+        public string Content { get => _text.Content; set => _text.Content = value; }
+        public Color BackgroundColor { get => _panel.BackgroundColor; set => _panel.BackgroundColor = value; }
+        public Color Color { get => _text.Color; set => _text.Color = value; }
+        public Color BorderColor { get => _panel.BorderColor; set => _panel.BorderColor = value; }
+        public Vector2 Position { get => _inputTextGroup.Position; set => _inputTextGroup.Position = value; }
+        public Vector2 Dimensions { get => _inputTextGroup.Dimensions; set => _inputTextGroup.Dimensions = value; }
+        public int ZOrder { get => _inputTextGroup.ZOrder; set => _inputTextGroup.ZOrder = value; }
 
         public void Update(GameTime gametime)
         {
             MouseState mouseState = Mouse.GetState();
             KeyboardState _keyboardState = Keyboard.GetState();
-            
+
             double elapsedTime = gametime.ElapsedGameTime.TotalSeconds;
 
             _inputTextGroup?.Update(gametime);
@@ -113,7 +100,7 @@ namespace DinaFramework.Graphics
 
             if (_isActive)
             {
-                
+
                 foreach (Keys key in Enum.GetValues<Keys>())
                 {
                     bool isKeyPressed = _keyboardState.IsKeyDown(key);

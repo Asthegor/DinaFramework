@@ -9,37 +9,39 @@ using System;
 
 namespace DinaFramework.Graphics
 {
-    public class CheckBox : Base, IUpdate, IDraw, IVisible, ICopyable<CheckBox>
+    public enum CheckBoxState { Unchecked, Checked };
+    public class CheckBox : Base, IUpdate, IDraw, IVisible, ICopyable<CheckBox>, ILocked
     {
         private Rectangle _checkBoxRect;
-        private bool _isChecked;
         private bool _useTextures;
         private Texture2D _checkedTexture;
         private Texture2D _uncheckedTexture;
         private Color _checkedColor;
         private Color _uncheckedColor;
-        private Text _label;
         private static Texture2D _pixelTexture;
-        private bool _visible;
+        private MouseState _oldMouseState;
 
-        public CheckBox(Color checkedColor, Color uncheckedColor, Vector2 position, Vector2 dimensions, SpriteFont font, string label, int zorder = 0) : base(position, dimensions, zorder)
+        public CheckBox(Color checkedColor, Color uncheckedColor, Vector2 position, Vector2 dimensions, int zorder = 0) :
+            base(position, dimensions, zorder)
         {
             _checkedColor = checkedColor;
             _uncheckedColor = uncheckedColor;
-            IsChecked = false;
             Position = position;
-            _label = new Text(font, label, Color.White);
-            _label.Position = Position + new Vector2(15, 0);
+            Initialize();
         }
-        public CheckBox(Texture2D uncheckedTexture, Texture2D checkedTexture, Vector2 position, Vector2 dimensions, SpriteFont font, string label, int zorder = 0) : base(position, dimensions, zorder)
+        public CheckBox(Texture2D uncheckedTexture, Texture2D checkedTexture, Vector2 position, Vector2 dimensions, int zorder = 0) :
+            base(position, dimensions, zorder)
         {
             _uncheckedTexture = uncheckedTexture;
             _checkedTexture = checkedTexture;
             _useTextures = true;
-            _isChecked = false;
             Position = position;
-            _label = new Text(font, label, Color.White);
-            _label.Position = Position + new Vector2(15, 0);
+            Initialize();
+        }
+        private void Initialize()
+        {
+            Visible = true;
+            State = CheckBoxState.Unchecked;
         }
         public override Vector2 Position
         {
@@ -52,13 +54,7 @@ namespace DinaFramework.Graphics
         }
         public override Vector2 Dimensions
         {
-            get
-            {
-                Vector2 dim = base.Dimensions + new Vector2(15, 0);
-                dim.X += _label.TextDimensions.X;
-                dim.Y = Math.Max(dim.Y, _label.TextDimensions.Y);
-                return dim;
-            }
+            get => base.Dimensions;
             set
             {
                 base.Dimensions = value;
@@ -66,18 +62,27 @@ namespace DinaFramework.Graphics
             }
         }
 
-        public bool IsChecked { get => _isChecked; set => _isChecked = value; }
-        public bool Visible { get => _visible; set => _visible = value; }
+        public bool Visible { get; set; }
+        public bool Locked { get; set; }
+        public CheckBoxState State { get; set; }
 
         public void Update(GameTime gametime)
         {
-            if (Mouse.GetState().LeftButton == ButtonState.Pressed)
+            MouseState ms = Mouse.GetState();
+            if (!Locked)
             {
-                Point mousePosition = new Point(Mouse.GetState().X, Mouse.GetState().Y);
-
-                if (_checkBoxRect.Contains(mousePosition))
-                    IsChecked = !IsChecked;
+                if (_oldMouseState.LeftButton == ButtonState.Pressed && ms.LeftButton == ButtonState.Released)
+                {
+                    if (_checkBoxRect.Contains(new Point(ms.X, ms.Y)))
+                    {
+                        if (State == CheckBoxState.Checked)
+                            State = CheckBoxState.Unchecked;
+                        else
+                            State = CheckBoxState.Checked;
+                    }
+                }
             }
+            _oldMouseState = ms;
         }
         public void Draw(SpriteBatch spritebatch)
         {
@@ -85,22 +90,25 @@ namespace DinaFramework.Graphics
 
             if (Visible)
             {
+                float ratio = 1;
+                if (Locked)
+                    ratio = 0.75f;
                 if (_useTextures)
                 {
-                    if (IsChecked)
-                        spritebatch.Draw(_checkedTexture, _checkBoxRect, Color.White);
+                    if (State == CheckBoxState.Checked)
+                        spritebatch.Draw(_checkedTexture, _checkBoxRect, Color.White * ratio);
                     else
                     {
-                        spritebatch.Draw(_uncheckedTexture, _checkBoxRect, Color.White);
+                        spritebatch.Draw(_uncheckedTexture, _checkBoxRect, Color.White * ratio);
                     }
                 }
                 else
                 {
                     // Dessine un rectangle non plein
-                    if (IsChecked)
-                        DrawRectangle(spritebatch, _checkBoxRect, _checkedColor, isFilled: true);
+                    if (State == CheckBoxState.Checked)
+                        DrawRectangle(spritebatch, _checkBoxRect, _checkedColor * ratio, isFilled: true);
                     else
-                        DrawRectangle(spritebatch, _checkBoxRect, _uncheckedColor, isFilled: false);
+                        DrawRectangle(spritebatch, _checkBoxRect, _uncheckedColor * ratio, isFilled: false);
                 }
             }
         }
@@ -132,17 +140,15 @@ namespace DinaFramework.Graphics
                 _checkBoxRect = _checkBoxRect,
                 _checkedColor = _checkedColor,
                 _checkedTexture = _checkedTexture,
-                _isChecked = _isChecked,
-                _label = _label?.Copy(),
                 _uncheckedColor = _uncheckedColor,
                 _uncheckedTexture = _uncheckedTexture,
                 _useTextures = _useTextures,
-                _visible = _visible,
                 Dimensions = Dimensions,
-                IsChecked = IsChecked,
                 Position = Position,
+                State = State,
                 Visible = Visible,
                 ZOrder = ZOrder,
+                Locked = Locked,
             };
         }
         private CheckBox() { }
