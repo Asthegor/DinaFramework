@@ -37,11 +37,11 @@ namespace DinaFramework.Graphics
             _onHover = onHover;
             _text.Position = Position + (Dimensions - _text.TextDimensions) / 2;
             _background = new Panel(Position, Dimensions, Color.Transparent);
+            _lockedColor = Color.Transparent;
         }
         public Button(Vector2 position, Vector2 dimensions, SpriteFont font, string content, Color textColor, Texture2D backgroundimage, Action action, Vector2 margin = default, Func<Button, Button> onHover = null)
-            : this(position, dimensions, font, content, textColor, action, margin)
+            : this(position, dimensions, font, content, textColor, action, margin, onHover)
         {
-            _onHover = onHover;
             _background = new Panel(Position, Dimensions, backgroundimage, 0);
         }
         public Button(Vector2 position, Texture2D backgroundimage, Action action, Func<Button, Button> onHover = null)
@@ -54,6 +54,7 @@ namespace DinaFramework.Graphics
             _action = action;
             _onHover = onHover;
             _background = new Panel(Position, Dimensions, backgroundimage, 0);
+            _lockedColor = Color.Transparent;
 
         }
         public Action Action { get => _action; set => _action = value; }
@@ -120,7 +121,7 @@ namespace DinaFramework.Graphics
             if (_background != null)
                 backupColor = _background.BackgroundColor;
 
-            if (Locked)
+            if (Locked && _lockedColor != Color.Transparent)
                 _background.BackgroundColor = _lockedColor;
 
             _background?.Draw(spritebatch);
