@@ -75,9 +75,8 @@ namespace DinaFramework.Scenes
                     File.AppendAllText(fileFullname, encryptString);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OutOfMemoryException || ex is StackOverflowException))
             {
-                Console.WriteLine(ex.Message);
                 return false;
             }
         }
