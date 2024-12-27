@@ -56,7 +56,7 @@ namespace DinaFramework.Scenes
                 string encryptString = File.ReadAllText(filePath);
                 if (string.IsNullOrEmpty(encryptString))
                     return default;
-                string jsonString = DLACryptographie.EncryptDecrypt.Decrypt(encryptString);
+                string jsonString = DLACryptographie.EncryptDecrypt.DecryptText(encryptString);
                 return JsonSerializer.Deserialize<T>(jsonString, _jsonOptions);
             }
 
@@ -67,7 +67,7 @@ namespace DinaFramework.Scenes
             try
             {
                 string jsonString = JsonSerializer.Serialize(obj, _jsonOptions);
-                string encryptString = DLACryptographie.EncryptDecrypt.Encrypt(jsonString);
+                string encryptString = DLACryptographie.EncryptDecrypt.EncryptText(jsonString);
 
                 if (overwritten)
                     File.WriteAllText(fileFullname, encryptString);
@@ -103,7 +103,7 @@ namespace DinaFramework.Scenes
                 spritebatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
                 if (!_currentSceneLoaded)
                     _loadingScreen?.Draw(spritebatch);
-                else if (_currentScene != null && _currentScene.Loaded)
+                else if (_currentScene != null && _currentSceneLoaded == true && _currentScene.Loaded)
                     _currentScene.Draw(spritebatch);
                 spritebatch.End();
             }
@@ -173,6 +173,7 @@ namespace DinaFramework.Scenes
                     {
                         _currentScene.Reset();
                         _currentSceneLoaded = true;
+                        _currentScene.Visible = true;
                     }).ConfigureAwait(false);
             }
             else

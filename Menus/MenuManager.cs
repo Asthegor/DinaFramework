@@ -127,7 +127,7 @@ namespace DinaFramework.Menus
             {
                 if (title is IElement titleElement)
                 {
-                    Vector2 titleTextDim = titleElement.Dimensions;
+                    Vector2 titleTextDim = (titleElement is IText titleText) ? titleText.TextDimensions : titleElement.Dimensions;
                     Vector2 titlePos = titleElement.Position;
                     titlePos.X = (screendimensions.X - titleTextDim.X) / 2.0f;
                     titleElement.Position = titlePos;
@@ -349,12 +349,21 @@ namespace DinaFramework.Menus
             // Désélection de l'ancien item
             if (_currentitemindex >= 0 && _currentitemindex < _items.Count)
                 _items[_currentitemindex].Deselection?.Invoke(_items[_currentitemindex]);
+
+            int startindex = _currentitemindex;
             // Changement de l'index de l'item
-            _currentitemindex += offset;
-            if (_currentitemindex >= _items.Count)
-                _currentitemindex = 0;
-            else if (_currentitemindex < 0)
-                _currentitemindex = _items.Count - 1;
+            do
+            {
+                _currentitemindex += offset;
+                if (_currentitemindex >= _items.Count)
+                    _currentitemindex = 0;
+                else if (_currentitemindex < 0)
+                    _currentitemindex = _items.Count - 1;
+                if (_currentitemindex == startindex)
+                    break;
+            }
+            while (_items[_currentitemindex].State == MenuItemState.Disable);
+
             // Sélection du nouvel item
             _items[_currentitemindex].Selection?.Invoke(_items[_currentitemindex]);
         }
@@ -396,6 +405,9 @@ namespace DinaFramework.Menus
             {
                 foreach (MenuItem item in _items)
                 {
+                    if (item.State == MenuItemState.Disable)
+                        continue;
+
                     Rectangle rect = new Rectangle(item.Position.ToPoint(), item.Dimensions.ToPoint());
                     if (_oldMouseState.Position != ms.Position && rect.Intersects(new Rectangle(new Point(ms.X, ms.Y), Point.Zero)))
                     {

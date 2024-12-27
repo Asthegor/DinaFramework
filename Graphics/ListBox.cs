@@ -30,6 +30,8 @@ namespace DinaFramework.Graphics
         private int _nbVisibleItems;
         private int _startIndex;
 
+        private Color _defaultSelectionColor;
+
         public ListBox(List<IElement> items, Vector2 position = default, int nbvisibleelements = -1)
         {
             ArgumentNullException.ThrowIfNull(items);
@@ -37,6 +39,8 @@ namespace DinaFramework.Graphics
 
             _selectedItem = null;
             _startIndex = 0;
+
+            _defaultSelectionColor = Color.White * 0.65f;
 
             _nbVisibleItems = nbvisibleelements <= 0 ? items.Count : nbvisibleelements;
 
@@ -108,7 +112,18 @@ namespace DinaFramework.Graphics
                     t.Dimensions = new Vector2(t.Dimensions.X, t.Dimensions.Y + offset.Y);
             }
         }
-        public int Value => _elements.IndexOf(_selectedItem);
+        public int Value
+        {
+            get => _elements.IndexOf(_selectedItem);
+            set
+            {
+                _selectedItem = (value < 0 || value >= _elements.Count) ? null : _selectedItem = _elements[value];
+
+                int selectedIndex = _listVisibleItems.IndexOf(_selectedItem);
+                for (int index = 0; index < _listPanels.Count; index++)
+                    _listPanels[index].BackgroundColor = (index == selectedIndex) ? _defaultSelectionColor : Color.Transparent;
+            }
+        }
 
         public void Update(GameTime gametime)
         {
@@ -125,7 +140,7 @@ namespace DinaFramework.Graphics
                         _listPanels[previousIndex].BackgroundColor = Color.Transparent;
                     }
 
-                    p.BackgroundColor = Color.White * 0.65f;
+                    p.BackgroundColor = _defaultSelectionColor;
                     _selectedItem = _listVisibleItems[index];
                 }
             }

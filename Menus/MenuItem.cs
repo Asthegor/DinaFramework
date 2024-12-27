@@ -10,6 +10,7 @@ using System;
 
 namespace DinaFramework.Menus
 {
+    public enum MenuItemState { Enable, Disable }
     public class MenuItem : IDraw, IPosition, IDimensions, IElement, IVisible, IColor
     {
         private bool _visible;
@@ -32,6 +33,8 @@ namespace DinaFramework.Menus
             get { return _activation; }
             set { _activation = value; }
         }
+
+        public MenuItemState State { get; set; }
 
         public Vector2 Position
         {
@@ -155,14 +158,42 @@ namespace DinaFramework.Menus
             Deselection = deselection;
             Activation = activation;
             Visible = true;
+            State = MenuItemState.Enable;
         }
+        //public void Draw(SpriteBatch spritebatch)
+        //{
+        //    if (_visible)
+        //    {
+        //        Color previousColor = Color.White;
+        //        if (_item is IColor colorItem)
+        //        {
+        //            previousColor = colorItem.Color;
+        //            if (State == MenuItemState.Disable)
+        //                colorItem.Color = Color.DarkGray;
+        //        }
+
+        //        if (_item is IDraw item)
+        //            item.Draw(spritebatch);
+
+        //        if (_item is IColor colorItem2)
+        //            colorItem2.Color = previousColor;
+        //    }
+        //}
         public void Draw(SpriteBatch spritebatch)
         {
-            if (_visible)
-            {
-                if (_item is IDraw item)
-                    item.Draw(spritebatch);
-            }
+            if (!_visible || _item is not IDraw drawableItem)
+                return;
+
+            IColor colorItem = _item as IColor;
+            Color? originalColor = colorItem?.Color;
+
+            if (colorItem != null && State == MenuItemState.Disable)
+                colorItem.Color = Color.DarkGray;
+
+            drawableItem.Draw(spritebatch);
+
+            if (colorItem != null && originalColor.HasValue)
+                colorItem.Color = originalColor.Value;
         }
     }
 }

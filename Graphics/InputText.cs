@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace DinaFramework.Graphics
 {
-    public class InputText : IUpdate, IDraw, IVisible, IElement
+    public class InputText : IUpdate, IDraw, IVisible, IElement, IColor
     {
         private const float DELAY_KEY_STROKE = 0.5f;
         private const float REPEAT_INTERVAL = 0.25f;  // Intervalle entre les répétitions
