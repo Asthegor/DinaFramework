@@ -35,38 +35,7 @@ DinaFramework est un framework développé à partir de [MonoGame](https://githu
 
 1. Ajoutez le projet `DinaFramework` à votre solution.
 2. Ajoutez une référence au projet `DinaFramework` dans votre projet de jeu.
-3. Dans votre classe qui hérite de `Game`, rajouter les informations suivantes :
-
-   a. Une nouvelle variable pour contenir le gestionnaire de scène :
-   ```csharp
-   private SceneManager _sceneManager;
-   ```
-   b. Dans la fonction `Initialize`, rajoutez la ligne suivante
-   pour initialiser le gestionnaire de scène :
-   ```csharp
-   _sceneManager = SceneManager.GetInstance(this);
-   ```
-   c. Dans la fonction `LoadContent`, rajoutez les lignes suivantes :
-   ```csharp
-   // Ajoutez toutes les scènes que vous pourrez afficher.
-   // INFO : La scène ne sera chargée (Load) que lorsqu'elle sera la scène courante.
-   _sceneManager.AddScene("MainMenu", typeof(MainMenu));
-
-   // Définissez la scène de départ de votre jeu
-   _sceneManager.SetCurrentScene("MainMenu");
-   ```
-   d. Rajoutez la ligne suivante dans la fonction `Update` :
-   ```csharp
-   _sceneManager.Update(gameTime);
-   ```
-   e. Rajoutez la ligne suivante dans la fonction `Draw` :
-   ```csharp
-   _sceneManager.Draw(_spriteBatch);
-   ```
-   Avec ces quelques lignes, chacune de vos scènes seront indépendantes les unes des autres.
-   Pour plus d'informations, se référer à la documentation.
-
-5. Vous n'avez plus qu'à utiliser les fonctionnalités du framework lors du développement de votre jeu.
+3. Vous n'avez plus qu'à utiliser les fonctionnalités du framework lors du développement de votre jeu.
 
 ## Documentation
 
