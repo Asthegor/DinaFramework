@@ -7,6 +7,8 @@ using System.Runtime.CompilerServices;
 
 namespace DinaFramework.Interfaces
 {
+    public interface IGameObject : ILoad, IReset, IUpdate, IDraw
+    {}
     public interface IElement : IPosition, IDimensions, IZOrder
     {}
     public interface IZOrder
@@ -15,11 +17,11 @@ namespace DinaFramework.Interfaces
     }
     public interface ILoad
     {
-        public abstract void Load(ContentManager content);
+        public abstract void Load();
     }
     public interface IUpdate
     {
-        public abstract void Update(GameTime gameTime);
+        public abstract void Update(GameTime gametime);
     }
     public interface IDraw
     {
@@ -37,11 +39,11 @@ namespace DinaFramework.Interfaces
     {
         public abstract Vector2 Dimensions { get; set; }
     }
-    public interface IValue
+    public interface IResource
     {
-        public abstract void AddValue(string name, Object value);
-        public abstract T GetValue<T>(string name);
-        public abstract void RemoveValue(string name);
+        public abstract void AddResource<T>(string resourceName, T resource);
+        public abstract T GetResource<T>(string resourceName);
+        public abstract void RemoveResource(string resourceName);
     }
     public interface IColor
     {
@@ -67,5 +69,18 @@ namespace DinaFramework.Interfaces
     public interface IText : IPosition, IDimensions
     {
         public abstract Vector2 TextDimensions { get; }
+    }
+    public interface ILoadingScreen
+    {
+        public abstract float Progress { get; set; }
+        public abstract string Text { get; set; }
+    }
+    public interface ICopyable<T>
+    {
+        public abstract T Copy();
+    }
+    public interface ILocked
+    {
+        public abstract bool Locked { get; set; }
     }
 }

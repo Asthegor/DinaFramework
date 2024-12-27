@@ -1,24 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <SignAssembly>False</SignAssembly>
     <Authors>Dominique LACOMBE</Authors>
     <AnalysisLevel>latest-all</AnalysisLevel>
     <Title>DinaFramework</Title>
-    <Description>DinaFramework est un framework développé à partir de MonoGame.</Description>
+    <Description>DinaFramework est un framework développé par Dominique LACOMBE et réalisé à partir de MonoGame.</Description>
     <NeutralLanguage>en-US</NeutralLanguage>
+    <OutputPath>$(SolutionDir)Build\$(Configuration)\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.303">
+    <Compile Remove="Documentation\**" />
+    <EmbeddedResource Remove="Documentation\**" />
+    <None Remove="Documentation\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.2.1105">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="System.Resources.ResourceManager" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="DLACrypto">
-      <HintPath>..\DLACrypto\bin\Release\DLACrypto.dll</HintPath>
-      <Private>True</Private>
+      <HintPath>DLACrypto.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -35,6 +39,8 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Core\Sounds\" />
+    <None Update="DLACrypto.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>

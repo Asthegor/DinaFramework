@@ -1,4 +1,5 @@
-﻿using DinaFramework.Interfaces;
+﻿using DinaFramework.Core;
+using DinaFramework.Interfaces;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -8,12 +9,12 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 
-namespace DinaFramework.Core.Fixed
+namespace DinaFramework.Graphics
 {
-    public class Panel : Base, IDraw, IVisible, IUpdate, IClickable
+    public class Panel : Base, IClickable, IColor, IDraw, IUpdate, IVisible, ICopyable<Panel>
     {
-        private readonly List<Texture2D> _images = new List<Texture2D>();
-        private readonly List<Vector2> _positions = new List<Vector2>();
+        private List<Vector2> _positions = new List<Vector2>();
+        private List<Texture2D> _images = new List<Texture2D>();
         private Texture2D _texture;
         private Rectangle _rectangleBackground;
         private Rectangle _rectangleBorder;
@@ -21,27 +22,35 @@ namespace DinaFramework.Core.Fixed
         private Color _borderColor;
         private bool _visible;
         private MouseState _oldMouseState;
-        bool _clicked;
-
-        public Panel(Vector2 position, Vector2 dimensions, Color backgroundcolor, int zorder = 0) : base(position, dimensions, zorder)
+        private bool _clicked;
+        private bool _hover;
+        private Panel() { } // ne sert qu'à la copie d'une instance
+        public Panel(Vector2 position, Vector2 dimensions, Color backgroundcolor, int zorder = 0) : 
+            base(position, dimensions, zorder)
         {
             BackgroundColor = backgroundcolor;
             BorderColor = backgroundcolor;
             Thickness = 0;
             CheckVisibility();
         }
-        public Panel(Vector2 position, Vector2 dimensions, Color backgroundcolor, Color bordercolor, int thickness, int zorder = 0) : this(position, dimensions, backgroundcolor, zorder)
+        public Panel(Vector2 position, Vector2 dimensions, Color backgroundcolor, Color bordercolor, int thickness, int zorder = 0) :
+            this(position, dimensions, backgroundcolor, zorder)
         {
             BorderColor = bordercolor;
             Thickness = thickness;
+            CheckVisibility();
         }
-        public Panel(Vector2 position, Vector2 dimensions, Texture2D image, int borderThickness, int zorder = 0) : base(position, dimensions, zorder)
+        public Panel(Vector2 position, Vector2 dimensions, Texture2D image, int borderThickness, int zorder = 0) : 
+            base(position, dimensions, zorder)
         {
             ArgumentNullException.ThrowIfNull(image);
 
+            BackgroundColor = Color.White;
             _images.Add(image);
             _positions.Add(position);
             _thickness = borderThickness;
+            if (Dimensions == default)
+                Dimensions = new Vector2(image.Width, image.Height);
             CheckVisibility();
         }
         public Panel(Vector2 position, Vector2 dimensions, Texture2D cornerTopLeft, Texture2D top, Texture2D cornerTopRight, Texture2D right, Texture2D cornerBottomRight, Texture2D bottom, Texture2D cornerBottomLeft, Texture2D left, Texture2D center, int zorder = 0) : base(position, dimensions, zorder)
@@ -56,6 +65,7 @@ namespace DinaFramework.Core.Fixed
             ArgumentNullException.ThrowIfNull(left);
             ArgumentNullException.ThrowIfNull(center);
 
+            BackgroundColor = Color.White;
             _images.Add(cornerTopLeft);
             _positions.Add(position);
 
@@ -150,6 +160,12 @@ namespace DinaFramework.Core.Fixed
             get { return _visible; }
             set { _visible = value; }
         }
+
+        public Color Color
+        {
+            get { return BackgroundColor; }
+            set { BackgroundColor = value; }
+        }
         public void Draw(SpriteBatch spritebatch)
         {
             ArgumentNullException.ThrowIfNull(spritebatch);
@@ -159,11 +175,8 @@ namespace DinaFramework.Core.Fixed
                 switch (_images.Count)
                 {
                     case 0:
-                        if (_texture == null)
-                        {
-                            _texture = new Texture2D(spritebatch.GraphicsDevice, 1, 1);
-                            _texture.SetData(new[] { Color.White });
-                        }
+                        _texture ??= new Texture2D(spritebatch.GraphicsDevice, 1, 1);
+                        _texture.SetData(new[] { Color.White });
                         if (_thickness > 0 && BorderColor != BackgroundColor)
                             spritebatch.Draw(_texture, _rectangleBorder, null, BorderColor);
                         spritebatch.Draw(_texture, _rectangleBackground, null, BackgroundColor);
@@ -174,7 +187,7 @@ namespace DinaFramework.Core.Fixed
                             spritebatch.Draw(_images[0],
                                              new Rectangle(Convert.ToInt32(_positions[0].X), Convert.ToInt32(_positions[0].Y), Convert.ToInt32(Dimensions.X), Convert.ToInt32(Dimensions.Y)),
                                              new Rectangle(0, 0, _images[0].Width, _images[0].Height),
-                                             Color.White);
+                                             BackgroundColor);
                         }
                         else
                         {
@@ -182,53 +195,53 @@ namespace DinaFramework.Core.Fixed
                             spritebatch.Draw(_images[0],
                                              new Rectangle(Convert.ToInt32(_positions[0].X), Convert.ToInt32(_positions[0].Y), _thickness, _thickness),
                                              new Rectangle(0, 0, _thickness, _thickness),
-                                             Color.White);
+                                             BackgroundColor);
                             // Top
                             spritebatch.Draw(_images[0],
                                              new Rectangle(Convert.ToInt32(_positions[0].X + _thickness), Convert.ToInt32(_positions[0].Y), Convert.ToInt32(Dimensions.X - _thickness * 2.0f), _thickness),
                                              new Rectangle(_thickness, 0, _images[0].Width - _thickness * 2, _thickness),
-                                             Color.White);
+                                             BackgroundColor);
                             // Corner Top Right
                             spritebatch.Draw(_images[0],
                                              new Rectangle(Convert.ToInt32(_positions[0].X + Dimensions.X - _thickness), Convert.ToInt32(_positions[0].Y), _thickness, _thickness),
                                              new Rectangle(_images[0].Width - _thickness, 0, _thickness, _thickness),
-                                             Color.White);
+                                             BackgroundColor);
                             // Right
                             spritebatch.Draw(_images[0],
                                              new Rectangle(Convert.ToInt32(_positions[0].X + Dimensions.X - _thickness), Convert.ToInt32(_positions[0].Y + _thickness), _thickness, Convert.ToInt32(Dimensions.Y - _thickness * 2.0f)),
                                              new Rectangle(_images[0].Width - _thickness, _thickness, _thickness, _images[0].Height - _thickness * 2),
-                                             Color.White);
+                                             BackgroundColor);
                             // Corner Bottom Right
                             spritebatch.Draw(_images[0],
                                              new Rectangle(Convert.ToInt32(_positions[0].X + Dimensions.X - _thickness), Convert.ToInt32(_positions[0].Y + Dimensions.Y - _thickness), _thickness, _thickness),
                                              new Rectangle(_images[0].Width - _thickness, _images[0].Height - _thickness, _thickness, _thickness),
-                                             Color.White);
+                                             BackgroundColor);
                             // Bottom
                             spritebatch.Draw(_images[0],
                                              new Rectangle(Convert.ToInt32(_positions[0].X + _thickness), Convert.ToInt32(_positions[0].Y + Dimensions.Y - _thickness), Convert.ToInt32(Dimensions.X - _thickness * 2.0f), _thickness),
                                              new Rectangle(_thickness, _images[0].Height - _thickness, _images[0].Width - _thickness * 2, _thickness),
-                                             Color.White);
+                                             BackgroundColor);
                             // Corner Bottom Left
                             spritebatch.Draw(_images[0],
                                              new Rectangle(Convert.ToInt32(_positions[0].X), Convert.ToInt32(_positions[0].Y + Dimensions.Y - _thickness), _thickness, _thickness),
                                              new Rectangle(0, _images[0].Height - _thickness, _thickness, _thickness),
-                                             Color.White);
+                                             BackgroundColor);
                             // Left
                             spritebatch.Draw(_images[0],
                                              new Rectangle(Convert.ToInt32(_positions[0].X), Convert.ToInt32(_positions[0].Y + _thickness), _thickness, Convert.ToInt32(Dimensions.Y - _thickness * 2.0f)),
                                              new Rectangle(0, _thickness, _thickness, _images[0].Height - _thickness * 2),
-                                             Color.White);
+                                             BackgroundColor);
                             // Center
                             spritebatch.Draw(_images[0],
                                              new Rectangle(Convert.ToInt32(_positions[0].X + _thickness), Convert.ToInt32(_positions[0].Y + _thickness), Convert.ToInt32(Dimensions.X - _thickness * 2.0f), Convert.ToInt32(Dimensions.Y - _thickness * 2.0f)),
                                              new Rectangle(_thickness, _thickness, _images[0].Width - _thickness * 2, _images[0].Height - _thickness * 2),
-                                             Color.White);
+                                             BackgroundColor);
 
                         }
                         break;
                     case 9:
                         // Corner Top Left
-                        spritebatch.Draw(_images[0], _positions[0], Color.White);
+                        spritebatch.Draw(_images[0], _positions[0], BackgroundColor);
                         // Top
                         spritebatch.Draw(_images[1],
                                          new Rectangle(Convert.ToInt32(_positions[1].X),
@@ -236,9 +249,9 @@ namespace DinaFramework.Core.Fixed
                                                        Convert.ToInt32(Dimensions.X - _images[0].Width - _images[2].Width),
                                                        _images[1].Height),
                                          new Rectangle(0, 0, _images[1].Width, _images[1].Height),
-                                         Color.White);
+                                         BackgroundColor);
                         // Corner Top Right
-                        spritebatch.Draw(_images[2], _positions[2], Color.White);
+                        spritebatch.Draw(_images[2], _positions[2], BackgroundColor);
                         // Right
                         spritebatch.Draw(_images[3],
                                          new Rectangle(Convert.ToInt32(_positions[3].X),
@@ -246,9 +259,9 @@ namespace DinaFramework.Core.Fixed
                                                        Convert.ToInt32(_images[3].Width),
                                                        Convert.ToInt32(Dimensions.Y - _images[2].Height - _images[4].Height)),
                                          new Rectangle(0, 0, _images[3].Width, _images[3].Height),
-                                         Color.White);
+                                         BackgroundColor);
                         // Corner Bottom Right
-                        spritebatch.Draw(_images[4], _positions[4], Color.White);
+                        spritebatch.Draw(_images[4], _positions[4], BackgroundColor);
                         // Bottom
                         spritebatch.Draw(_images[5],
                                          new Rectangle(Convert.ToInt32(_positions[5].X),
@@ -256,9 +269,9 @@ namespace DinaFramework.Core.Fixed
                                                        Convert.ToInt32(Dimensions.X - _images[4].Width - _images[6].Width),
                                                        _images[5].Height),
                                          new Rectangle(0, 0, _images[5].Width, _images[5].Height),
-                                         Color.White);
+                                         BackgroundColor);
                         // Corner Bottom Left
-                        spritebatch.Draw(_images[6], _positions[6], Color.White);
+                        spritebatch.Draw(_images[6], _positions[6], BackgroundColor);
                         // Left
                         spritebatch.Draw(_images[7],
                                          new Rectangle(Convert.ToInt32(_positions[7].X),
@@ -266,7 +279,7 @@ namespace DinaFramework.Core.Fixed
                                                        Convert.ToInt32(_images[7].Width),
                                                        Convert.ToInt32(Dimensions.Y - _images[0].Height - _images[6].Height)),
                                          new Rectangle(0, 0, _images[7].Width, _images[7].Height),
-                                         Color.White);
+                                         BackgroundColor);
                         // Center
                         spritebatch.Draw(_images[8],
                                          new Rectangle(Convert.ToInt32(_positions[8].X),
@@ -274,10 +287,10 @@ namespace DinaFramework.Core.Fixed
                                                        Convert.ToInt32(Dimensions.X - _images[0].Width - _images[2].Width),
                                                        Convert.ToInt32(Dimensions.Y - _images[0].Height - _images[6].Height)),
                                          new Rectangle(0, 0, _images[8].Width, _images[8].Height),
-                                         Color.White);
+                                         BackgroundColor);
                         break;
                     default:
-                        throw new InvalidEnumArgumentException("Images missing for the panel.");
+                        throw new InvalidEnumArgumentException("Images missing for the obj.");
                 }
             }
         }
@@ -287,22 +300,50 @@ namespace DinaFramework.Core.Fixed
             _texture.Dispose();
         }
 
-        public void Update(GameTime gameTime)
+        public void Update(GameTime gametime)
         {
             MouseState mouseState = Mouse.GetState();
             _clicked = false;
-            if (_oldMouseState.LeftButton == ButtonState.Released && mouseState.LeftButton == ButtonState.Pressed)
+            if (_rectangleBackground.Contains(mouseState.Position))
             {
-                if (_rectangleBackground.Contains(mouseState.Position))
+                _hover = true;
+                if (_oldMouseState.LeftButton == ButtonState.Pressed && mouseState.LeftButton == ButtonState.Released)
                     _clicked = true;
             }
+            else
+                _hover = false;
             _oldMouseState = mouseState;
         }
         public bool IsClicked() => _clicked;
-
+        public bool IsHovered() => _hover;
         internal void SetVisible(bool visible)
         {
             _visible = visible;
+        }
+        public Panel Copy()
+        {
+            List<Texture2D> copiedTextures = new List<Texture2D>();
+            foreach (Texture2D texture in _images)
+                copiedTextures.Add(texture);
+            return new Panel()
+            {
+                _borderColor = _borderColor,
+                _clicked = _clicked,
+                _images = copiedTextures,
+                _positions = _positions,
+                _oldMouseState = _oldMouseState,
+                _rectangleBackground = _rectangleBackground,
+                _texture = _texture,
+                _rectangleBorder = _rectangleBorder,
+                _thickness = _thickness,
+                _visible = _visible,
+                BackgroundColor = BackgroundColor,
+                BorderColor = BorderColor,
+                Dimensions = Dimensions,
+                Position = Position,
+                Thickness = Thickness,
+                ZOrder = ZOrder
+            };
         }
     }
 }

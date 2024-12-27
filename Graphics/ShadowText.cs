@@ -1,4 +1,5 @@
-﻿using DinaFramework.Enums;
+﻿using DinaFramework.Core;
+using DinaFramework.Enums;
 using DinaFramework.Interfaces;
 using DinaFramework.Translation;
 
@@ -7,12 +8,12 @@ using Microsoft.Xna.Framework.Graphics;
 
 using System;
 
-namespace DinaFramework.Core.Fixed
+namespace DinaFramework.Graphics
 {
-    public class ShadowText : Base, IUpdate, IDraw, IColor, IVisible, IText
+    public class ShadowText : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<ShadowText>
     {
-        readonly Text _text;
-        readonly Text _shadow;
+        Text _text;
+        Text _shadow;
         Vector2 _offset;
         public ShadowText(SpriteFont font, string content, Color color, Vector2 position, Color shadowcolor, Vector2 offset,
                           HorizontalAlignment halign = default, VerticalAlignment valign = default, int zorder = 0)
@@ -20,14 +21,6 @@ namespace DinaFramework.Core.Fixed
             _text = new Text(font, content, color, position, halign, valign, zorder);
             _shadow = new Text(font, content, shadowcolor, position + offset, halign, valign, zorder - 1);
             Offset = offset;
-        }
-        public ShadowText(ShadowText shadowtext)
-        {
-            ArgumentNullException.ThrowIfNull(shadowtext);
-
-            _text = new Text(shadowtext._text);
-            _shadow = new Text(shadowtext._shadow);
-            Offset = shadowtext.Offset;
         }
         public Color Color
         {
@@ -53,10 +46,10 @@ namespace DinaFramework.Core.Fixed
                 _text.Content = value;
             }
         }
-        public void Update(GameTime gameTime)
+        public void Update(GameTime gametime)
         {
-            _shadow.Update(gameTime);
-            _text.Update(gameTime);
+            _shadow.Update(gametime);
+            _text.Update(gametime);
         }
         public void Draw(SpriteBatch spritebatch)
         {
@@ -108,7 +101,24 @@ namespace DinaFramework.Core.Fixed
                 _shadow.Visible = value;
             }
         }
-
         public Vector2 TextDimensions => _text.TextDimensions;
+        public ShadowText Copy()
+        {
+            return new ShadowText()
+            {
+                _offset = _offset,
+                _shadow = _shadow?.Copy(),
+                _text = _text?.Copy(),
+                Color = Color,
+                Content = Content,
+                Dimensions = Dimensions,
+                Offset = Offset,
+                Position = Position,
+                ShadowColor = ShadowColor,
+                Visible = Visible,
+                ZOrder = ZOrder
+            };
+        }
+        private ShadowText() { }
     }
 }

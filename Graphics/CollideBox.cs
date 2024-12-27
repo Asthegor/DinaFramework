@@ -4,9 +4,9 @@ using Microsoft.Xna.Framework;
 
 using System;
 
-namespace DinaFramework.Core.Fixed
+namespace DinaFramework.Graphics
 {
-    public class CollideBox : IPosition, IDimensions, ICollide, IElement
+    public class CollideBox : IPosition, IDimensions, ICollide, IElement, ICopyable<CollideBox>
     {
         Vector2 _position;
         Vector2 _dimensions;
@@ -43,5 +43,19 @@ namespace DinaFramework.Core.Fixed
 
             return Rectangle.Intersects(item.Rectangle);
         }
+
+        public CollideBox Copy()
+        {
+            return new CollideBox()
+            {
+                _dimensions = _dimensions,
+                _position = _position,
+                _rect = _rect,
+                Dimensions = Dimensions,
+                Position = Position,
+                ZOrder = ZOrder
+            };
+        }
+        private CollideBox() { }
     }
 }

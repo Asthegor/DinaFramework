@@ -5,9 +5,9 @@ using Microsoft.Xna.Framework.Graphics;
 
 using System;
 
-namespace DinaFramework.Core.Fixed
+namespace DinaFramework.Graphics
 {
-    public class Line : IColor, IDraw
+    public class Line : IColor, IDraw, ICopyable<Line>
     {
         private readonly float _distance;
         private readonly float _angle;
@@ -40,7 +40,8 @@ namespace DinaFramework.Core.Fixed
 
         public void Draw(SpriteBatch spritebatch)
         {
-            if (spritebatch == null) return;
+            if (spritebatch == null)
+                return;
 
             if (_texture == null)
             {
@@ -49,5 +50,19 @@ namespace DinaFramework.Core.Fixed
             }
             spritebatch.Draw(_texture, _position, null, Color, _angle, _origin, _scale, SpriteEffects.None, 0);
         }
+        public Line Copy()
+        {
+            return new Line()
+            {
+                _origin = _origin,
+                _position = _position,
+                _scale = _scale,
+                _texture = _texture,
+                Color = Color,
+                Thickness = Thickness,
+            };
+        }
+
+        private Line() { }
     }
 }
