@@ -1,4 +1,5 @@
 ﻿using DinaFramework.Controls;
+using DinaFramework.Exceptions;
 using DinaFramework.Interfaces;
 
 using Microsoft.Xna.Framework;
@@ -17,9 +18,11 @@ namespace DinaFramework.Scenes
     public class SceneManager : IResource
     {
         public static bool HasFocus { get; set; }
+
         private static SceneManager _instance;
         private static readonly object _mutex = new object();
         private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+
         private readonly Dictionary<string, object> _values = new Dictionary<string, object>();
         private readonly Game _game;
         private ContentManager _content;
@@ -28,6 +31,7 @@ namespace DinaFramework.Scenes
         private Scene _loadingScreen;
         private bool _currentSceneLoaded;
         private float _loadingProgress;
+        
         // Propriétés
         public bool IsMouseVisible { get => _game.IsMouseVisible; set => _game.IsMouseVisible = value; }
         public float LoadingProgress { get => _loadingProgress; set => _loadingProgress = value; }
@@ -82,17 +86,25 @@ namespace DinaFramework.Scenes
         }
 
         // Méthodes publiques
-        public void AddResource<T>(string resourceName, T resource)
+        public bool AddResource<T>(string resourceName, T resource)
         {
             if (!_values.TryAdd(resourceName, resource))
+            {
                 _values[resourceName] = resource;
+                return true;
+            }
+            return false;
         }
         public void AddScene(string name, Type type)
         {
-            Debug.Assert(!string.IsNullOrEmpty(name), "The parameter 'name' must not be empty.");
-            Debug.Assert(type != null, "The parameter 'type' must not be null.");
-            Debug.Assert(typeof(Scene).IsAssignableFrom(type), "The type '" + type.Name + "' is not a valid Scene type.");
-            Debug.Assert(!_scenes.ContainsKey(name), "The name '" + name + "' already exists.");
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentException("The parameter 'name' must not be empty.");
+
+            if (!Scene.IsAssignableFrom(type))
+                throw new InvalidSceneTypeException(type);
+
+            if (_scenes.ContainsKey(name))
+                throw new DuplicateDictionaryKeyException(name);
 
             _scenes[name] = (Scene)Activator.CreateInstance(type, this);
         }
