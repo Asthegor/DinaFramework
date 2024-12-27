@@ -41,7 +41,7 @@ namespace DinaFramework.Interfaces
     }
     public interface IResource
     {
-        public abstract void AddResource<T>(string resourceName, T resource);
+        public abstract bool AddResource<T>(string resourceName, T resource);
         public abstract T GetResource<T>(string resourceName);
         public abstract void RemoveResource(string resourceName);
     }

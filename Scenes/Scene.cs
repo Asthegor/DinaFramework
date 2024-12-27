@@ -6,11 +6,16 @@ using Microsoft.Xna.Framework.Graphics;
 
 using System;
 using System.Linq;
+using System.Reflection;
 
 namespace DinaFramework.Scenes
 {
     public abstract class Scene : IGameObject, IResource
     {
+        public static bool IsAssignableFrom(Type type)
+        {
+            return (type != null && typeof(Scene).IsAssignableFrom(type));
+        }
         private readonly SceneManager _sceneManager;
         protected SceneManager SceneManager => _sceneManager;
         protected Scene(SceneManager sceneManager)
@@ -34,7 +39,7 @@ namespace DinaFramework.Scenes
         public abstract void Update(GameTime gametime);
         public abstract void Draw(SpriteBatch spritebatch);
 
-        public void AddResource<T>(string resourceName, T resource) { _sceneManager.AddResource(resourceName, resource); }
+        public bool AddResource<T>(string resourceName, T resource) { return _sceneManager.AddResource(resourceName, resource); }
         public T GetResource<T>(string resourceName)
         {
             if (string.IsNullOrEmpty(resourceName))
