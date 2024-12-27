@@ -31,8 +31,8 @@ namespace DinaFramework.Controls
                 alias = char.ToUpper(alias[0]) + alias[1..];
                 foreach (var kvp in _keys)
                 {
-                    if (_keys.ContainsKey(alias))
-                        return _keys[alias];
+                    if (_keys.TryGetValue(alias, out ControllerKey value))
+                        return value;
 
                     switch (kvp.Value)
                     {
@@ -53,19 +53,19 @@ namespace DinaFramework.Controls
             set
             {
                 ArgumentNullException.ThrowIfNull(alias);
+
                 alias = char.ToUpper(alias[0]) + alias[1..];
+
                 if (!_keys.ContainsKey(alias))
-                {
                     _keys[alias] = value;
-                }
                 else if (value == null)
                     _keys.Remove(alias);
             }
         }
         public ControllerKey GetKey(string name)
         {
-            if (_keys.ContainsKey(name))
-                return _keys[name];
+            if (_keys.TryGetValue(name, out ControllerKey value))
+                return value;
             return null;
         }
     }
