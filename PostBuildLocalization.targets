@@ -1,0 +1,16 @@
+<Project>
+  <Target Name="PostBuildMoveSatelliteResources" AfterTargets="Build">
+    <PropertyGroup>
+      <LocalizationDir>$(OutputPath)Localization\</LocalizationDir>
+    </PropertyGroup>
+	  <Exec Condition="!Exists('$(LocalizationDir)')" Command="mkdir $(LocalizationDir)" />
+    <ItemGroup>
+      <SatelliteDlls Include="$(OutputPath)**\*.resources.dll" Exclude="$(LocalizationDir)**\*" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(SatelliteDlls)"
+      DestinationFiles="@(SatelliteDlls->'$(LocalizationDir)%(RecursiveDir)%(Culture)\%(Filename)%(Extension)')"
+	  SkipUnchangedFiles="true" />
+    <RemoveDir Directories="@(SatelliteDlls->'%(RootDir)%(Directory)')" />
+  </Target>
+</Project>
