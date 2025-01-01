@@ -7,11 +7,28 @@ using System.Collections.Generic;
 
 namespace DinaFramework.Controls
 {
+    /// <summary>
+    /// Classe représentant un contrôleur de joueur.
+    /// </summary>
     public class PlayerController
     {
+        /// <summary>
+        /// Type de contrôleur utilisé par le joueur.
+        /// </summary>
         public ControllerType Controller { get; private set; }
+        /// <summary>
+        /// Index du joueur.
+        /// </summary>
         public PlayerIndex Index { get; private set; }
+
         private readonly Dictionary<string, ControllerKey> _keys;
+
+        /// <summary>
+        /// Initialise une nouvelle instance de la classe PlayerController.
+        /// </summary>
+        /// <param name="controllerType">Le type de contrôleur.</param>
+        /// <param name="playerIndex">L'index du joueur.</param>
+        /// <param name="controllerKeys">Les touches de contrôleur associées au joueur.</param>
         public PlayerController(ControllerType controllerType, PlayerIndex playerIndex, params ControllerKey[] controllerKeys)
         {
             ArgumentNullException.ThrowIfNull(controllerKeys);
@@ -22,6 +39,11 @@ namespace DinaFramework.Controls
             foreach (ControllerKey key in controllerKeys)
                 _keys.Add(key.ToString(), key);
         }
+        /// <summary>
+        /// Accesseur pour obtenir ou définir une touche de contrôleur par son alias.
+        /// </summary>
+        /// <param name="alias">L'alias de la touche de contrôleur.</param>
+        /// <returns>La touche de contrôleur.</returns>
         public ControllerKey this[string alias]
         {
             get
@@ -62,6 +84,11 @@ namespace DinaFramework.Controls
                     _keys.Remove(alias);
             }
         }
+        /// <summary>
+        /// Récupère une touche de contrôleur par son nom.
+        /// </summary>
+        /// <param name="name">Le nom de la touche de contrôleur.</param>
+        /// <returns>La touche de contrôleur correspondante, ou null si elle n'est pas trouvée.</returns>
         public ControllerKey GetKey(string name)
         {
             if (_keys.TryGetValue(name, out ControllerKey value))

@@ -15,8 +15,16 @@ using System.Threading.Tasks;
 
 namespace DinaFramework.Scenes
 {
+    /// <summary>
+    /// Gère les scènes du jeu, le passage d'une scène à l'autre, le chargement des ressources et l'affichage.
+    /// Cette classe est un gestionnaire central pour les scènes, les ressources et la gestion des écrans de chargement.
+    /// Elle garantit qu'une seule instance de la classe existe pendant l'exécution du jeu (Singleton).
+    /// </summary>
     public class SceneManager : IResource
     {
+        /// <summary>
+        /// Indique si la fenêtre du jeu a actuellement le focus.
+        /// </summary>
         public static bool HasFocus { get; set; }
 
         private static SceneManager _instance;
@@ -31,18 +39,47 @@ namespace DinaFramework.Scenes
         private Scene _loadingScreen;
         private bool _currentSceneLoaded;
         private float _loadingProgress;
-        
+
         // Propriétés
+        /// <summary>
+        /// Obtient ou définit la visibilité de la souris dans la fenêtre du jeu.
+        /// </summary>
         public bool IsMouseVisible { get => _game.IsMouseVisible; set => _game.IsMouseVisible = value; }
+        /// <summary>
+        /// Obtient ou définit le progrès du chargement, compris entre 0 et 1.
+        /// </summary>
         public float LoadingProgress { get => _loadingProgress; set => _loadingProgress = value; }
+        /// <summary>
+        /// Obtient les dimensions de l'écran du jeu sous forme de Vector2 (largeur et hauteur).
+        /// </summary>
         public Vector2 ScreenDimensions { get; private set; }
+        /// <summary>
+        /// Obtient le contrôleur du joueur pour gérer les entrées du joueur.
+        /// </summary>
         public PlayerController Controller { get; private set; }
+        /// <summary>
+        /// Obtient le gestionnaire de périphériques graphiques utilisé pour gérer le périphérique graphique et les paramètres de rendu.
+        /// </summary>
         public GraphicsDeviceManager GraphicsDeviceManager { get; private set; }
+        /// <summary>
+        /// Obtient ou définit le SpriteBatch utilisé pour dessiner les sprites 2D.
+        /// </summary>
         public SpriteBatch SpriteBatch { get; set; }
+        /// <summary>
+        /// Obtient le ContentManager utilisé pour charger et gérer les ressources du jeu.
+        /// </summary>
         public ContentManager Content { get => _content; private set => _content = value; }
+        /// <summary>
+        /// Obtient le fournisseur de services qui permet d'accéder aux services du jeu.
+        /// </summary>
         public IServiceProvider Services => _game.Services;
 
         // Méthodes statiques
+        /// <summary>
+        /// Obtient l'instance unique du SceneManager. Si l'instance n'existe pas, elle est créée.
+        /// </summary>
+        /// <param name="game">L'instance du jeu utilisée pour initialiser le gestionnaire de scènes.</param>
+        /// <returns>L'instance unique du SceneManager.</returns>
         public static SceneManager GetInstance(Game game)
         {
             ArgumentNullException.ThrowIfNull(game);
@@ -52,7 +89,17 @@ namespace DinaFramework.Scenes
             }
             return _instance;
         }
+        /// <summary>
+        /// Obtient l'instance unique du SceneManager.
+        /// </summary>
+        /// <returns>L'instance unique du SceneManager.</returns>
         public static SceneManager GetInstance() { return _instance; }
+        /// <summary>
+        /// Charge un objet depuis un fichier crypté et le désérialise dans le type spécifié.
+        /// </summary>
+        /// <typeparam name="T">Le type de l'objet à charger.</typeparam>
+        /// <param name="filePath">Le chemin du fichier crypté.</param>
+        /// <returns>L'objet désérialisé, ou la valeur par défaut si le fichier n'existe pas ou est vide.</returns>
         public static T LoadObjectFromEncryptFile<T>(string filePath)
         {
             if (File.Exists(filePath))
@@ -66,6 +113,14 @@ namespace DinaFramework.Scenes
 
             return default;
         }
+        /// <summary>
+        /// Sauvegarde un objet dans un fichier en format crypté, avec possibilité de remplacer le fichier existant.
+        /// </summary>
+        /// <typeparam name="T">Le type de l'objet à sauvegarder.</typeparam>
+        /// <param name="obj">L'objet à sauvegarder.</param>
+        /// <param name="fileFullname">Le chemin complet du fichier.</param>
+        /// <param name="overwritten">Indique si le fichier doit être écrasé.</param>
+        /// <returns>Vrai si l'objet a été sauvegardé avec succès, sinon faux.</returns>
         public static bool SaveObjectToFile<T>(T obj, string fileFullname, bool overwritten = true)
         {
             try
@@ -86,6 +141,13 @@ namespace DinaFramework.Scenes
         }
 
         // Méthodes publiques
+        /// <summary>
+        /// Ajoute une ressource dans le gestionnaire de ressources, ou la met à jour si elle existe déjà.
+        /// </summary>
+        /// <typeparam name="T">Le type de la ressource.</typeparam>
+        /// <param name="resourceName">Le nom de la ressource.</param>
+        /// <param name="resource">La ressource à ajouter ou mettre à jour.</param>
+        /// <returns>Vrai si la ressource a été ajoutée ou mise à jour, sinon faux.</returns>
         public bool AddResource<T>(string resourceName, T resource)
         {
             if (!_values.TryAdd(resourceName, resource))
@@ -95,6 +157,14 @@ namespace DinaFramework.Scenes
             }
             return false;
         }
+        /// <summary>
+        /// Ajoute une nouvelle scène dans le gestionnaire de scènes par son nom et son type.
+        /// </summary>
+        /// <param name="name">Le nom de la scène.</param>
+        /// <param name="type">Le type de la scène à ajouter.</param>
+        /// <exception cref="ArgumentException">Lancé lorsque le nom est vide.</exception>
+        /// <exception cref="InvalidSceneTypeException">Lancé lorsque le type ne dérive pas de Scene.</exception>
+        /// <exception cref="DuplicateDictionaryKeyException">Lancé lorsque le nom de la scène existe déjà.</exception>
         public void AddScene(string name, Type type)
         {
             if (string.IsNullOrEmpty(name))
@@ -108,6 +178,10 @@ namespace DinaFramework.Scenes
 
             _scenes[name] = (Scene)Activator.CreateInstance(type, this);
         }
+        /// <summary>
+        /// Dessine la scène actuelle ou l'écran de chargement si la scène n'est pas encore chargée.
+        /// </summary>
+        /// <param name="spritebatch">Le SpriteBatch utilisé pour dessiner.</param>
         public void Draw(SpriteBatch spritebatch)
         {
             if (spritebatch != null)
@@ -120,19 +194,38 @@ namespace DinaFramework.Scenes
                 spritebatch.End();
             }
         }
+        /// <summary>
+        /// Quitte le jeu.
+        /// </summary>
         public void Exit() { _game.Exit(); }
+        /// <summary>
+        /// Récupère une ressource par son nom dans le gestionnaire de ressources.
+        /// </summary>
+        /// <typeparam name="T">Le type de la ressource à récupérer.</typeparam>
+        /// <param name="resourceName">Le nom de la ressource.</param>
+        /// <returns>La ressource du type spécifié.</returns>
+        /// <exception cref="KeyNotFoundException">Lancé lorsque la ressource n'est pas trouvée.</exception>
         public T GetResource<T>(string resourceName)
         {
             if (_values.TryGetValue(resourceName, out object value))
                 return (T)value;
             throw new KeyNotFoundException($"Resource '{resourceName}' not found in the resource manager.");
         }
+        /// <summary>
+        /// Définit l'écran de chargement actuel à un type spécifique implémentant ILoadingScreen.
+        /// </summary>
+        /// <typeparam name="T">Le type de l'écran de chargement.</typeparam>
         public void LoadingScreen<T>() where T : Scene, ILoadingScreen
         {
             Type type = typeof(T);
             Debug.Assert(typeof(T).IsSubclassOf(typeof(Scene)), "The type '" + type.Name + "' is not a valid ILoadingScreen type.");
             _loadingScreen = (Scene)Activator.CreateInstance(type, this);
         }
+        /// <summary>
+        /// Supprime une scène du gestionnaire de scènes par son nom.
+        /// </summary>
+        /// <param name="name">Le nom de la scène à supprimer.</param>
+        /// <exception cref="ArgumentException">Lancé lorsque le nom est vide.</exception>
         public void RemoveScene(string name)
         {
             Debug.Assert(!string.IsNullOrEmpty(name), "The 'name' must not be empty.");
@@ -140,13 +233,26 @@ namespace DinaFramework.Scenes
 
             _scenes.Remove(name);
         }
+        /// <summary>
+        /// Supprime une ressource du gestionnaire de ressources par son nom.
+        /// </summary>
+        /// <param name="resourceName">Le nom de la ressource à supprimer.</param>
         public void RemoveResource(string resourceName) { _values.Remove(resourceName); }
+        /// <summary>
+        /// Réinitialise l'écran de chargement avec un nouveau message.
+        /// </summary>
+        /// <param name="message">Le message à afficher sur l'écran de chargement.</param>
         public void ResetLoadingScreen(string message)
         {
             _loadingScreen.Reset();
             if (_loadingScreen is ILoadingScreen ls)
                 ls.Text = message;
         }
+        /// <summary>
+        /// Définit la scène actuelle à une nouvelle scène par son nom, avec un écran de chargement optionnel.
+        /// </summary>
+        /// <param name="name">Le nom de la scène à définir comme actuelle.</param>
+        /// <param name="withLoadingScreen">Indique si un écran de chargement doit être affiché pendant la transition.</param>
         public async void SetCurrentScene(string name, bool withLoadingScreen = false)
         {
             if (string.IsNullOrEmpty(name))
@@ -199,10 +305,18 @@ namespace DinaFramework.Scenes
                 _currentSceneLoaded = true;
             }
         }
+        /// <summary>
+        /// Définit le gestionnaire de périphériques graphiques utilisé pour gérer le périphérique graphique.
+        /// </summary>
+        /// <param name="graphicsDeviceManager">Le gestionnaire de périphériques graphiques à définir.</param>
         public void SetGraphicsDeviceManager(GraphicsDeviceManager graphicsDeviceManager)
         {
             GraphicsDeviceManager = graphicsDeviceManager;
         }
+        /// <summary>
+        /// Met à jour la scène actuelle ou l'écran de chargement avec le temps de jeu spécifié.
+        /// </summary>
+        /// <param name="gameTime">Le temps de jeu utilisé pour mettre à jour la scène.</param>
         public void Update(GameTime gameTime)
         {
             if (!_currentSceneLoaded)

@@ -11,6 +11,9 @@ using System.ComponentModel;
 
 namespace DinaFramework.Graphics
 {
+    /// <summary>
+    /// Représente un panneau graphique pouvant être dessiné et interactif.
+    /// </summary>
     public class Panel : Base, IClickable, IColor, IDraw, IUpdate, IVisible, ICopyable<Panel>
     {
         private List<Vector2> _positions = new List<Vector2>();
@@ -25,6 +28,13 @@ namespace DinaFramework.Graphics
         private bool _clicked;
         private bool _hover;
         private Panel() { } // ne sert qu'à la copie d'une instance
+        /// <summary>
+        /// Initialise une nouvelle instance de la classe Panel avec des paramètres par défaut.
+        /// </summary>
+        /// <param name="position">Position du panneau.</param>
+        /// <param name="dimensions">Dimensions du panneau.</param>
+        /// <param name="backgroundcolor">Couleur d'arrière-plan.</param>
+        /// <param name="zorder">Ordre de superposition (facultatif).</param>
         public Panel(Vector2 position, Vector2 dimensions, Color backgroundcolor, int zorder = 0) : 
             base(position, dimensions, zorder)
         {
@@ -33,6 +43,15 @@ namespace DinaFramework.Graphics
             Thickness = 0;
             CheckVisibility();
         }
+        /// <summary>
+        /// Initialise une nouvelle instance de la classe Panel avec une bordure spécifiée.
+        /// </summary>
+        /// <param name="position">Position du panneau.</param>
+        /// <param name="dimensions">Dimensions du panneau.</param>
+        /// <param name="backgroundcolor">Couleur d'arrière-plan.</param>
+        /// <param name="bordercolor">Couleur de la bordure.</param>
+        /// <param name="thickness">Épaisseur de la bordure.</param>
+        /// <param name="zorder">Ordre de superposition (facultatif).</param>
         public Panel(Vector2 position, Vector2 dimensions, Color backgroundcolor, Color bordercolor, int thickness, int zorder = 0) :
             this(position, dimensions, backgroundcolor, zorder)
         {
@@ -40,6 +59,14 @@ namespace DinaFramework.Graphics
             Thickness = thickness;
             CheckVisibility();
         }
+        /// <summary>
+        /// Initialise un nouveau panneau avec une image de fond et une épaisseur de bordure.
+        /// </summary>
+        /// <param name="position">La position du panneau.</param>
+        /// <param name="dimensions">Les dimensions du panneau.</param>
+        /// <param name="image">L'image de fond du panneau.</param>
+        /// <param name="borderThickness">L'épaisseur de la bordure.</param>
+        /// <param name="zorder">L'ordre Z du panneau (par défaut 0).</param>
         public Panel(Vector2 position, Vector2 dimensions, Texture2D image, int borderThickness, int zorder = 0) : 
             base(position, dimensions, zorder)
         {
@@ -53,6 +80,21 @@ namespace DinaFramework.Graphics
                 Dimensions = new Vector2(image.Width, image.Height);
             CheckVisibility();
         }
+        /// <summary>
+        /// Initialise un panneau avec une combinaison de textures pour les coins, bords et centre du panneau.
+        /// </summary>
+        /// <param name="position">La position du panneau.</param>
+        /// <param name="dimensions">Les dimensions du panneau.</param>
+        /// <param name="cornerTopLeft">Texture du coin supérieur gauche.</param>
+        /// <param name="top">Texture du bord supérieur.</param>
+        /// <param name="cornerTopRight">Texture du coin supérieur droit.</param>
+        /// <param name="right">Texture du bord droit.</param>
+        /// <param name="cornerBottomRight">Texture du coin inférieur droit.</param>
+        /// <param name="bottom">Texture du bord inférieur.</param>
+        /// <param name="cornerBottomLeft">Texture du coin inférieur gauche.</param>
+        /// <param name="left">Texture du bord gauche.</param>
+        /// <param name="center">Texture du centre du panneau.</param>
+        /// <param name="zorder">L'ordre Z du panneau (par défaut 0).</param>
         public Panel(Vector2 position, Vector2 dimensions, Texture2D cornerTopLeft, Texture2D top, Texture2D cornerTopRight, Texture2D right, Texture2D cornerBottomRight, Texture2D bottom, Texture2D cornerBottomLeft, Texture2D left, Texture2D center, int zorder = 0) : base(position, dimensions, zorder)
         {
             ArgumentNullException.ThrowIfNull(cornerTopLeft);
@@ -95,6 +137,9 @@ namespace DinaFramework.Graphics
 
             CheckVisibility();
         }
+        /// <summary>
+        /// Position du panneau.
+        /// </summary>
         public override Vector2 Position
         {
             get => base.Position;
@@ -108,6 +153,9 @@ namespace DinaFramework.Graphics
             }
 
         }
+        /// <summary>
+        /// Dimensions du panneau.
+        /// </summary>
         public override Vector2 Dimensions
         {
             get => base.Dimensions;
@@ -117,7 +165,13 @@ namespace DinaFramework.Graphics
                 AdjustRectangles();
             }
         }
+        /// <summary>
+        /// Obtient ou définit la couleur d'arrière-plan du panneau.
+        /// </summary>
         public Color BackgroundColor { get; set; }
+        /// <summary>
+        /// Obtient ou définit la couleur de la bordure du panneau.
+        /// </summary>
         public Color BorderColor
         {
             get { return _borderColor; }
@@ -127,6 +181,9 @@ namespace DinaFramework.Graphics
                 AdjustRectangles();
             }
         }
+        /// <summary>
+        /// Obtient ou définit l'épaisseur de la bordure.
+        /// </summary>
         public int Thickness
         {
             get { return _thickness; }
@@ -155,17 +212,27 @@ namespace DinaFramework.Graphics
             if (Dimensions != default)
                 Visible = true;
         }
+        /// <summary>
+        /// Obtient ou définit une valeur indiquant si le panneau est visible.
+        /// </summary>
         public bool Visible
         {
             get { return _visible; }
             set { _visible = value; }
         }
 
+        /// <summary>
+        /// Obtient ou définit la couleur associée au panneau (mappée sur BackgroundColor).
+        /// </summary>
         public Color Color
         {
             get { return BackgroundColor; }
             set { BackgroundColor = value; }
         }
+        /// <summary>
+        /// Dessine le panneau à l'aide d'un SpriteBatch.
+        /// </summary>
+        /// <param name="spritebatch">Instance de SpriteBatch utilisée pour le rendu.</param>
         public void Draw(SpriteBatch spritebatch)
         {
             ArgumentNullException.ThrowIfNull(spritebatch);
@@ -295,11 +362,18 @@ namespace DinaFramework.Graphics
             }
         }
 
+        /// <summary>
+        /// Libère les ressources utilisées par le panneau.
+        /// </summary>
         public void Dispose()
         {
             _texture.Dispose();
         }
 
+        /// <summary>
+        /// Met à jour l'état du panneau en fonction des interactions utilisateur.
+        /// </summary>
+        /// <param name="gametime">Temps de jeu actuel.</param>
         public void Update(GameTime gametime)
         {
             MouseState mouseState = Mouse.GetState();
@@ -314,12 +388,24 @@ namespace DinaFramework.Graphics
                 _hover = false;
             _oldMouseState = mouseState;
         }
+        /// <summary>
+        /// Détermine si le panneau a été cliqué.
+        /// </summary>
+        /// <returns>True si cliqué, sinon false.</returns>
         public bool IsClicked() => _clicked;
+        /// <summary>
+        /// Détermine si le panneau est survolé par la souris.
+        /// </summary>
+        /// <returns>True si survolé, sinon false.</returns>
         public bool IsHovered() => _hover;
         internal void SetVisible(bool visible)
         {
             _visible = visible;
         }
+        /// <summary>
+        /// Crée une copie du panneau actuel.
+        /// </summary>
+        /// <returns>Une nouvelle instance de Panel avec les mêmes propriétés.</returns>
         public Panel Copy()
         {
             List<Texture2D> copiedTextures = new List<Texture2D>();

@@ -15,6 +15,9 @@ using System.Linq;
 
 namespace DinaFramework.Menus
 {
+    /// <summary>
+    /// Gère l'affichage et l'interaction avec le menu, incluant les éléments, les titres, les icônes et les interactions clavier/souris.
+    /// </summary>
     public class MenuManager : IDraw, IUpdate, IVisible
     {
         private const int DEFAULT_SPACING = 5;
@@ -43,6 +46,12 @@ namespace DinaFramework.Menus
         private Vector2 _itemsScreenDimensions;
 
         // Construteurs
+        /// <summary>
+        /// Initialise une nouvelle instance de MenuManager.
+        /// </summary>
+        /// <param name="itemspacing">Espace entre les éléments du menu (par défaut : 5).</param>
+        /// <param name="cancellation">Action à exécuter lors de l'annulation du menu.</param>
+        /// <param name="currentitemindex">Index de l'élément sélectionné au départ (par défaut : -1).</param>
         public MenuManager(int itemspacing = DEFAULT_SPACING, Action cancellation = null, int currentitemindex = -1)
         {
             _elements = new List<IElement>();
@@ -63,13 +72,25 @@ namespace DinaFramework.Menus
 
         //------------------------------------------------------------------
         // Propriétés
+        /// <summary>
+        /// Obtient les dimensions des items du menu.
+        /// </summary>
         public Vector2 ItemsDimensions => _itemsGroup.Dimensions;
+        /// <summary>
+        /// Obtient ou définit la position des items du menu.
+        /// </summary>
         public Vector2 ItemsPosition
         {
             get => _itemsGroup.Position;
             set => _itemsGroup.Position = value;
         }
+        /// <summary>
+        /// Obtient l'indice de l'élément actuellement sélectionné.
+        /// </summary>
         public int CurrentItemIndex => _currentitemindex;
+        /// <summary>
+        /// Obtient ou définit l'élément actuellement sélectionné.
+        /// </summary>
         public MenuItem CurrentItem
         {
             get => (_currentitemindex == -1 || _currentitemindex >= _items.Count) ? null : _items[_currentitemindex];
@@ -80,11 +101,17 @@ namespace DinaFramework.Menus
                 CurrentItem?.Selection?.Invoke(CurrentItem);
             }
         }
+        /// <summary>
+        /// Obtient ou définit l'alignement des icônes dans le menu.
+        /// </summary>
         public IconMenuAlignment IconAlignment
         {
             get => _iconAlignment;
             set => _iconAlignment = value;
         }
+        /// <summary>
+        /// Obtient ou définit la visibilité des icônes dans le menu.
+        /// </summary>
         public bool IconsVisible
         {
             get => (_iconLeft != null && _iconLeft.Visible) || (_iconRight != null && _iconRight.Visible);
@@ -94,11 +121,17 @@ namespace DinaFramework.Menus
                 _iconRight?.SetVisible(value);
             }
         }
+        /// <summary>
+        /// Obtient ou définit l'action d'annulation du menu (quitter le menu).
+        /// </summary>
         public Action Cancellation
         {
             get => _cancellation;
             set => _cancellation = value;
         }
+        /// <summary>
+        /// Obtient ou définit la visibilité du menu.
+        /// </summary>
         public bool Visible
         {
             get => _visible;
@@ -106,6 +139,17 @@ namespace DinaFramework.Menus
         }
 
         // Titres
+        /// <summary>
+        /// Ajoute un titre au menu.
+        /// </summary>
+        /// <param name="font">Police du titre.</param>
+        /// <param name="text">Texte du titre.</param>
+        /// <param name="position">Position du titre.</param>
+        /// <param name="color">Couleur du titre.</param>
+        /// <param name="shadowcolor">Couleur de l'ombre (facultatif).</param>
+        /// <param name="shadowoffset">Décalage de l'ombre (facultatif).</param>
+        /// <param name="zorder">Ordre de superposition du titre.</param>
+        /// <returns>L'élément titre ajouté.</returns>
         public IElement AddTitle(SpriteFont font, string text, Vector2 position, Color color, Color? shadowcolor = null, Vector2? shadowoffset = null, int zorder = 0)
         {
             var title = (shadowcolor.HasValue && shadowoffset.HasValue)
@@ -114,11 +158,20 @@ namespace DinaFramework.Menus
             AddTitleToGroups(title);
             return title;
         }
+        /// <summary>
+        /// Ajoute un titre à partir d'un élément déjà créé.
+        /// </summary>
+        /// <param name="title">L'élément titre à ajouter.</param>
+        /// <returns>L'élément titre ajouté.</returns>
         public IElement AddTitle(IElement title)
         {
             AddTitleToGroups(title);
             return title;
         }
+        /// <summary>
+        /// Centre les titres sur l'écran.
+        /// </summary>
+        /// <param name="screendimensions">Dimensions de l'écran.</param>
         public void CenterTitles(Vector2 screendimensions)
         {
             _centeredTitles = true;
@@ -135,6 +188,10 @@ namespace DinaFramework.Menus
 
             }
         }
+        /// <summary>
+        /// Modifie la police des titres.
+        /// </summary>
+        /// <param name="font">La police à utiliser.</param>
         public void SetTitleFont(SpriteFont font)
         {
             foreach (var title in _titles)
@@ -148,6 +205,14 @@ namespace DinaFramework.Menus
 
         //------------------------------------------------------------------
         // Icones
+        /// <summary>
+        /// Définit les icônes du menu, incluant leur alignement et leur espacement.
+        /// </summary>
+        /// <param name="iconLeft">Icône gauche.</param>
+        /// <param name="iconRight">Icône droite.</param>
+        /// <param name="iconAlignment">Alignement des icônes.</param>
+        /// <param name="iconSpacing">Espacement entre les icônes.</param>
+        /// <param name="resize">Indique si les icônes doivent être redimensionnées.</param>
         public void SetIconItems(Texture2D iconLeft = null, Texture2D iconRight = null,
                                  IconMenuAlignment iconAlignment = IconMenuAlignment.Left,
                                  int iconSpacing = DEFAULT_SPACING,
@@ -172,38 +237,68 @@ namespace DinaFramework.Menus
                     offset.X += _iconLeft.Dimensions.X + iconSpacing;
                 if (_iconRight != null)
                     offset.X += _iconRight.Dimensions.X + iconSpacing;
-                _background.Dimensions = _itemsGroup.Dimensions + offset;
+                _background.Dimensions += offset;
+                _background.Position -= new Vector2(_iconLeft.Dimensions.X, 0);
             }
         }
 
 
         //------------------------------------------------------------------
         // Items
+        /// <summary>
+        /// Ajoute un élément au menu.
+        /// </summary>
+        /// <param name="font">Police du texte de l'élément.</param>
+        /// <param name="text">Texte de l'élément.</param>
+        /// <param name="color">Couleur du texte.</param>
+        /// <param name="selection">Fonction appelée lors de la sélection.</param>
+        /// <param name="deselection">Fonction appelée lors de la désélection.</param>
+        /// <param name="activation">Fonction appelée lors de l'activation.</param>
+        /// <param name="halign">Alignement horizontal de l'élément.</param>
+        /// <param name="valign">Alignement vertical de l'élément.</param>
+        /// <returns>L'élément menu ajouté.</returns>
         public MenuItem AddItem(SpriteFont font, string text, Color color, Func<MenuItem, MenuItem> selection = null, Func<MenuItem, MenuItem> deselection = null, Func<MenuItem, MenuItem> activation = null, HorizontalAlignment halign = HorizontalAlignment.Left, VerticalAlignment valign = VerticalAlignment.Top)
         {
             return AddItemToGroups(new MenuItem(font, text, color, selection, deselection, activation, new Vector2(_itemsGroup.Position.X, GetNextItemYPosition()), halign, valign));
         }
+        /// <summary>
+        /// Ajoute un élément de menu à partir d'un objet déjà créé.
+        /// </summary>
+        /// <param name="item">L'élément à ajouter.</param>
+        /// <param name="selection">Fonction appelée lors de la sélection de l'élément.</param>
+        /// <param name="deselection">Fonction appelée lors de la désélection de l'élément.</param>
+        /// <param name="activation">Fonction appelée lors de l'activation de l'élément.</param>
+        /// <returns>L'élément de menu ajouté.</returns>
         public MenuItem AddItem(object item, Func<MenuItem, MenuItem> selection = null, Func<MenuItem, MenuItem> deselection = null, Func<MenuItem, MenuItem> activation = null)
         {
             ArgumentNullException.ThrowIfNull(item, "Parameter 'item' must not be null.");
 
             return AddItemToGroups(new MenuItem(item, selection, deselection, activation, (item as IPosition).Position));
         }
+        /// <summary>
+        /// Centre les éléments de menu sur l'écran.
+        /// </summary>
+        /// <param name="screendimensions">Dimensions de l'écran pour le centrage.</param>
         public void CenterMenuItems(Vector2 screendimensions)
         {
             _centeredItems = true;
             _itemsScreenDimensions = screendimensions;
-            foreach (MenuItem item in _items)
-            {
-                if (item is null)
-                    continue;
+            _itemsGroup.Position = (screendimensions - _itemsGroup.Dimensions) / 2;
+            //foreach (MenuItem item in _items)
+            //{
+            //    if (item is null)
+            //        continue;
 
-                Vector2 itemTextDim = item.TextDimensions;
-                Vector2 itemPos = item.Position;
-                itemPos.X = (screendimensions.X - itemTextDim.X) / 2.0f;
-                item.Position = itemPos;
-            }
+            //    Vector2 itemTextDim = item.TextDimensions;
+            //    Vector2 itemPos = item.Position;
+            //    itemPos.X = (screendimensions.X - itemTextDim.X) / 2.0f;
+            //    item.Position = itemPos;
+            //}
         }
+        /// <summary>
+        /// Définit la police des éléments de menu.
+        /// </summary>
+        /// <param name="font">La police à appliquer aux éléments de menu.</param>
         public void SetItemFont(SpriteFont font)
         {
             foreach (MenuItem item in _items)
@@ -218,6 +313,13 @@ namespace DinaFramework.Menus
 
         //------------------------------------------------------------------
         // Touches
+        /// <summary>
+        /// Définit les touches permettant de naviguer dans le menu.
+        /// </summary>
+        /// <param name="nextItemKey">Touche pour sélectionner l'élément suivant.</param>
+        /// <param name="prevItemKey">Touche pour sélectionner l'élément précédent.</param>
+        /// <param name="activateItemKey">Touche pour activer l'élément sélectionné.</param>
+        /// <param name="cancelKey">Touche pour annuler le menu (facultatif).</param>
         public void SetKeys(ControllerKey nextItemKey, ControllerKey prevItemKey, ControllerKey activateItemKey, ControllerKey cancelKey = null)
         {
             SetNextItemKey(nextItemKey);
@@ -225,29 +327,56 @@ namespace DinaFramework.Menus
             SetActivateItemKey(activateItemKey);
             SetCancelMenuKey(cancelKey);
         }
+        /// <summary>
+        /// Définit la touche pour sélectionner l'élément suivant.
+        /// </summary>
+        /// <param name="key">Touche à associer à la sélection de l'élément suivant.</param>
         public void SetNextItemKey(ControllerKey key) { _next_item_key = key; }
+        /// <summary>
+        /// Définit la touche pour sélectionner l'élément précédent.
+        /// </summary>
+        /// <param name="key">Touche à associer à la sélection de l'élément précédent.</param>
         public void SetPreviousItemKey(ControllerKey key) { _previous_item_key = key; }
+        /// <summary>
+        /// Définit la touche pour activer/valider l'élément sélectionné.
+        /// </summary>
+        /// <param name="key">Touche à associer à l'activation (validation) de l'élément sélectionné.</param>
         public void SetActivateItemKey(ControllerKey key) { _active_item_key = key; }
+        /// <summary>
+        /// Définit la touche pour annuler le menu (facultatif).
+        /// </summary>
+        /// <param name="key">Touche à associer à l'annulation du menu.</param>
         public void SetCancelMenuKey(ControllerKey key) { _cancel_menu_key = key; }
 
 
         //------------------------------------------------------------------
         // Items Background
+        /// <summary>
+        /// Définit l'arrière-plan des éléments du menu.
+        /// </summary>
+        /// <param name="panel">Panneau à utiliser comme fond pour les éléments.</param>
+        /// <param name="borderSpacing">Espacement des bordures autour de l'arrière-plan.</param>
         public void SetItemsBackground(Panel panel, int borderSpacing)
         {
             bool bkgnotexist = (_background == null);
             _background = panel;
             _borderSpacing = borderSpacing;
-            if (bkgnotexist)
-                _itemsGroup.Add(_background);
             _background.Visible = true;
 
             // Mise à jour de la position du panneau
-            _background.Position = _itemsGroup.Position;
+            _background.Position = _itemsGroup.Position - new Vector2(borderSpacing, borderSpacing);
+            if (_iconLeft != null)
+                _background.Position -= new Vector2(_iconLeft.Dimensions.X, 0);
 
             // Mise à jour des dimensions du panneau
-            _itemsGroup.Dimensions = new Vector2(_itemsGroup.Dimensions.X + borderSpacing * 2.0f, _itemsGroup.Dimensions.Y + borderSpacing * 2.0f);
-            _background.Dimensions = _itemsGroup.Dimensions;
+            _background.Dimensions = new Vector2(_itemsGroup.Dimensions.X + borderSpacing * 2.0f, _itemsGroup.Dimensions.Y + borderSpacing * 2.0f);
+            //_itemsGroup.Dimensions = new Vector2(_itemsGroup.Dimensions.X + borderSpacing * 2.0f, _itemsGroup.Dimensions.Y + borderSpacing * 2.0f);
+            //_background.Dimensions = _itemsGroup.Position - _itemsGroup.Dimensions;
+
+            if (_iconRight != null)
+                _background.Dimensions += new Vector2(_iconRight.Dimensions.X, 0);
+            //if (bkgnotexist)
+            //    _itemsGroup.Add(_background);
 
             // Mise à jour du ZOrder du panneau
             int index = 0;
@@ -260,23 +389,43 @@ namespace DinaFramework.Menus
                     if ((index == 0 || min_zorder > menuitem.ZOrder))
                         min_zorder = ((MenuItem)item).ZOrder;
                     // Mise à jour des positions des items
-                    menuitem.Position = new Vector2(menuitem.Position.X + borderSpacing, menuitem.Position.Y + borderSpacing);
+                    //menuitem.Position = new Vector2(menuitem.Position.X + borderSpacing, menuitem.Position.Y + borderSpacing);
                 }
                 index++;
             }
             _background.ZOrder = min_zorder - 1;
             _itemsGroup.SortElements();
         }
+        /// <summary>
+        /// Définit la visibilité de l'arrière-plan des éléments.
+        /// </summary>
+        /// <param name="visible">Si true, rend l'arrière-plan visible ; sinon, invisible.</param>
         public void SetBackgroundVisible(bool visible)
         {
             _background?.SetVisible(visible);
         }
 
         //------------------------------------------------------------------
+        /// <summary>
+        /// Réinitialise l'état de l'élément de menu courant à partir d'un index spécifique.
+        /// Si l'index est invalide (par défaut -1), la réinitialisation se fait à un élément par défaut.
+        /// </summary>
+        /// <param name="value">L'index de l'élément à sélectionner pour réinitialiser. Par défaut -1, ce qui signifie sélectionner l'élément par défaut.</param>
+        /// <remarks>
+        /// Cette méthode permet de remettre à zéro l'élément sélectionné actuel, en appelant la méthode de sélection/désélection sur l'élément précédent et sur le nouvel élément.
+        /// </remarks>
         public void Reset(int value = -1)
         {
             Reset(_items.ElementAtOrDefault(value));
         }
+        /// <summary>
+        /// Réinitialise l'état de l'élément de menu courant à partir d'un élément spécifique.
+        /// Effectue la sélection et la désélection de l'élément courant, en utilisant les actions définies dans l'élément.
+        /// </summary>
+        /// <param name="item">L'élément de menu à sélectionner.</param>
+        /// <remarks>
+        /// Cette méthode met à jour l'élément sélectionné actuel, en invoquant les actions de sélection et de désélection définies sur les éléments.
+        /// </remarks>
         public void Reset(MenuItem item)
         {
             CurrentItem?.Deselection?.Invoke(CurrentItem);
@@ -284,6 +433,15 @@ namespace DinaFramework.Menus
             CurrentItem?.Selection?.Invoke(CurrentItem);
             _oldMouseState = Mouse.GetState();
         }
+        /// <summary>
+        /// Met à jour l'état du menu en fonction des entrées utilisateur et des éléments d'interface.
+        /// Elle gère les entrées de souris et de clavier, et met à jour chaque élément nécessitant une mise à jour.
+        /// </summary>
+        /// <param name="gametime">Les informations sur le temps écoulé depuis la dernière mise à jour (GameTime).</param>
+        /// <remarks>
+        /// Cette méthode vérifie si le menu est visible, puis gère les interactions via la souris et le clavier.
+        /// Elle met également à jour tous les éléments qui implémentent l'interface IUpdate.
+        /// </remarks>
         public void Update(GameTime gametime)
         {
             if (!Visible)
@@ -298,10 +456,16 @@ namespace DinaFramework.Menus
                     update.Update(gametime);
             }
         }
+        /// <summary>
+        /// Affiche le menu à l'écran.
+        /// </summary>
+        /// <param name="spriteBatch">Objet utilisé pour dessiner le menu.</param>
         public void Draw(SpriteBatch spritebatch)
         {
             if (!Visible)
                 return;
+
+            _background?.Draw(spritebatch);
 
             foreach (var element in _elements)
             {
@@ -401,7 +565,7 @@ namespace DinaFramework.Menus
         {
             MouseState ms = Mouse.GetState();
             SceneManager sm = SceneManager.GetInstance();
-            if (sm != null && sm.IsMouseVisible == true)
+            if ((sm != null && sm.IsMouseVisible == true) || (sm == null && ms != _oldMouseState))
             {
                 foreach (MenuItem item in _items)
                 {

@@ -9,6 +9,9 @@ using System.Collections.Generic;
 
 namespace DinaFramework.Graphics
 {
+    /// <summary>
+    /// Représente une boîte de liste graphique permettant d'afficher une collection d'éléments avec des fonctionnalités de sélection et de mise à jour.
+    /// </summary>
     public class ListBox : Base, IPosition, IDimensions, IUpdate, IDraw, IElement
     {
         private const float OFFSET_LIST_Y = 2;
@@ -32,6 +35,12 @@ namespace DinaFramework.Graphics
 
         private Color _defaultSelectionColor;
 
+        /// <summary>
+        /// Initialise une nouvelle instance de la classe ListBox avec les éléments spécifiés.
+        /// </summary>
+        /// <param name="items">Liste des éléments à afficher dans la boîte de liste.</param>
+        /// <param name="position">Position initiale de la boîte de liste.</param>
+        /// <param name="nbvisibleelements">Nombre d'éléments visibles dans la boîte de liste. Par défaut, tous les éléments sont visibles.</param>
         public ListBox(List<IElement> items, Vector2 position = default, int nbvisibleelements = -1)
         {
             ArgumentNullException.ThrowIfNull(items);
@@ -81,6 +90,9 @@ namespace DinaFramework.Graphics
             }
         }
 
+        /// <summary>
+        /// Obtient ou définit la position de la boîte de liste.
+        /// </summary>
         public override Vector2 Position
         {
             get => base.Position;
@@ -100,6 +112,9 @@ namespace DinaFramework.Graphics
             }
         }
 
+        /// <summary>
+        /// Obtient ou définit les dimensions de la boîte de liste.
+        /// </summary>
         public override Vector2 Dimensions
         {
             get => base.Dimensions;
@@ -112,6 +127,9 @@ namespace DinaFramework.Graphics
                     t.Dimensions = new Vector2(t.Dimensions.X, t.Dimensions.Y + offset.Y);
             }
         }
+        /// <summary>
+        /// Obtient ou définit l'élément sélectionné dans la boîte de liste par son index.
+        /// </summary>
         public int Value
         {
             get => _elements.IndexOf(_selectedItem);
@@ -125,6 +143,10 @@ namespace DinaFramework.Graphics
             }
         }
 
+        /// <summary>
+        /// Met à jour l'état de la boîte de liste, y compris la gestion des clics sur les éléments.
+        /// </summary>
+        /// <param name="gametime">Temps de jeu actuel.</param>
         public void Update(GameTime gametime)
         {
             for (int index = 0; index < _listPanels.Count; index++)
@@ -146,6 +168,10 @@ namespace DinaFramework.Graphics
             }
         }
 
+        /// <summary>
+        /// Dessine la boîte de liste et ses éléments visibles sur un SpriteBatch.
+        /// </summary>
+        /// <param name="spritebatch">L'objet SpriteBatch utilisé pour dessiner les éléments.</param>
         public void Draw(SpriteBatch spritebatch)
         {
             _backgroundPanel.Draw(spritebatch);

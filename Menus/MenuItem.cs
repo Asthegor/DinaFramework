@@ -10,7 +10,10 @@ using System;
 
 namespace DinaFramework.Menus
 {
-    public enum MenuItemState { Enable, Disable }
+    /// <summary>
+    /// Représente un élément de menu interactif qui peut être sélectionné, désélectionné et activé.
+    /// Implémente les interfaces IDraw, IPosition, IDimensions, IElement, IVisible et IColor.
+    /// </summary>
     public class MenuItem : IDraw, IPosition, IDimensions, IElement, IVisible, IColor
     {
         private bool _visible;
@@ -18,24 +21,39 @@ namespace DinaFramework.Menus
         Func<MenuItem, MenuItem> _selection;
         Func<MenuItem, MenuItem> _deselection;
         Func<MenuItem, MenuItem> _activation;
+        /// <summary>
+        /// Fonction exécutée lors de la sélection de l'élément de menu.
+        /// </summary>
         public Func<MenuItem, MenuItem> Selection
         {
             get { return _selection; }
             set { _selection = value; }
         }
+        /// <summary>
+        /// Fonction exécutée lors de la désélection de l'élément de menu.
+        /// </summary>
         public Func<MenuItem, MenuItem> Deselection
         {
             get { return _deselection; }
             set { _deselection = value; }
         }
+        /// <summary>
+        /// Fonction exécutée lors de l'activation (validation) de l'élément de menu.
+        /// </summary>
         public Func<MenuItem, MenuItem> Activation
         {
             get { return _activation; }
             set { _activation = value; }
         }
 
+        /// <summary>
+        /// L'état actuel de l'élément de menu (Enable ou Disable).
+        /// </summary>
         public MenuItemState State { get; set; }
 
+        /// <summary>
+        /// La position de l'élément de menu.
+        /// </summary>
         public Vector2 Position
         {
             get
@@ -50,6 +68,9 @@ namespace DinaFramework.Menus
                     posItem.Position = value;
             }
         }
+        /// <summary>
+        /// Les dimensions de l'élément de menu (largeur et hauteur).
+        /// </summary>
         public Vector2 Dimensions
         {
             get
@@ -64,6 +85,9 @@ namespace DinaFramework.Menus
                     dimItem.Dimensions = value;
             }
         }
+        /// <summary>
+        /// Les dimensions du texte associé à l'élément de menu.
+        /// </summary>
         public Vector2 TextDimensions
         {
             get
@@ -73,6 +97,9 @@ namespace DinaFramework.Menus
                 return default;
             }
         }
+        /// <summary>
+        /// Le ZOrder de l'élément de menu (utilisé pour le tri de l'affichage).
+        /// </summary>
         public int ZOrder
         {
             get
@@ -87,6 +114,9 @@ namespace DinaFramework.Menus
                     baseitem.ZOrder = value;
             }
         }
+        /// <summary>
+        /// La couleur de l'élément de menu.
+        /// </summary>
         public Color Color
         {
             get
@@ -101,6 +131,9 @@ namespace DinaFramework.Menus
                     coloritem.Color = value;
             }
         }
+        /// <summary>
+        /// Le contenu du texte associé à l'élément de menu.
+        /// </summary>
         public string Content
         {
             get
@@ -115,12 +148,18 @@ namespace DinaFramework.Menus
                     textitem.Content = value;
             }
         }
+        /// <summary>
+        /// Indique si l'élément de menu est visible ou non.
+        /// </summary>
         public bool Visible
         {
             get { return _visible; }
             set { _visible = value; }
         }
 
+        /// <summary>
+        /// La police utilisée pour afficher le texte de l'élément de menu.
+        /// </summary>
         public SpriteFont Font
         {
             get
@@ -136,6 +175,18 @@ namespace DinaFramework.Menus
             }
         }
 
+        /// <summary>
+        /// Constructeur pour initialiser un élément de menu avec un texte, une couleur, et des fonctions pour la sélection, désélection et activation.
+        /// </summary>
+        /// <param name="font">La police du texte.</param>
+        /// <param name="text">Le texte à afficher.</param>
+        /// <param name="color">La couleur du texte.</param>
+        /// <param name="selection">Fonction de sélection (optionnelle).</param>
+        /// <param name="deselection">Fonction de désélection (optionnelle).</param>
+        /// <param name="activation">Fonction d'activation (optionnelle).</param>
+        /// <param name="position">Position de l'élément (optionnelle).</param>
+        /// <param name="halign">Alignement horizontal (optionnel).</param>
+        /// <param name="valign">Alignement vertical (optionnel).</param>
         public MenuItem(SpriteFont font, string text, Color color,
                         Func<MenuItem, MenuItem> selection = null,
                         Func<MenuItem, MenuItem> deselection = null,
@@ -145,6 +196,14 @@ namespace DinaFramework.Menus
             this(new Text(font, text, color, position, halign, valign, 0), selection, deselection, activation, position)
         {
         }
+        /// <summary>
+        /// Constructeur pour initialiser un élément de menu avec un objet personnalisé, ainsi que des fonctions pour la sélection, désélection et activation.
+        /// </summary>
+        /// <param name="item">L'objet de l'élément de menu.</param>
+        /// <param name="selection">Fonction de sélection (optionnelle).</param>
+        /// <param name="deselection">Fonction de désélection (optionnelle).</param>
+        /// <param name="activation">Fonction d'activation (optionnelle).</param>
+        /// <param name="position">Position de l'élément (optionnelle).</param>
         public MenuItem(object item,
                         Func<MenuItem, MenuItem> selection = null,
                         Func<MenuItem, MenuItem> deselection = null,
@@ -179,6 +238,10 @@ namespace DinaFramework.Menus
         //            colorItem2.Color = previousColor;
         //    }
         //}
+        /// <summary>
+        /// Dessine l'élément de menu à l'écran, en respectant sa visibilité et son état.
+        /// </summary>
+        /// <param name="spritebatch">Le SpriteBatch utilisé pour dessiner l'élément.</param>
         public void Draw(SpriteBatch spritebatch)
         {
             if (!_visible || _item is not IDraw drawableItem)
