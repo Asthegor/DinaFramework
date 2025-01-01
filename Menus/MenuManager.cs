@@ -284,16 +284,16 @@ namespace DinaFramework.Menus
             _centeredItems = true;
             _itemsScreenDimensions = screendimensions;
             _itemsGroup.Position = (screendimensions - _itemsGroup.Dimensions) / 2;
-            //foreach (MenuItem item in _items)
-            //{
-            //    if (item is null)
-            //        continue;
+            foreach (MenuItem item in _items)
+            {
+                if (item is null)
+                    continue;
 
-            //    Vector2 itemTextDim = item.TextDimensions;
-            //    Vector2 itemPos = item.Position;
-            //    itemPos.X = (screendimensions.X - itemTextDim.X) / 2.0f;
-            //    item.Position = itemPos;
-            //}
+                Vector2 itemTextDim = item.TextDimensions;
+                Vector2 itemPos = item.Position;
+                itemPos.X = (screendimensions.X - itemTextDim.X) / 2.0f;
+                item.Position = itemPos;
+            }
         }
         /// <summary>
         /// Définit la police des éléments de menu.
@@ -547,11 +547,11 @@ namespace DinaFramework.Menus
                 }
                 if (_iconRight != null && (IconAlignment == IconMenuAlignment.Right || IconAlignment == IconMenuAlignment.Both))
                 {
-                    float iconRightPos = _background != null ? _background.Position.X + _background.Dimensions.X - _iconRight.Dimensions.X - _borderSpacing
-                                                             : _itemsGroup.Position.X + _itemsGroup.Dimensions.X - _iconRight.Dimensions.X;
+                    //float iconRightPos = _background != null ? _background.Position.X + _background.Dimensions.X - _iconRight.Dimensions.X - _borderSpacing
+                    //                                         : _itemsGroup.Position.X + _itemsGroup.Dimensions.X + _iconSpacing;
 
-                    _iconRight.Position = new Vector2(iconRightPos,
-                                                      _items[_currentitemindex].Position.Y + (_items[_currentitemindex].Dimensions.Y / 2.0f) - (_iconRight.Dimensions.Y / 2.0f));
+                    _iconRight.Position = new Vector2(_items[_currentitemindex].Position.X + _items[_currentitemindex].TextDimensions.X + _iconSpacing,
+                                                      _items[_currentitemindex].Position.Y + (_items[_currentitemindex].TextDimensions.Y - _iconRight.Dimensions.Y) / 2.0f);
                     _iconRight.Draw(spritebatch);
                 }
             }
