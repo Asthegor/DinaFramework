@@ -11,6 +11,9 @@ using System.Diagnostics;
 
 namespace DinaFramework.Graphics
 {
+    /// <summary>
+    /// Classe représentant un menu déroulant interactif avec des options sélectionnables.
+    /// </summary>
     public class DropDown : Base, IUpdate, IDraw, IVisible, IPosition
     {
         private const int OFFSET_OPTIONS = 2;
@@ -34,6 +37,20 @@ namespace DinaFramework.Graphics
         private MouseState _oldMouseState;
         private Color _selectedOptionColor;
 
+        /// <summary>
+        /// Initialise une nouvelle instance de la classe DropDown.
+        /// </summary>
+        /// <param name="font">Police à utiliser pour afficher le texte.</param>
+        /// <param name="arrowTexture">Texture de la flèche pour afficher l'option déroulante.</param>
+        /// <param name="position">Position de l'élément dans l'espace 2D.</param>
+        /// <param name="dimensions">Dimensions du menu déroulant.</param>
+        /// <param name="options">Liste des options du menu déroulant.</param>
+        /// <param name="textcolor">Couleur du texte des options.</param>
+        /// <param name="selectedoptioncolor">Couleur de l'option sélectionnée.</param>
+        /// <param name="backgroundcolor">Couleur de fond du menu déroulant.</param>
+        /// <param name="bordercolor">Couleur de la bordure du menu déroulant.</param>
+        /// <param name="thickness">Épaisseur de la bordure.</param>
+        /// <param name="nbvisibleoptions">Nombre d'options visibles à afficher par défaut.</param>
         public DropDown(SpriteFont font, Texture2D arrowTexture, Vector2 position, Vector2 dimensions, List<string> options, Color textcolor, Color selectedoptioncolor, Color backgroundcolor, Color bordercolor, int thickness = 1, int nbvisibleoptions = 5)
             : base(position, dimensions)
         {
@@ -66,6 +83,9 @@ namespace DinaFramework.Graphics
             Reset();
         }
 
+        /// <summary>
+        /// Position du menu déroulant.
+        /// </summary>
         public new Vector2 Position
         {
             get => base.Position;
@@ -79,7 +99,13 @@ namespace DinaFramework.Graphics
             }
         }
 
+        /// <summary>
+        /// Visibilité du menu déroulant.
+        /// </summary>
         public bool Visible { get => _visible; set => _visible = value; }
+        /// <summary>
+        /// Option sélectionnée dans le menu déroulant.
+        /// </summary>
         public string Value {
             get => _text.Content;
             set
@@ -104,6 +130,11 @@ namespace DinaFramework.Graphics
             }
         }
 
+        /// <summary>
+        /// Ajoute une nouvelle option au menu déroulant à la position spécifiée.
+        /// </summary>
+        /// <param name="option">Option à ajouter.</param>
+        /// <param name="position">Position où ajouter l'option (par défaut à la fin).</param>
         public void AddOption(string option, int position = -1)
         {
             if (position >= 0 && position < _options.Count)
@@ -111,10 +142,25 @@ namespace DinaFramework.Graphics
             else
                 _options.Add(option);
         }
+        /// <summary>
+        /// Supprime une option du menu déroulant.
+        /// </summary>
+        /// <param name="option">Option à supprimer.</param>
         public void RemoveOption(string option)
         {
             _options.Remove(option);
         }
+        /// <summary>
+        /// Efface toutes les options du menu déroulant.
+        /// </summary>
+        public void Clear()
+        {
+            _options.Clear();
+        }
+        
+        /// <summary>
+        /// Réinitialise le menu déroulant à son état initial (fermé et sans option sélectionnée).
+        /// </summary>
         public void Reset()
         {
             _isExpanded = false;
@@ -128,6 +174,10 @@ namespace DinaFramework.Graphics
                 tb.Color = _text.Color;
             }
         }
+        /// <summary>
+        /// Met à jour l'état du menu déroulant (ouvert/fermé, sélection d'option).
+        /// </summary>
+        /// <param name="gametime">Temps de jeu actuel.</param>
         public void Update(GameTime gametime)
         {
             bool clickedAway = false;
@@ -185,6 +235,10 @@ namespace DinaFramework.Graphics
             _oldMouseState = mouseState;
         }
 
+        /// <summary>
+        /// Dessine le menu déroulant sur l'écran.
+        /// </summary>
+        /// <param name="spritebatch">Objet SpriteBatch pour dessiner les éléments.</param>
         public void Draw(SpriteBatch spritebatch)
         {
             if (Visible)

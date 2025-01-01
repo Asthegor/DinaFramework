@@ -12,10 +12,12 @@ using System.Diagnostics;
 
 namespace DinaFramework.Graphics
 {
+    /// <summary>
+    /// Classe représentant une barre de progression.
+    /// </summary>
     public class ProgressBar : Base, IDraw, IUpdate, IVisible, ICopyable<ProgressBar>
     {
-        public enum PBType { Color, Image2Parts, Image3Parts }
-        private PBType _pbtype;
+        private ProgressBarType _pbtype;
         private bool _visible;
         private float _value;
         private float _maxValue;
@@ -33,6 +35,19 @@ namespace DinaFramework.Graphics
         private float _increment;
         private bool _autoIncrement;
 
+        /// <summary>
+        /// Initialise une nouvelle instance de la classe ProgressBar avec un fond de couleur et une bordure.
+        /// </summary>
+        /// <param name="position">Position de la barre de progression.</param>
+        /// <param name="dimensions">Dimensions de la barre de progression.</param>
+        /// <param name="value">Valeur initiale de la barre.</param>
+        /// <param name="maxValue">Valeur maximale de la barre.</param>
+        /// <param name="frontColor">Couleur du remplissage.</param>
+        /// <param name="borderColor">Couleur de la bordure.</param>
+        /// <param name="backColor">Couleur de fond.</param>
+        /// <param name="borderThickness">Épaisseur de la bordure.</param>
+        /// <param name="mode">Mode de la barre de progression.</param>
+        /// <param name="zorder">Ordre de superposition.</param>
         public ProgressBar(Vector2 position, Vector2 dimensions, float value, float maxValue, Color frontColor, Color borderColor, Color backColor, int borderThickness = 1, ProgressBarMode mode = ProgressBarMode.LeftToRight, int zorder = 0) : base(position, dimensions, zorder)
         {
             Visible = true;
@@ -42,6 +57,18 @@ namespace DinaFramework.Graphics
             _rectangles[0] = new Rectangle(position.ToPoint(), dimensions.ToPoint()); // Border
             SetColors(frontColor, borderColor, backColor, borderThickness);
         }
+        /// <summary>
+        /// Initialise une nouvelle instance de la classe ProgressBar avec une image de fond et une image de remplissage.
+        /// </summary>
+        /// <param name="position">Position de la barre de progression.</param>
+        /// <param name="dimensions">Dimensions de la barre de progression.</param>
+        /// <param name="value">Valeur initiale de la barre.</param>
+        /// <param name="maxValue">Valeur maximale de la barre.</param>
+        /// <param name="backImage">Image de fond.</param>
+        /// <param name="frontImage">Image de remplissage.</param>
+        /// <param name="offset">Décalage de l'image.</param>
+        /// <param name="mode">Mode de la barre de progression.</param>
+        /// <param name="zorder">Ordre de superposition.</param>
         public ProgressBar(Vector2 position, Vector2 dimensions, float value, float maxValue, Texture2D backImage, Texture2D frontImage, int offset = 0, ProgressBarMode mode = ProgressBarMode.LeftToRight, int zorder = 0) : base(position, dimensions, zorder)
         {
             Visible = true;
@@ -52,6 +79,18 @@ namespace DinaFramework.Graphics
             _rectangles[0] = new Rectangle(position.ToPoint(), dimensions.ToPoint());
             SetImages(backImage, frontImage, _imgOffset);
         }
+        /// <summary>
+        /// Initialise une nouvelle instance de la classe ProgressBar avec trois images (gauche, centre, droite) pour le fond et le remplissage.
+        /// </summary>
+        /// <param name="position">Position de la barre de progression.</param>
+        /// <param name="dimensions">Dimensions de la barre de progression.</param>
+        /// <param name="value">Valeur initiale de la barre.</param>
+        /// <param name="maxValue">Valeur maximale de la barre.</param>
+        /// <param name="leftImage">Image de la partie gauche.</param>
+        /// <param name="centerImage">Image de la partie centrale.</param>
+        /// <param name="rightImage">Image de la partie droite.</param>
+        /// <param name="mode">Mode de la barre de progression.</param>
+        /// <param name="zorder">Ordre de superposition.</param>
         public ProgressBar(Vector2 position, Vector2 dimensions, float value, float maxValue, Texture2D leftImage, Texture2D centerImage, Texture2D rightImage, ProgressBarMode mode = ProgressBarMode.LeftToRight, int zorder = 0) : base(position, dimensions, zorder)
         {
             Visible = true;
@@ -61,6 +100,16 @@ namespace DinaFramework.Graphics
             _rectangles[1] = new Rectangle(position.ToPoint(), dimensions.ToPoint());
             SetImages(leftImage, centerImage, rightImage);
         }
+        /// <summary>
+        /// Initialise une nouvelle instance de la classe ProgressBar avec trois images (gauche, centre, droite) pour le fond et le remplissage.
+        /// </summary>
+        /// <param name="value">Valeur initiale de la barre.</param>
+        /// <param name="maxValue">Valeur maximale de la barre.</param>
+        /// <param name="leftImage">Image de la partie gauche.</param>
+        /// <param name="centerImage">Image de la partie centrale.</param>
+        /// <param name="rightImage">Image de la partie droite.</param>
+        /// <param name="mode">Mode de la barre de progression.</param>
+        /// <param name="zorder">Ordre de superposition.</param>
         public ProgressBar(float value, float maxValue, Texture2D leftImage, Texture2D centerImage, Texture2D rightImage, ProgressBarMode mode = ProgressBarMode.LeftToRight, int zorder = 0)
         {
             Debug.Assert(leftImage != null, "'leftImage' could not be null.");
@@ -79,9 +128,23 @@ namespace DinaFramework.Graphics
             SetImages(leftImage, centerImage, rightImage);
         }
 
+        /// <summary>
+        /// Indique si la barre de progression doit s'incrémenter automatiquement.
+        /// </summary>
         public bool AutoIncrement { get => _autoIncrement; set => _autoIncrement = value; }
+        /// <summary>
+        /// La valeur maximale de la barre de progression.
+        /// </summary>
         public float MaxValue { get => _maxValue; set => _maxValue = value; }
+        /// <summary>
+        /// Mode de la barre de progression, définissant la direction de l'animation.
+        /// </summary>
         public ProgressBarMode Mode { get => _mode; set => _mode = value; }
+        /// <summary>
+        /// Définit l'intervalle de progression automatique avec un délai et un incrément.
+        /// </summary>
+        /// <param name="delay">Délai entre chaque incrément.</param>
+        /// <param name="increment">Valeur de l'incrément à chaque intervalle.</param>
         public void ProgressInterval(float delay, float increment = 1)
         {
             if (delay > 0 && increment != 0)
@@ -91,6 +154,9 @@ namespace DinaFramework.Graphics
                 AutoIncrement = true;
             }
         }
+        /// <summary>
+        /// La valeur actuelle de la barre de progression.
+        /// </summary>
         public float Value
         {
             get => _value;
@@ -104,23 +170,32 @@ namespace DinaFramework.Graphics
                     _value = value;
                 switch (_pbtype)
                 {
-                    case PBType.Color:
+                    case ProgressBarType.Color:
                         UpdateColorRectangle();
                         break;
-                    case PBType.Image2Parts:
+                    case ProgressBarType.Image2Parts:
                         Update2ImagesRectangle(_imgOffset);
                         break;
-                    case PBType.Image3Parts:
+                    case ProgressBarType.Image3Parts:
                         Update3ImagesRectangle();
                         break;
                 }
 
             }
         }
+        /// <summary>
+        /// Indique si la barre de progression est visible ou non.
+        /// </summary>
         public bool Visible { get => _visible; set => _visible = value; }
+        /// <summary>
+        /// Définit les images de la barre de progression avec un arrière-plan et un avant-plan.
+        /// </summary>
+        /// <param name="backImage">Image de fond.</param>
+        /// <param name="frontImage">Image de remplissage.</param>
+        /// <param name="offset">Décalage de l'image.</param>
         public void SetImages(Texture2D backImage, Texture2D frontImage, int offset = 0)
         {
-            _pbtype = PBType.Image2Parts;
+            _pbtype = ProgressBarType.Image2Parts;
             if (_textures.Count == 0)
                 _textures.Add(backImage);
             else
@@ -131,9 +206,15 @@ namespace DinaFramework.Graphics
                 _textures[1] = frontImage;
             Update2ImagesRectangle(offset);
         }
+        /// <summary>
+        /// Définit les images de la barre de progression avec trois parties (gauche, centre, droite).
+        /// </summary>
+        /// <param name="leftImage">Image de la partie gauche.</param>
+        /// <param name="centerImage">Image de la partie centrale.</param>
+        /// <param name="rightImage">Image de la partie droite.</param>
         public void SetImages(Texture2D leftImage, Texture2D centerImage, Texture2D rightImage)
         {
-            _pbtype = PBType.Image3Parts;
+            _pbtype = ProgressBarType.Image3Parts;
             if (_textures.Count == 0)
                 _textures.Add(leftImage);
             else
@@ -148,9 +229,16 @@ namespace DinaFramework.Graphics
                 _textures[2] = rightImage;
             Update3ImagesRectangle();
         }
+        /// <summary>
+        /// Définit les couleurs et la bordure de la barre de progression.
+        /// </summary>
+        /// <param name="frontColor">Couleur de remplissage.</param>
+        /// <param name="borderColor">Couleur de bordure.</param>
+        /// <param name="backColor">Couleur de fond.</param>
+        /// <param name="borderThickness">Épaisseur de la bordure.</param>
         public void SetColors(Color frontColor, Color borderColor, Color backColor, int borderThickness = 1)
         {
-            _pbtype = PBType.Color;
+            _pbtype = ProgressBarType.Color;
             _frontColor = frontColor;
             _backColor = backColor;
             _borderColor = borderColor;
@@ -503,6 +591,10 @@ namespace DinaFramework.Graphics
             }
 
         }
+        /// <summary>
+        /// Met à jour l'état de la barre de progression en fonction du temps écoulé et de son mode.
+        /// </summary>
+        /// <param name="gameTime">Le temps de jeu écoulé depuis la dernière mise à jour.</param>
         public void Update(GameTime gametime)
         {
             ArgumentNullException.ThrowIfNull(gametime);
@@ -516,6 +608,10 @@ namespace DinaFramework.Graphics
                 }
             }
         }
+        /// <summary>
+        /// Dessine la barre de progression sur l'écran en fonction de son état actuel (valeur, images, couleurs, etc.).
+        /// </summary>
+        /// <param name="spriteBatch">Le spriteBatch utilisé pour dessiner la barre de progression.</param>
         public void Draw(SpriteBatch spritebatch)
         {
             ArgumentNullException.ThrowIfNull(spritebatch);
@@ -524,7 +620,7 @@ namespace DinaFramework.Graphics
             {
                 switch (_pbtype)
                 {
-                    case PBType.Color:
+                    case ProgressBarType.Color:
                         if (_textures.Count == 0)
                         {
                             _textures.Add(new Texture2D(spritebatch.GraphicsDevice, 1, 1));
@@ -534,11 +630,11 @@ namespace DinaFramework.Graphics
                         spritebatch.Draw(_textures[0], _rectangles[1], _backColor);
                         spritebatch.Draw(_textures[0], _rectangles[2], _frontColor);
                         break;
-                    case PBType.Image2Parts:
+                    case ProgressBarType.Image2Parts:
                         spritebatch.Draw(_textures[0], _rectangles[0], Color.White);
                         spritebatch.Draw(_textures[1], _rectangles[1], Color.White);
                         break;
-                    case PBType.Image3Parts:
+                    case ProgressBarType.Image3Parts:
                         spritebatch.Draw(_textures[0], _rectangles[0], _rectanglesSource[0], Color.White);
                         spritebatch.Draw(_textures[1], _rectangles[1], _rectanglesSource[1], Color.White);
                         spritebatch.Draw(_textures[2], _rectangles[2], _rectanglesSource[2], Color.White);
@@ -549,12 +645,19 @@ namespace DinaFramework.Graphics
             }
         }
 
+        /// <summary>
+        /// Réinitialise la barre de progression à son état initial, en réinitialisant sa valeur de progression.
+        /// </summary>
         public void Reset(float value = 0)
         {
             _timer = 0;
             Value = value;
         }
 
+        /// <summary>
+        /// Crée une copie de la barre de progression actuelle, avec la même valeur de progression.
+        /// </summary>
+        /// <returns>Une nouvelle instance de la barre de progression avec les mêmes valeurs.</returns>
         public ProgressBar Copy()
         {
             Rectangle[] copiedRectangles = new Rectangle[_rectangles.Length];

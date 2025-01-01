@@ -8,6 +8,9 @@ using System;
 
 namespace DinaFramework.Graphics
 {
+    /// <summary>
+    /// Représente un sprite (image) avec des propriétés telles que la couleur, la position, la rotation, le redimensionnement et l'effet de réflexion.
+    /// </summary>
     public class Sprite : Base, IColor, IVisible, IDraw, ICollide, ICopyable<Sprite>
     {
         private Rectangle _rectangle;
@@ -19,9 +22,28 @@ namespace DinaFramework.Graphics
         private Vector2 _flip;
         private Vector2 _scale;
 
+        /// <summary>
+        /// Initialise une nouvelle instance de la classe Sprite avec les paramètres spécifiés.
+        /// </summary>
+        /// <param name="texture">La texture (image) à afficher.</param>
+        /// <param name="color">La couleur du sprite.</param>
+        /// <param name="position">La position du sprite dans l'espace.</param>
         public Sprite(Texture2D texture, Color color, Vector2 position) :
             this(texture, color, position, null, Vector2.Zero, Vector2.One, 0, Vector2.One, SpriteEffects.None, 0)
         { }
+        /// <summary>
+        /// Initialise une nouvelle instance de la classe Sprite avec les paramètres spécifiés.
+        /// </summary>
+        /// <param name="texture">La texture (image) à afficher.</param>
+        /// <param name="color">La couleur du sprite.</param>
+        /// <param name="position">La position du sprite dans l'espace.</param>
+        /// <param name="sourceRectangle">La portion de la texture à afficher.</param>
+        /// <param name="origin">L'origine du sprite pour la rotation.</param>
+        /// <param name="flip">Les effets de réflexion du sprite.</param>
+        /// <param name="rotation">L'angle de rotation du sprite.</param>
+        /// <param name="scale">Le facteur de mise à l'échelle du sprite.</param>
+        /// <param name="effects">Les effets de sprite (par exemple, inversion horizontale ou verticale).</param>
+        /// <param name="zOrder">L'ordre de superposition du sprite.</param>
         public Sprite(Texture2D texture, Color color, Vector2 position, Rectangle? sourceRectangle, Vector2 origin, Vector2 flip, float rotation, Vector2 scale, SpriteEffects effects, int zOrder)
             : base(position, new Vector2(sourceRectangle?.Width ?? texture?.Width ?? 0, sourceRectangle?.Height ?? texture?.Height ?? 0), zOrder)
         {
@@ -88,21 +110,33 @@ namespace DinaFramework.Graphics
         //    Flip = sprite.Flip;
         //    _effects = sprite._effects;
         //}
+        /// <summary>
+        /// Obtient ou définit la texture du sprite.
+        /// </summary>
         public Texture2D Texture
         {
             get { return _texture; }
             set { _texture = value; }
         }
+        /// <summary>
+        /// Obtient ou définit le rectangle représentant la zone d'affichage du sprite.
+        /// </summary>
         public Rectangle Rectangle
         {
             get { return _rectangle; }
             private set { _rectangle = value; }
         }
+        /// <summary>
+        /// Obtient ou définit la couleur du sprite.
+        /// </summary>
         public Color Color
         {
             get { return _color; }
             set { _color = value; }
         }
+        /// <summary>
+        /// Obtient ou définit la position du sprite.
+        /// </summary>
         public override Vector2 Position
         {
             get { return base.Position; }
@@ -113,6 +147,9 @@ namespace DinaFramework.Graphics
                 //_rectangle.Location = new Point(Convert.ToInt32(value.X - Origin.X), Convert.ToInt32(value.Y - Origin.Y));
             }
         }
+        /// <summary>
+        /// Obtient ou définit les dimensions du sprite.
+        /// </summary>
         public override Vector2 Dimensions
         {
             get
@@ -127,22 +164,41 @@ namespace DinaFramework.Graphics
                 _rectangle.Size = new Point(Convert.ToInt32(value.X), Convert.ToInt32(value.Y));
             }
         }
+        /// <summary>
+        /// Obtient ou définit l'origine du sprite pour la rotation.
+        /// </summary>
         public Vector2 Origin
         {
             get { return _origin; }
             set { _origin = value; }
         }
+        /// <summary>
+        /// Centre l'origine du sprite sur son centre.
+        /// </summary>
         public void CenterOrigin() { _origin = new Vector2(Texture.Width, Texture.Height) / 2.0f; }
+        /// <summary>
+        /// Obtient ou définit la visibilité du sprite.
+        /// </summary>
         public bool Visible
         {
             get { return _visible; }
             set { _visible = value; }
         }
+        /// <summary>
+        /// Définit la visibilité du sprite (utilisé dans le MenuManager).
+        /// </summary>
+        /// <param name="value">La valeur de visibilité (true ou false).</param>
         public void SetVisible(bool value = false)
         {
             _visible = value;
         }
+        /// <summary>
+        /// Obtient ou définit la rotation du sprite en radians.
+        /// </summary>
         public float Rotation { get; set; }
+        /// <summary>
+        /// Obtient ou définit l'échelle du sprite.
+        /// </summary>
         public Vector2 Scale
         {
             get => _scale;
@@ -152,6 +208,9 @@ namespace DinaFramework.Graphics
                 _rectangle.Size = new Vector2(Dimensions.X * _scale.X, Dimensions.Y * _scale.Y).ToPoint();
             }
         }
+        /// <summary>
+        /// Obtient ou définit l'effet de réflexion du sprite (horizontal ou vertical).
+        /// </summary>
         public Vector2 Flip
         {
             get { return _flip; }
@@ -169,6 +228,10 @@ namespace DinaFramework.Graphics
                 _flip = value;
             }
         }
+        /// <summary>
+        /// Dessine le sprite sur l'écran avec un SpriteBatch.
+        /// </summary>
+        /// <param name="spritebatch">Le SpriteBatch utilisé pour dessiner le sprite.</param>
         public void Draw(SpriteBatch spritebatch)
         {
             if (Visible)
@@ -182,6 +245,11 @@ namespace DinaFramework.Graphics
             }
         }
 
+        /// <summary>
+        /// Vérifie si le sprite entre en collision avec un autre objet ICollide.
+        /// </summary>
+        /// <param name="item">L'objet avec lequel vérifier la collision.</param>
+        /// <returns>True si une collision est détectée, sinon false.</returns>
         public bool Collide(ICollide item)
         {
             if (item == null)
@@ -189,6 +257,10 @@ namespace DinaFramework.Graphics
             return Rectangle.Intersects(item.Rectangle);
         }
 
+        /// <summary>
+        /// Crée une copie du sprite actuel.
+        /// </summary>
+        /// <returns>Une nouvelle instance de Sprite avec les mêmes propriétés.</returns>
         public Sprite Copy()
         {
             return new Sprite()

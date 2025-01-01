@@ -9,6 +9,10 @@ using System.Collections.Generic;
 
 namespace DinaFramework.Graphics
 {
+    /// <summary>
+    /// Représente une animation graphique composée de plusieurs frames (images).
+    /// Gère la répétition, la vitesse, et d'autres propriétés visuelles comme la rotation, l'échelle, ou le retournement (flip).
+    /// </summary>
     public class Animation : Base, IReset, IUpdate, IDraw, IColor, ICollide, IVisible
     {
         private readonly List<Texture2D> _frames = new List<Texture2D>();
@@ -24,6 +28,20 @@ namespace DinaFramework.Graphics
         private float _rotation;
         private bool _visible;
 
+        /// <summary>
+        /// Initialise une nouvelle instance de Animation.
+        /// </summary>
+        /// <param name="frames">Liste des textures représentant les frames de l'animation.</param>
+        /// <param name="speed">Vitesse de l'animation (en frames par seconde).</param>
+        /// <param name="nbRepetitions">Nombre de répétitions de l'animation (-1 pour une répétition infinie, valeur par défaut : -1).</param>
+        /// <param name="position">Position de l'animation (par défaut : (0, 0)).</param>
+        /// <param name="dimensions">Dimensions de l'animation (par défaut : dimensions de la première frame).</param>
+        /// <param name="origin">Point d'origine de l'animation pour la rotation (par défaut : (0, 0)).</param>
+        /// <param name="rotation">Angle de rotation de l'animation (par défaut : 0).</param>
+        /// <param name="scale">Facteur d'échelle de l'animation (par défaut : (1, 1)).</param>
+        /// <param name="flip">Facteur de retournement de l'animation (par défaut : (1, 1)).</param>
+        /// <param name="visible">Indique si l'animation est visible (par défaut : true).</param>
+        /// <param name="zorder">Ordre de superposition de l'animation (par défaut : 0).</param>
         public Animation(List<Texture2D> frames, float speed, int nbRepetitions = -1, Vector2 position = default, Vector2 dimensions = default, Vector2 origin = default, float rotation = 0, Vector2 scale = default, Vector2 flip = default, bool visible = true, int zorder = default) : base(position, dimensions, zorder)
         {
             ArgumentNullException.ThrowIfNull(frames);
@@ -47,8 +65,13 @@ namespace DinaFramework.Graphics
             Visible = visible;
         }
 
+        /// <summary>
+        /// Vitesse d'exécution de l'animation.
+        /// </summary>
         public float Speed { get => _speed; set => _speed = value; }
-
+        /// <summary>
+        /// Position actuelle de l'animation sur l'écran.
+        /// </summary>
         public override Vector2 Position
         {
             get => base.Position;
@@ -58,7 +81,9 @@ namespace DinaFramework.Graphics
                 _rect.Location = value.ToPoint();
             }
         }
-
+        /// <summary>
+        /// Taille de l'animation (largeur et hauteur).
+        /// </summary>
         public override Vector2 Dimensions
         {
             get => base.Dimensions;
@@ -68,31 +93,41 @@ namespace DinaFramework.Graphics
                 _rect.Size = value.ToPoint();
             }
         }
-
+        /// <summary>
+        /// Couleur appliquée à l'animation lors du rendu.
+        /// </summary>
         public Color Color
         {
             get => _color;
             set => _color = value;
         }
-
+        /// <summary>
+        /// Point d'origine utilisé pour les transformations, comme la rotation ou le redimensionnement.
+        /// </summary>
         public Vector2 Origin
         {
             get => _origin;
             set => _origin = value;
         }
-
+        /// <summary>
+        /// Angle de rotation de l'animation en radians.
+        /// </summary>
         public float Rotation
         {
             get => _rotation;
             set => _rotation = value;
         }
-
+        /// <summary>
+        /// Facteur de redimensionnement de l'animation sur les axes X et Y.
+        /// </summary>
         public Vector2 Scale
         {
             get => _scale;
             set => _scale = value;
         }
-
+        /// <summary>
+        /// Permet de retourner l'animation horizontalement ou verticalement.
+        /// </summary>
         public Vector2 Flip
         {
             get => _flip;
@@ -105,11 +140,19 @@ namespace DinaFramework.Graphics
                     value.Y /= Math.Abs(value.Y);
             }
         }
-
+        /// <summary>
+        /// Rectangle de délimitation actuel de l'animation.
+        /// </summary>
         public Rectangle Rectangle => _rect;
-
+        /// <summary>
+        /// Indique si l'animation est visible.
+        /// </summary>
         public bool Visible { get => _visible; set => _visible = value; }
 
+        /// <summary>
+        /// Met à jour l'état de l'animation.
+        /// </summary>
+        /// <param name="gametime">Temps de jeu écoulé depuis la dernière mise à jour.</param>
         public void Update(GameTime gametime)
         {
             if (Visible && _currentRepetition != 0)
@@ -128,6 +171,10 @@ namespace DinaFramework.Graphics
             }
         }
 
+        /// <summary>
+        /// Affiche l'animation sur l'écran.
+        /// </summary>
+        /// <param name="spritebatch">Objet SpriteBatch utilisé pour dessiner l'animation.</param>
         public void Draw(SpriteBatch spritebatch)
         {
             ArgumentNullException.ThrowIfNull(spritebatch);
@@ -136,6 +183,11 @@ namespace DinaFramework.Graphics
                 spritebatch.Draw(_frames[(int)_currentFrame], _rect, null, _color, _rotation, _origin, SpriteEffects.None, ZOrder);
         }
 
+        /// <summary>
+        /// Vérifie si l'animation entre en collision avec un autre objet.
+        /// </summary>
+        /// <param name="item">Objet implémentant l'interface ICollide.</param>
+        /// <returns>Retourne true si une collision est détectée, sinon false.</returns>
         public bool Collide(ICollide item)
         {
             if (item == null)
@@ -144,8 +196,15 @@ namespace DinaFramework.Graphics
             return Rectangle.Intersects(item.Rectangle);
         }
 
+        /// <summary>
+        /// Indique si l'animation a terminé son cycle.
+        /// </summary>
+        /// <returns>True si l'animation est terminée, sinon false.</returns>
         public bool IsFinished() => _currentRepetition == 0;
 
+        /// <summary>
+        /// Réinitialise l'animation à son état initial.
+        /// </summary>
         public void Reset()
         {
             _currentRepetition = _nbRepetitions;

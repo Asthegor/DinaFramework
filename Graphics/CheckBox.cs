@@ -1,4 +1,5 @@
 ﻿using DinaFramework.Core;
+using DinaFramework.Enums;
 using DinaFramework.Interfaces;
 
 using Microsoft.Xna.Framework;
@@ -9,7 +10,9 @@ using System;
 
 namespace DinaFramework.Graphics
 {
-    public enum CheckBoxState { Unchecked, Checked };
+    /// <summary>
+    /// Classe représentant une case à cocher graphique interactive.
+    /// </summary>
     public class CheckBox : Base, IUpdate, IDraw, IVisible, ICopyable<CheckBox>, ILocked
     {
         private Rectangle _checkBoxRect;
@@ -21,6 +24,14 @@ namespace DinaFramework.Graphics
         private static Texture2D _pixelTexture;
         private MouseState _oldMouseState;
 
+        /// <summary>
+        /// Initialise une nouvelle instance de la classe CheckBox avec des couleurs.
+        /// </summary>
+        /// <param name="checkedColor">Couleur de la case cochée.</param>
+        /// <param name="uncheckedColor">Couleur de la case non cochée.</param>
+        /// <param name="position">Position de la case à cocher.</param>
+        /// <param name="dimensions">Dimensions de la case à cocher.</param>
+        /// <param name="zorder">Ordre de dessin de la case.</param>
         public CheckBox(Color checkedColor, Color uncheckedColor, Vector2 position, Vector2 dimensions, int zorder = 0) :
             base(position, dimensions, zorder)
         {
@@ -29,6 +40,14 @@ namespace DinaFramework.Graphics
             Position = position;
             Initialize();
         }
+        /// <summary>
+        /// Initialise une nouvelle instance de la classe CheckBox avec des textures.
+        /// </summary>
+        /// <param name="uncheckedTexture">Texture utilisée pour la case non cochée.</param>
+        /// <param name="checkedTexture">Texture utilisée pour la case cochée.</param>
+        /// <param name="position">Position de la case à cocher.</param>
+        /// <param name="dimensions">Dimensions de la case à cocher.</param>
+        /// <param name="zorder">Ordre de dessin de la case.</param>
         public CheckBox(Texture2D uncheckedTexture, Texture2D checkedTexture, Vector2 position, Vector2 dimensions, int zorder = 0) :
             base(position, dimensions, zorder)
         {
@@ -43,6 +62,9 @@ namespace DinaFramework.Graphics
             Visible = true;
             State = CheckBoxState.Unchecked;
         }
+        /// <summary>
+        /// Position de la case à cocher.
+        /// </summary>
         public override Vector2 Position
         {
             get => base.Position;
@@ -52,6 +74,9 @@ namespace DinaFramework.Graphics
                 _checkBoxRect = new Rectangle(Position.ToPoint(), base.Dimensions.ToPoint());
             }
         }
+        /// <summary>
+        /// Dimensions de la case à cocher.
+        /// </summary>
         public override Vector2 Dimensions
         {
             get => base.Dimensions;
@@ -62,10 +87,23 @@ namespace DinaFramework.Graphics
             }
         }
 
+        /// <summary>
+        /// Indique si la case à cocher est visible.
+        /// </summary>
         public bool Visible { get; set; }
+        /// <summary>
+        /// Indique si la case à cocher est verrouillée.
+        /// </summary>
         public bool Locked { get; set; }
+        /// <summary>
+        /// État actuel de la case à cocher (cochée ou non cochée).
+        /// </summary>
         public CheckBoxState State { get; set; }
 
+        /// <summary>
+        /// Met à jour l'état de la case à cocher (gestion des clics et des interactions).
+        /// </summary>
+        /// <param name="gametime">Temps de jeu écoulé depuis la dernière mise à jour.</param>
         public void Update(GameTime gametime)
         {
             MouseState ms = Mouse.GetState();
@@ -84,6 +122,10 @@ namespace DinaFramework.Graphics
             }
             _oldMouseState = ms;
         }
+        /// <summary>
+        /// Dessine la case à cocher sur l'écran.
+        /// </summary>
+        /// <param name="spritebatch">Objet SpriteBatch utilisé pour dessiner la case.</param>
         public void Draw(SpriteBatch spritebatch)
         {
             ArgumentNullException.ThrowIfNull(spritebatch);
@@ -133,6 +175,10 @@ namespace DinaFramework.Graphics
             }
         }
 
+        /// <summary>
+        /// Crée une copie de la case à cocher actuelle.
+        /// </summary>
+        /// <returns>Nouvelle instance de CheckBox avec les mêmes propriétés.</returns>
         public CheckBox Copy()
         {
             return new CheckBox()

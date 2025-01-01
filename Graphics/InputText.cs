@@ -10,7 +10,10 @@ using System.Collections.Generic;
 
 namespace DinaFramework.Graphics
 {
-    public class InputText : IUpdate, IDraw, IVisible, IElement, IColor
+    /// <summary>
+    /// Représente un champ de saisie de texte interactif, permettant à l'utilisateur de saisir du texte.
+    /// </summary>
+    public class InputText : IUpdate, IDraw, IVisible, IElement, IColor, IPosition, IDimensions
     {
         private const float DELAY_KEY_STROKE = 0.5f;
         private const float REPEAT_INTERVAL = 0.25f;  // Intervalle entre les répétitions
@@ -30,6 +33,9 @@ namespace DinaFramework.Graphics
 
         private Dictionary<Keys, float> _keyTimers;
 
+        /// <summary>
+        /// Visibilité du champ de texte.
+        /// </summary>
         public bool Visible { get => _visible; set => _visible = value; }
 
         public InputText(SpriteFont spritefont, string content, Color color, Vector2 position, Vector2 dimensions, Vector2 offset,
@@ -65,11 +71,29 @@ namespace DinaFramework.Graphics
             _keyTimers = new Dictionary<Keys, float>();
             _isActive = false;
         }
+        /// <summary>
+        /// Texte contenu dans le champ de texte.
+        /// </summary>
         public string Content { get => _text.Content; set => _text.Content = value; }
+        /// <summary>
+        /// Couleur de fond du champ de texte.
+        /// </summary>
         public Color BackgroundColor { get => _panel.BackgroundColor; set => _panel.BackgroundColor = value; }
+        /// <summary>
+        /// Couleur du texte du champ de texte.
+        /// </summary>
         public Color Color { get => _text.Color; set => _text.Color = value; }
+        /// <summary>
+        /// Couleur de la bordure du champ de texte.
+        /// </summary>
         public Color BorderColor { get => _panel.BorderColor; set => _panel.BorderColor = value; }
+        /// <summary>
+        /// Position du champ de texte.
+        /// </summary>
         public Vector2 Position { get => _inputTextGroup.Position; set => _inputTextGroup.Position = value; }
+        /// <summary>
+        /// Dimensions du champ de texte.
+        /// </summary>
         public Vector2 Dimensions { get => _inputTextGroup.Dimensions; set => _inputTextGroup.Dimensions = value; }
         public int ZOrder { get => _inputTextGroup.ZOrder; set => _inputTextGroup.ZOrder = value; }
 
