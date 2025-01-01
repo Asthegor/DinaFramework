@@ -40,6 +40,7 @@ DinaFramework est un framework développé à partir de [MonoGame](https://githu
 ## Documentation
 
 La documentation détaillée est en cours de développement.
+Une première version est tout de même disponible ici : https://dinacsharp.lacombedominique.com/documentation/
 
 ## Contributions
 
