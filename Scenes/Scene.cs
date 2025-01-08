@@ -1,4 +1,5 @@
-﻿using DinaFramework.Interfaces;
+﻿using DinaFramework.Exceptions;
+using DinaFramework.Interfaces;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -18,6 +19,7 @@ namespace DinaFramework.Scenes
     /// </remarks>
     public abstract class Scene : IGameObject, IResource
     {
+        private bool _isSpritebatchBegin;
         /// <summary>
         /// Vérifie si un type donné est une sous-classe de Scene.
         /// </summary>
@@ -169,7 +171,9 @@ namespace DinaFramework.Scenes
         /// <param name="transformMatrix">La matrice de transformation à appliquer aux sprites.</param>
         protected void BeginSpritebatch(SpriteSortMode sortMode = SpriteSortMode.Deferred, BlendState blendState = null, SamplerState samplerState = null, DepthStencilState depthStencilState = null, RasterizerState rasterizerState = null, Effect effect = null, Matrix? transformMatrix = null)
         {
+            _sceneManager.SpriteBatch.End();
             _sceneManager.SpriteBatch.Begin(sortMode, blendState, samplerState, depthStencilState, rasterizerState, effect, transformMatrix);
+            _isSpritebatchBegin = true;
         }
         /// <summary>
         /// Réinitialise l'écran de chargement avec le message spécifié.
@@ -178,6 +182,18 @@ namespace DinaFramework.Scenes
         protected void ResetLoadingScreen(string message)
         {
             _sceneManager.ResetLoadingScreen(message);
+        }
+
+        /// <summary>
+        /// Termine le processus de dessin des sprites.
+        /// </summary>
+        protected void EndSpritebatch()
+        {
+            if (!_isSpritebatchBegin)
+                throw new SpriteBatchNotBeginException();
+
+            _sceneManager.EndSpritebatch();
+            _isSpritebatchBegin = false;
         }
     }
 }

@@ -188,6 +188,23 @@ namespace DinaFramework.Graphics
         /// </summary>
         public bool Visible { get => _visible; set => _visible = value; }
         /// <summary>
+        /// Le délai de progression automatique.
+        /// </summary>
+        public float Delay
+        {
+            get => _delay;
+            set => _delay = value;
+        }
+        /// <summary>
+        /// L.incrément de progression automatique.
+        /// </summary>
+        public float Increment
+        {
+            get => _increment;
+            set => _increment = value;
+        }
+
+        /// <summary>
         /// Définit les images de la barre de progression avec un arrière-plan et un avant-plan.
         /// </summary>
         /// <param name="backImage">Image de fond.</param>

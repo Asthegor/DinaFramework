@@ -325,6 +325,14 @@ namespace DinaFramework.Scenes
                 _currentScene.Update(gameTime);
         }
 
+        internal void EndSpritebatch()
+        {
+            SpriteBatch.End();
+            SpriteBatch.GraphicsDevice.SetRenderTarget(null);
+
+            SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+        }
+
 
         // Fonctions privées
         private SceneManager(Game game)

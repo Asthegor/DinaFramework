@@ -9,6 +9,7 @@ namespace DinaFramework.Exceptions
     public class InvalidSceneTypeException(Type type) : Exception($"The type '{type.Name}' must be a class that inherits from 'Scene' and implements 'ILoadingScreen'.") { }
     public class DuplicateDictionaryKeyException(string key) : Exception($"The key '{key}' is already in the Dictionary") { }
 
+    public class SpriteBatchNotBeginException() : Exception($"You must launch BeginSpritebatch in order to launch EndSpritebatch.");
 
 }
 #pragma warning restore CA1032 // Implémenter des constructeurs d'exception standard
