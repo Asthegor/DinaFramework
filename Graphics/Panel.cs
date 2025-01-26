@@ -25,7 +25,8 @@ namespace DinaFramework.Graphics
         private Color _borderColor;
         private bool _visible;
         private MouseState _oldMouseState;
-        private bool _clicked;
+        private bool _leftClicked;
+        private bool _rightClicked;
         private bool _hover;
         private Panel() { } // ne sert qu'à la copie d'une instance
         /// <summary>
@@ -35,13 +36,14 @@ namespace DinaFramework.Graphics
         /// <param name="dimensions">Dimensions du panneau.</param>
         /// <param name="backgroundcolor">Couleur d'arrière-plan.</param>
         /// <param name="zorder">Ordre de superposition (facultatif).</param>
-        public Panel(Vector2 position, Vector2 dimensions, Color backgroundcolor, int zorder = 0) : 
+        public Panel(Vector2 position, Vector2 dimensions, Color backgroundcolor, int zorder = 0) :
             base(position, dimensions, zorder)
         {
             BackgroundColor = backgroundcolor;
             BorderColor = backgroundcolor;
             Thickness = 0;
             CheckVisibility();
+            _oldMouseState = Mouse.GetState();
         }
         /// <summary>
         /// Initialise une nouvelle instance de la classe Panel avec une bordure spécifiée.
@@ -58,6 +60,7 @@ namespace DinaFramework.Graphics
             BorderColor = bordercolor;
             Thickness = thickness;
             CheckVisibility();
+            _oldMouseState = Mouse.GetState();
         }
         /// <summary>
         /// Initialise un nouveau panneau avec une image de fond et une épaisseur de bordure.
@@ -67,7 +70,7 @@ namespace DinaFramework.Graphics
         /// <param name="image">L'image de fond du panneau.</param>
         /// <param name="borderThickness">L'épaisseur de la bordure.</param>
         /// <param name="zorder">L'ordre Z du panneau (par défaut 0).</param>
-        public Panel(Vector2 position, Vector2 dimensions, Texture2D image, int borderThickness, int zorder = 0) : 
+        public Panel(Vector2 position, Vector2 dimensions, Texture2D image, int borderThickness, int zorder = 0) :
             base(position, dimensions, zorder)
         {
             ArgumentNullException.ThrowIfNull(image);
@@ -79,6 +82,7 @@ namespace DinaFramework.Graphics
             if (Dimensions == default)
                 Dimensions = new Vector2(image.Width, image.Height);
             CheckVisibility();
+            _oldMouseState = Mouse.GetState();
         }
         /// <summary>
         /// Initialise un panneau avec une combinaison de textures pour les coins, bords et centre du panneau.
@@ -136,6 +140,7 @@ namespace DinaFramework.Graphics
             _positions.Add(new Vector2(position.X + cornerBottomLeft.Width, position.Y + cornerBottomLeft.Height));
 
             CheckVisibility();
+            _oldMouseState = Mouse.GetState();
         }
         /// <summary>
         /// Position du panneau.
@@ -376,23 +381,47 @@ namespace DinaFramework.Graphics
         /// <param name="gametime">Temps de jeu actuel.</param>
         public void Update(GameTime gametime)
         {
-            MouseState mouseState = Mouse.GetState();
-            _clicked = false;
-            if (_rectangleBackground.Contains(mouseState.Position))
-            {
-                _hover = true;
-                if (_oldMouseState.LeftButton == ButtonState.Pressed && mouseState.LeftButton == ButtonState.Released)
-                    _clicked = true;
-            }
-            else
-                _hover = false;
-            _oldMouseState = mouseState;
+            MouseState currentMouseState = Mouse.GetState();
+            //_leftClicked = false;
+            //if (_rectangleBackground.Contains(mouseState.Position))
+            //{
+            //    _hover = true;
+            //    if (mouseState.LeftButton == ButtonState.Pressed)
+            //        Debug.WriteLine("Test");
+            //    if (_oldMouseState.LeftButton == ButtonState.Pressed && mouseState.LeftButton == ButtonState.Released)
+            //        _leftClicked = true;
+            //}
+            //else
+            //{
+            //    _hover = false;
+            //}
+
+            _hover = _rectangleBackground.Contains(currentMouseState.Position);
+            // Vérifie si le clic a eu lieu
+            _leftClicked = _hover &&
+                       currentMouseState.LeftButton == ButtonState.Released &&
+                       _oldMouseState.LeftButton == ButtonState.Pressed;
+            _rightClicked = _hover &&
+                       currentMouseState.RightButton == ButtonState.Released &&
+                       _oldMouseState.RightButton == ButtonState.Pressed;
+
+            _oldMouseState = currentMouseState;
         }
         /// <summary>
         /// Détermine si le panneau a été cliqué.
         /// </summary>
         /// <returns>True si cliqué, sinon false.</returns>
-        public bool IsClicked() => _clicked;
+        public bool IsClicked() => _leftClicked || _rightClicked;
+        /// <summary>
+        /// Détermine si le panneau a été cliqué avec le bouton gauche.
+        /// </summary>
+        /// <returns>True si cliqué, sinon false.</returns>
+        public bool IsLeftClicked() => _leftClicked;
+        /// <summary>
+        /// Détermine si le panneau a été cliqué avec le bouton droit.
+        /// </summary>
+        /// <returns>True si cliqué, sinon false.</returns>
+        public bool IsRightClicked() => _rightClicked;
         /// <summary>
         /// Détermine si le panneau est survolé par la souris.
         /// </summary>
@@ -414,7 +443,8 @@ namespace DinaFramework.Graphics
             return new Panel()
             {
                 _borderColor = _borderColor,
-                _clicked = _clicked,
+                _leftClicked = _leftClicked,
+                _rightClicked = _rightClicked,
                 _images = copiedTextures,
                 _positions = _positions,
                 _oldMouseState = _oldMouseState,

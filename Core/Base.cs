@@ -9,7 +9,7 @@ namespace DinaFramework.Core
     /// <summary>
     /// Classe abstraite de base représentant un élément avec une position, des dimensions et un ordre d'affichage.
     /// </summary>
-    public abstract class Base : IElement
+    public abstract class Base : IElement, IPosition, IDimensions, IZOrder
     {
         int _zorder;
         Vector2 _position;

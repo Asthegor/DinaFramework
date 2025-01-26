@@ -14,7 +14,7 @@ namespace DinaFramework.Core
     /// </summary>
     public class Group : Base, IDraw, IVisible, IEnumerator, IEnumerable, ICollide, IUpdate, IClickable, IColor
     {
-        readonly List<IElement> _elements = new List<IElement>();
+        readonly List<IElement> _elements = [];
         private int index;
         private Rectangle _rect;
         private bool _visible;

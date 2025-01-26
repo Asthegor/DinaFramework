@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DinaFramework.Graphics
 {
@@ -15,7 +16,6 @@ namespace DinaFramework.Graphics
     public class ListBox : Base, IPosition, IDimensions, IUpdate, IDraw, IElement
     {
         private const float OFFSET_LIST_Y = 2;
-
         private Vector2 OFFSET_PANEL = new Vector2(5, 5);
 
         private List<IElement> _elements = [];
@@ -26,7 +26,8 @@ namespace DinaFramework.Graphics
         private List<Panel> _listPanels = [];
         private List<IElement> _listVisibleItems = [];
 
-        private IElement _selectedItem;
+        private IElement _leftSelectedItem;
+        private IElement _rightSelectedItem;
 
         private Vector2 _maxElementDimensions;
 
@@ -44,9 +45,13 @@ namespace DinaFramework.Graphics
         public ListBox(List<IElement> items, Vector2 position = default, int nbvisibleelements = -1)
         {
             ArgumentNullException.ThrowIfNull(items);
-            _elements.AddRange(items);
+            foreach (var item in items)
+            {
+                AddElement(item);
+            }
+            //_elements.AddRange(items);
 
-            _selectedItem = null;
+            _leftSelectedItem = null;
             _startIndex = 0;
 
             _defaultSelectionColor = Color.White * 0.65f;
@@ -55,7 +60,7 @@ namespace DinaFramework.Graphics
 
             HarmonizeElementsDimensions();
 
-            for (int index = _startIndex; index < _nbVisibleItems; index++)
+            for (int index = _startIndex; index < _nbVisibleItems && index < _elements.Count; index++)
             {
                 var item = _elements[index];
                 item.Position = OFFSET_PANEL + new Vector2(0, (_maxElementDimensions.Y + OFFSET_LIST_Y) * (index - _startIndex));
@@ -67,6 +72,7 @@ namespace DinaFramework.Graphics
             _backgroundPanel = new Panel(default, bkgpanelDim, Color.White * 0.5f);
             _listGroup.Add(_backgroundPanel);
 
+            Dimensions = bkgpanelDim;
             Position = position;
         }
 
@@ -99,7 +105,6 @@ namespace DinaFramework.Graphics
             set
             {
                 Vector2 offset = value - base.Position;
-                base.Position = value;
 
                 if (_backgroundPanel != null)
                     _backgroundPanel.Position += offset;
@@ -109,6 +114,8 @@ namespace DinaFramework.Graphics
 
                 foreach (IElement t in _elements)
                     t.Position += offset;
+
+                base.Position = value;
             }
         }
 
@@ -120,11 +127,11 @@ namespace DinaFramework.Graphics
             get => base.Dimensions;
             set
             {
-                Vector2 offset = base.Dimensions - value;
-                base.Dimensions = value;
+                //Vector2 offset = base.Dimensions - value;
 
-                foreach (IElement t in _elements)
-                    t.Dimensions = new Vector2(t.Dimensions.X, t.Dimensions.Y + offset.Y);
+                //foreach (IElement t in _elements)
+                //    t.Dimensions = new Vector2(t.Dimensions.X, t.Dimensions.Y + offset.Y);
+                base.Dimensions = value;
             }
         }
         /// <summary>
@@ -132,14 +139,28 @@ namespace DinaFramework.Graphics
         /// </summary>
         public int Value
         {
-            get => _elements.IndexOf(_selectedItem);
+            get => _elements.IndexOf(_leftSelectedItem);
             set
             {
-                _selectedItem = (value < 0 || value >= _elements.Count) ? null : _selectedItem = _elements[value];
+                _leftSelectedItem = (value < 0 || value >= _listVisibleItems.Count) ? null : _leftSelectedItem = _elements.FirstOrDefault(_listVisibleItems[value]);
 
-                int selectedIndex = _listVisibleItems.IndexOf(_selectedItem);
+                int selectedIndex = _listVisibleItems.IndexOf(_leftSelectedItem);
                 for (int index = 0; index < _listPanels.Count; index++)
                     _listPanels[index].BackgroundColor = (index == selectedIndex) ? _defaultSelectionColor : Color.Transparent;
+            }
+        }
+        /// <summary>
+        /// Obtient l'index de l'élément sélectionné via un clic droit. Retourne -1 si aucun élément n'est sélectionné.
+        /// </summary>
+        public int ContextMenuItemIndex
+        {
+            get => _elements.IndexOf(_rightSelectedItem);
+            set
+            {
+                if (value < 0 || value >= _listVisibleItems.Count)
+                    _rightSelectedItem = null;
+                else
+                    _rightSelectedItem = _elements.FirstOrDefault(_listVisibleItems[value]);
             }
         }
 
@@ -154,20 +175,39 @@ namespace DinaFramework.Graphics
                 Panel p = _listPanels[index];
                 p.Update(gametime);
 
-                if (p.IsClicked())
+                if (p.IsLeftClicked())
                 {
-                    if (_selectedItem != null)
-                    {
-                        int previousIndex = _listVisibleItems.IndexOf(_selectedItem);
-                        _listPanels[previousIndex].BackgroundColor = Color.Transparent;
-                    }
-
-                    p.BackgroundColor = _defaultSelectionColor;
-                    _selectedItem = _listVisibleItems[index];
+                    UpdateLeftSelectedItem(p, index);
+                    _rightSelectedItem = null;
+                    ContextMenuItemIndex = -1;
+                }
+                else if (p.IsRightClicked())
+                {
+                    UpdateLeftSelectedItem(p, index, true);
+                    _rightSelectedItem = _listVisibleItems[index];
+                    ContextMenuItemIndex = index;
                 }
             }
         }
+        private void UpdateLeftSelectedItem(Panel p, int index, bool removeselection = true)
+        {
+            if (_leftSelectedItem != null)
+            {
+                int previousIndex = _listVisibleItems.IndexOf(_leftSelectedItem);
+                _listPanels[previousIndex].BackgroundColor = Color.Transparent;
+            }
 
+            if (removeselection && _leftSelectedItem == _listVisibleItems[index])
+            {
+                p.BackgroundColor = Color.Transparent;
+                _leftSelectedItem = null;
+            }
+            else
+            {
+                p.BackgroundColor = _defaultSelectionColor;
+                _leftSelectedItem = _listVisibleItems[index];
+            }
+        }
         /// <summary>
         /// Dessine la boîte de liste et ses éléments visibles sur un SpriteBatch.
         /// </summary>
@@ -186,6 +226,39 @@ namespace DinaFramework.Graphics
                 }
             }
         }
+        /// <summary>
+        /// Ajoute un nouvel élément à la boîte de liste.
+        /// </summary>
+        /// <param name="element">Élément à ajouter à la boîte de liste.</param>
+        public void AddElement(IElement element)
+        {
+            _elements.Add(element);
+            if (_elements.Count < _nbVisibleItems)
+            {
+                _listVisibleItems.Add(element);
+                //UpdateVisibleItemPosition(element);
+            }
+        }
+        /// <summary>
+        /// Supprime un élément spécifique de la boîte de liste.
+        /// </summary>
+        /// <param name="element">Élément à supprimer de la boîte de liste.</param>
+        /// <remarks>
+        /// Si l'élément supprimé est visible, un nouvel élément est ajouté à la liste des éléments visibles pour maintenir le nombre d'éléments affichés.
+        /// </remarks>
+        public void RemoveElement(IElement element)
+        {
+            bool addnew = _listVisibleItems.Remove(element);
+            _elements.Remove(element);
+            if (addnew)
+            {
+                IElement lastelement = _listVisibleItems.Last();
+                int indexlast = _elements.LastIndexOf(lastelement);
+                if (indexlast != -1 && indexlast < _elements.Count - 1)
+                    _listVisibleItems.Add(_elements[indexlast + 1]);
+            }
+        }
+
 
         // Servira quand j'implémenterais les barres de défilement
         private void ChangeVisibleItemList(int startindex)
