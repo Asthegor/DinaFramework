@@ -11,8 +11,9 @@ DinaFramework est un framework développé à partir de [MonoGame](https://githu
 - **Graphics** : Outils pour la gestion et le rendu des éléments graphiques.
 - **Menus** : Structures pour créer et gérer des menus dans le jeu.
 - **Scenes** : Gestion des différentes scènes ou états du jeu.
+- **Screen** : Gestion des changements de résolution
+- **Services** : Annuaire global (ServiceLocator) des services
 - **Translation** : Support multilingue pour les jeux.
-
 
 
 ## Prérequis
@@ -33,14 +34,14 @@ DinaFramework est un framework développé à partir de [MonoGame](https://githu
 
 ## Utilisation
 
-1. Ajoutez le projet `DinaFramework` à votre solution.
-2. Ajoutez une référence au projet `DinaFramework` dans votre projet de jeu.
+1. Compilez le projet `DinaFramework`
+2. Ajouter la DLL générée `DinaFramework.dll` à votre projet.
+2. Ajoutez une référence à la dll `DinaFramework.dll` dans votre projet de jeu.
 3. Vous n'avez plus qu'à utiliser les fonctionnalités du framework lors du développement de votre jeu.
 
 ## Documentation
 
 La documentation détaillée est en cours de développement.
-
 Une première version est tout de même disponible ici : https://dinacsharp.lacombedominique.com/documentation/
 
 ## Contributions
