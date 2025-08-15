@@ -10,219 +10,296 @@ using System;
 namespace DinaFramework.Graphics
 {
     /// <summary>
-    /// Classe représentant un bouton graphique interactif.
+    /// Classe représentant un bouton graphique interactif avec gestion d'état via flags et événements.
     /// </summary>
-    public class Button : Base, IUpdate, IDraw, IPosition, ICopyable<Button>, ILocked
+    public class Button : Base, IUpdate, IDraw, ICopyable<Button>, ILocked
     {
-        Text _text;
-        Panel _background;
-        Action _action;
-        Func<Button, Button> _onHover;
-        bool _locked;
-        Sprite _lockedSprite;
-        Vector2 _margin = new Vector2(10, 10);
-        Color _lockedColor;
-        Button _backup;
-        /// <summary>
-        /// Initialise une nouvelle instance de la classe Button avec un texte et un fond coloré.
-        /// </summary>
-        /// <param name="position">Position du bouton sur l'écran.</param>
-        /// <param name="dimensions">Dimensions du bouton.</param>
-        /// <param name="font">Police utilisée pour le texte du bouton.</param>
-        /// <param name="content">Texte affiché sur le bouton.</param>
-        /// <param name="textColor">Couleur du texte.</param>
-        /// <param name="action">Action à exécuter lors d'un clic sur le bouton.</param>
-        /// <param name="margin">Marge entre le texte et les bords du bouton.</param>
-        /// <param name="onHover">Fonction appelée lors du survol du bouton.</param>
-        public Button(Vector2 position, Vector2 dimensions, SpriteFont font, string content, Color textColor, Action action, Vector2 margin = default, Func<Button, Button> onHover = null)
-        {
-            _backup = null;
-            _text = new Text(font, content, textColor);
+        private Text _text;
+        private Panel _background;
+        private Sprite _lockedSprite;
+        private Vector2 _margin = new Vector2(10, 10);
+        private Color _lockedColor = Color.Transparent;
 
-            if (margin != default)
-                _margin = margin;
-            // Calcul des dimensions du fond
-            Vector2 backgroundDimensions = _text.TextDimensions + _margin * 2;
-            float width = Math.Max(backgroundDimensions.X, dimensions.X);
-            float height = Math.Max(backgroundDimensions.Y, dimensions.Y);
+        private bool _locked;
+
+        private bool _isHovered;
+        private bool _isPressed;
+
+        /// <summary>
+        /// Initialise un nouveau bouton avec texte et fond coloré.
+        /// </summary>
+        public Button(Vector2 position, Vector2 dimensions, SpriteFont font, string content, Color textColor, Action<Button> onClick = null,
+                      Vector2 margin = default, Action<Button> onHover = null, bool withroundcorner = false, int cornerradius = 0)
+        {
+            ArgumentNullException.ThrowIfNull(font);
+
+            _text = new Text(font, content, textColor, horizontalalignment: Enums.HorizontalAlignment.Center, verticalalignment: Enums.VerticalAlignment.Center);
+            _margin = margin != default ? margin : _margin;
+
+            Vector2 backgroundDim = _text.TextDimensions + _margin * 2;
+            float width = Math.Max(backgroundDim.X, dimensions.X);
+            float height = Math.Max(backgroundDim.Y, dimensions.Y);
             Dimensions = new Vector2(width, height);
             Position = position;
-            _action = action;
-            _onHover = onHover;
-            _text.Position = Position + (Dimensions - _text.TextDimensions) / 2;
-            _background = new Panel(Position, Dimensions, Color.Transparent);
-            _lockedColor = Color.Transparent;
-        }
-        /// <summary>
-        /// Initialise une nouvelle instance de la classe Button avec un texte et une image de fond.
-        /// </summary>
-        /// <param name="position">Position du bouton sur l'écran.</param>
-        /// <param name="dimensions">Dimensions du bouton.</param>
-        /// <param name="font">Police utilisée pour le texte du bouton.</param>
-        /// <param name="content">Texte affiché sur le bouton.</param>
-        /// <param name="textColor">Couleur du texte.</param>
-        /// <param name="backgroundimage">Texture utilisée comme image de fond.</param>
-        /// <param name="action">Action à exécuter lors d'un clic sur le bouton.</param>
-        /// <param name="margin">Marge entre le texte et les bords du bouton.</param>
-        /// <param name="onHover">Fonction appelée lors du survol du bouton.</param>
-        public Button(Vector2 position, Vector2 dimensions, SpriteFont font, string content, Color textColor, Texture2D backgroundimage, Action action, Vector2 margin = default, Func<Button, Button> onHover = null)
-            : this(position, dimensions, font, content, textColor, action, margin, onHover)
-        {
-            _background = new Panel(Position, Dimensions, backgroundimage, 0);
-        }
-        /// <summary>
-        /// Initialise une nouvelle instance de la classe Button avec une image de fond uniquement.
-        /// </summary>
-        /// <param name="position">Position du bouton sur l'écran.</param>
-        /// <param name="backgroundimage">Texture utilisée comme image de fond.</param>
-        /// <param name="action">Action à exécuter lors d'un clic sur le bouton.</param>
-        /// <param name="onHover">Fonction appelée lors du survol du bouton.</param>
-        public Button(Vector2 position, Texture2D backgroundimage, Action action, Func<Button, Button> onHover = null)
-        {
-            ArgumentNullException.ThrowIfNull(backgroundimage);
 
-            _backup = null;
-            Dimensions = new Vector2(backgroundimage.Width, backgroundimage.Height);
+            _background = new Panel(Position, Dimensions, Color.Transparent, Color.Transparent, 1, withroundcorner, cornerradius);
+
+            if (onClick != null) OnClicked += onClick;
+
+            if (onHover != null) OnHovered += onHover;
+
+            UpdateTextPosition();
+            _text.Dimensions = Dimensions;
+        }
+
+        /// <summary>
+        /// Initialise un nouveau bouton avec texte et image de fond.
+        /// </summary>
+        public Button(Vector2 position, Vector2 dimensions, SpriteFont font, string content, Color textColor, Texture2D backgroundImage,
+                      Action<Button> onClick = null, Vector2 margin = default, Action<Button> onHover = null)
+            : this(position, dimensions, font, content, textColor, onClick, margin, onHover)
+        {
+            _background = new Panel(Position, Dimensions, backgroundImage, 0);
+        }
+
+        /// <summary>
+        /// Initialise un nouveau bouton avec uniquement une image de fond.
+        /// </summary>
+        public Button(Vector2 position, Texture2D backgroundImage, Action<Button> onClick = null, Action<Button> onHover = null)
+        {
+            ArgumentNullException.ThrowIfNull(backgroundImage);
+            ArgumentNullException.ThrowIfNull(onClick);
+
             Position = position;
-            _action = action;
-            _onHover = onHover;
-            _background = new Panel(Position, Dimensions, backgroundimage, 0);
-            _lockedColor = Color.Transparent;
+            Dimensions = new Vector2(backgroundImage.Width, backgroundImage.Height);
+            _background = new Panel(Position, Dimensions, backgroundImage, 0);
 
+            if (onClick  != null) OnClicked += onClick;
+            if (onHover != null) OnHovered += onHover;
         }
+
         /// <summary>
-        /// Action à exécuter lorsque le bouton est cliqué.
-        /// </summary>
-        public Action Action { get => _action; set => _action = value; }
-        /// <summary>
-        /// Fonction appelée lorsque le curseur survole le bouton.
-        /// </summary>
-        public Func<Button, Button> OnHover { get => _onHover; set => _onHover = value; }
-        /// <summary>
-        /// Texte affiché sur le bouton.
-        /// </summary>
-        public string Content { get => _text.Content; set => _text.Content = value; }
-        /// <summary>
-        /// Position du bouton sur l'écran.
+        /// Position du bouton.
         /// </summary>
         public new Vector2 Position
         {
             get => base.Position;
             set
             {
+                base.Position = value;
                 if (_background != null)
                     _background.Position = value;
                 if (_lockedSprite != null)
                     _lockedSprite.Position = value;
-                if (_text != null && _background != null)
-                {
-                    _text.Position = new Vector2(_background.Position.X + (_background.Dimensions.X - _text.TextDimensions.X) / 2,
-                                                 _background.Position.Y + (_background.Dimensions.Y - _text.TextDimensions.Y) / 2);
-                }
-                base.Position = value;
+                UpdateTextPosition();
+            }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        public new Vector2 Dimensions
+        {
+            get => base.Dimensions;
+            set
+            {
+                base.Dimensions = value;
+                if (_background != null)
+                    _background.Dimensions = value;
+                if (_text != null)
+                    _text.Dimensions = value;
             }
         }
 
         /// <summary>
-        /// Couleur du texte du bouton.
+        /// Couleur du texte.
         /// </summary>
-        public Color TextColor { get => _text.Color; set => _text.Color = value; }
+        public Color TextColor
+        {
+            get => _text?.Color ?? Color.White;
+            set
+            {
+                if (_text != null)
+                    _text.Color = value;
+            }
+        }
+
         /// <summary>
         /// Couleur de fond du bouton.
         /// </summary>
-        public Color BackgroundColor { get => _background.BackgroundColor; set => _background.BackgroundColor = value; }
+        public Color BackgroundColor
+        {
+            get => _background?.BackgroundColor ?? Color.Transparent;
+            set
+            {
+                if (_background != null)
+                    _background.BackgroundColor = value;
+            }
+        }
+
+        /// <summary>
+        /// Texte affiché sur le bouton.
+        /// </summary>
+        public string Content
+        {
+            get => _text?.Content ?? string.Empty;
+            set
+            {
+                if (_text != null)
+                    _text.Content = value;
+            }
+        }
+
         /// <summary>
         /// Indique si le bouton est verrouillé.
         /// </summary>
-        public bool Locked { get => _locked; set => _locked = value; }
+        public bool Locked
+        {
+            get => _locked;
+            set => _locked = value;
+        }
         /// <summary>
-        /// Police utilisée pour afficher le texte.
+        /// Couleur de la bordure du bouton.
         /// </summary>
-        public SpriteFont Font { get => _text.Font; set => _text.Font = value; }
+        public Color BorderColor
+        {
+            get => _background?.BorderColor ?? Color.Transparent;
+            set
+            {
+                if (_background != null)
+                    _background.BorderColor = value;
+            }
+        }
+        /// <summary>
+        /// Épaisseur de la bordure du bouton (par défaut : 0).
+        /// </summary>
+        public int BorderThickness
+        {
+            get => _background?.Thickness ?? 0;
+            set
+            {
+                if (_background != null)
+                    _background.Thickness = value;
+            }
+        }
 
         /// <summary>
-        /// Définit l'image et la couleur utilisées lorsque le bouton est verrouillé.
+        /// Définit la texture et la couleur affichées quand le bouton est verrouillé.
         /// </summary>
-        /// <param name="lockedTexture">Texture utilisée pour le verrouillage.</param>
-        /// <param name="lockedColor">Couleur appliquée lorsque le bouton est verrouillé.</param>
-        public void LockedImage(Texture2D lockedTexture, Color lockedColor)
+        public void SetLockedImage(Texture2D lockedTexture, Color lockedColor)
         {
             if (lockedTexture != null)
             {
-                _lockedSprite ??= new Sprite(lockedTexture, Color.White, Position);
+                if (_lockedSprite == null)
+                    _lockedSprite = new Sprite(lockedTexture, Color.White, Position);
+
                 _lockedSprite.Texture = lockedTexture;
                 _lockedSprite.Dimensions = Dimensions;
             }
             else
+            {
                 _lockedSprite = null;
+            }
 
             _lockedColor = lockedColor;
         }
-        /// <summary>
-        /// Met à jour l'état du bouton (gestion du survol, clic, etc.).
-        /// </summary>
-        /// <param name="gametime">Temps de jeu écoulé depuis la dernière mise à jour.</param>
+
+    /// <summary>
+    /// Met à jour l'état du bouton.
+    /// </summary>
+    /// <param name="gametime"></param>
         public void Update(GameTime gametime)
         {
-            _background?.Update(gametime);
-            if (Locked == false)
+            if (_background == null)
+                return;
+
+            _background.Update(gametime);
+
+            if (Locked)
             {
-                if (_onHover != null)
+                _isHovered = false;
+                _isPressed = false;
+                return;
+            }
+
+            bool hoveredNow = _background.IsHovered();
+
+            if (hoveredNow != _isHovered)
+            {
+                _isHovered = hoveredNow;
+                OnHovered?.Invoke(this);
+            }
+
+            if (_isHovered)
+            {
+                bool clickedNow = _background.IsClicked();
+
+                if (clickedNow && !_isPressed)
                 {
-                    if (_background?.IsHovered() == true)
-                    {
-                        SaveState();
-                        _onHover?.Invoke(this);
-                    }
-                    else
-                        RestoreState();
+                    _isPressed = true;
+                    OnClicked?.Invoke(this);
                 }
-                if (_background?.IsClicked() == true)
-                    _action?.Invoke();
+                else if (!clickedNow)
+                {
+                    _isPressed = false;
+                }
+            }
+            else
+            {
+                _isPressed = false;
             }
         }
+
         /// <summary>
-        /// Affiche le bouton à l'écran.
+        /// Dessine le bouton.
         /// </summary>
-        /// <param name="spritebatch">Objet SpriteBatch utilisé pour dessiner le bouton.</param>
         public void Draw(SpriteBatch spritebatch)
         {
-            Color backupColor = Color.White;
-            if (_background != null)
-                backupColor = _background.BackgroundColor;
+            if (_background == null)
+                return;
+
+            Color backupColor = _background.BackgroundColor;
 
             if (Locked && _lockedColor != Color.Transparent)
                 _background.BackgroundColor = _lockedColor;
 
-            _background?.Draw(spritebatch);
+            _background.Draw(spritebatch);
 
             if (Locked)
             {
                 _lockedSprite?.Draw(spritebatch);
-                if (_background != null)
-                    _background.BackgroundColor = backupColor;
+                _background.BackgroundColor = backupColor;
             }
 
             _text?.Draw(spritebatch);
         }
+
         /// <summary>
-        /// Définit une nouvelle texture de fond pour le bouton.
+        /// Définir une nouvelle image de fond.
         /// </summary>
-        /// <param name="backgroundimg">Texture de fond à appliquer.</param>
-        public void SetBackground(Texture2D backgroundimg)
+        public void SetBackground(Texture2D backgroundImage)
         {
-            _background = new Panel(_background.Position, _background.Dimensions, backgroundimg, 0);
+            if (backgroundImage == null)
+                return;
+            _background = new Panel(Position, Dimensions, backgroundImage, 0);
         }
 
         /// <summary>
-        /// Crée une copie du bouton actuel.
+        /// Événement déclenché quand le bouton est cliqué.
         /// </summary>
-        /// <returns>Retourne une nouvelle instance de Button avec les mêmes propriétés.</returns>
+        public event Action<Button> OnClicked;
+
+        /// <summary>
+        /// Événement déclenché quand le bouton est survolé.
+        /// </summary>
+        public event Action<Button> OnHovered;
+
+        /// <summary>
+        /// Crée une copie du bouton (sans les événements).
+        /// </summary>
         public Button Copy()
         {
-            return new Button()
+            var copy = new Button()
             {
-                _action = _action,
                 _background = _background?.Copy(),
                 _locked = _locked,
                 _lockedColor = _lockedColor,
@@ -236,31 +313,20 @@ namespace DinaFramework.Graphics
                 TextColor = TextColor,
                 ZOrder = ZOrder,
             };
+
+            // Ne pas copier les events OnClicked / OnHovered
+
+            return copy;
         }
+
+        // Constructeur privé pour Copy()
         private Button() { }
-        private void SaveState()
+
+        private void UpdateTextPosition()
         {
-            _backup ??= Copy();
-        }
-        private void RestoreState()
-        {
-            if (_backup != null)
-            {
-                _action = _backup._action;
-                _background = _backup._background?.Copy();
-                _locked = _backup._locked;
-                _lockedColor = _backup._lockedColor;
-                _lockedSprite = _backup._lockedSprite?.Copy();
-                _margin = _backup._margin;
-                _text = _backup._text?.Copy();
-                BackgroundColor = _backup.BackgroundColor;
-                Content = _backup.Content;
-                Dimensions = _backup.Dimensions;
-                Position = _backup.Position;
-                TextColor = _backup.TextColor;
-                ZOrder = _backup.ZOrder;
-                _backup = null;
-            }
+            if (_text == null || _background == null)
+                return;
+            _text.Position = _background.Position;
         }
     }
 }

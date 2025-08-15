@@ -68,13 +68,10 @@ namespace DinaFramework.Graphics
         /// <param name="spritebatch">L'objet SpriteBatch utilisé pour dessiner la ligne.</param>
         public void Draw(SpriteBatch spritebatch)
         {
-            if (spritebatch == null)
-                return;
-
             if (_texture == null)
             {
                 _texture = new Texture2D(spritebatch.GraphicsDevice, 1, 1);
-                _texture.SetData(new[] { Color.White });
+                _texture.SetData([Color.White]);
             }
             spritebatch.Draw(_texture, _position, null, Color, _angle, _origin, _scale, SpriteEffects.None, 0);
         }

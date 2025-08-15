@@ -71,7 +71,7 @@ namespace DinaFramework.Graphics
             set
             {
                 base.Position = value;
-                _checkBoxRect = new Rectangle(Position.ToPoint(), base.Dimensions.ToPoint());
+                _checkBoxRect = new Rectangle(base.Position.ToPoint(), base.Dimensions.ToPoint());
             }
         }
         /// <summary>
@@ -83,7 +83,7 @@ namespace DinaFramework.Graphics
             set
             {
                 base.Dimensions = value;
-                _checkBoxRect = new Rectangle(Position.ToPoint(), value.ToPoint());
+                _checkBoxRect = new Rectangle(base.Position.ToPoint(), base.Dimensions.ToPoint());
             }
         }
 
@@ -101,6 +101,20 @@ namespace DinaFramework.Graphics
         public CheckBoxState State { get; set; }
 
         /// <summary>
+        /// Événement déclenché lorsqu'on clique sur la case à cocher. Utile pour réagir immédiatement au changement d'état par l'utilisateur.
+        /// </summary>
+        public event Action OnClicked;
+        /// <summary>
+        /// Obtient ou définit l'état coché de la case. True si la case est cochée, false sinon.
+        /// Cette propriété simplifie l'accès à l'état en évitant de manipuler l'énumération CheckBoxState directement.
+        /// </summary>
+        public bool IsChecked
+        {
+            get => State == CheckBoxState.Checked;
+            set => State = value ? CheckBoxState.Checked : CheckBoxState.Unchecked;
+        }
+
+        /// <summary>
         /// Met à jour l'état de la case à cocher (gestion des clics et des interactions).
         /// </summary>
         /// <param name="gametime">Temps de jeu écoulé depuis la dernière mise à jour.</param>
@@ -113,10 +127,8 @@ namespace DinaFramework.Graphics
                 {
                     if (_checkBoxRect.Contains(new Point(ms.X, ms.Y)))
                     {
-                        if (State == CheckBoxState.Checked)
-                            State = CheckBoxState.Unchecked;
-                        else
-                            State = CheckBoxState.Checked;
+                        IsChecked = !IsChecked; // on inverse l'état
+                        OnClicked?.Invoke();
                     }
                 }
             }
@@ -159,7 +171,7 @@ namespace DinaFramework.Graphics
             ArgumentNullException.ThrowIfNull(spritebatch);
 
             _pixelTexture ??= new Texture2D(spritebatch.GraphicsDevice, 1, 1);
-            _pixelTexture.SetData(new Color[] { Color.White });
+            _pixelTexture.SetData([Color.White]);
             // Dessine un rectangle non plein
             if (isFilled)
                 spritebatch.Draw(_pixelTexture, rectangle, color);

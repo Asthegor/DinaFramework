@@ -46,7 +46,7 @@ namespace DinaFramework.Translation
                     {
                         if (method.Name == "set_Culture")
                         {
-                            method.Invoke(null, new[] { culture });
+                            method.Invoke(null, [culture]);
                             break;
                         }
                     }
@@ -83,7 +83,10 @@ namespace DinaFramework.Translation
                 foreach (var method in strings.GetRuntimeMethods())
                 {
                     if (method.Name == $"get_{key}")
-                        return (string)method.Invoke(null, null);
+                    {
+                        string res = (string)method.Invoke(null, null);
+                        return res;
+                    }
                 }
             }
             return key;
@@ -147,7 +150,7 @@ namespace DinaFramework.Translation
                 AddCulturesFromSubdirectories(assemblyPath, cultures, assembly);
             }
 
-            _availableLanguages = cultures.ToArray();
+            _availableLanguages = [.. cultures];
             return _availableLanguages;
         }
 

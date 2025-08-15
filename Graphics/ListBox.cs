@@ -13,26 +13,26 @@ namespace DinaFramework.Graphics
     /// <summary>
     /// Représente une boîte de liste graphique permettant d'afficher une collection d'éléments avec des fonctionnalités de sélection et de mise à jour.
     /// </summary>
-    public class ListBox : Base, IPosition, IDimensions, IUpdate, IDraw, IElement
+    public class ListBox : Base, IPosition, IDimensions, IUpdate, IDraw, IElement, IVisible
     {
         private const float OFFSET_LIST_Y = 2;
         private Vector2 OFFSET_PANEL = new Vector2(5, 5);
 
-        private List<IElement> _elements = [];
+        private readonly List<IElement> _elements = [];
 
-        private Group _listGroup = new Group();
-        private Panel _backgroundPanel;
+        private readonly Group _listGroup = [];
+        private readonly Panel _backgroundPanel;
 
-        private List<Panel> _listPanels = [];
-        private List<IElement> _listVisibleItems = [];
+        private readonly List<Panel> _listPanels = [];
+        private readonly List<IElement> _listVisibleItems = [];
 
         private IElement _leftSelectedItem;
         private IElement _rightSelectedItem;
 
         private Vector2 _maxElementDimensions;
 
-        private int _nbVisibleItems;
-        private int _startIndex;
+        private readonly int _nbVisibleItems;
+        private readonly int _startIndex;
 
         private Color _defaultSelectionColor;
 
@@ -49,7 +49,6 @@ namespace DinaFramework.Graphics
             {
                 AddElement(item);
             }
-            //_elements.AddRange(items);
 
             _leftSelectedItem = null;
             _startIndex = 0;
@@ -74,26 +73,6 @@ namespace DinaFramework.Graphics
 
             Dimensions = bkgpanelDim;
             Position = position;
-        }
-
-        private void HarmonizeElementsDimensions()
-        {
-            _maxElementDimensions = Vector2.Zero;
-            foreach (IElement element in _elements)
-            {
-                if (element is IDimensions elemDim)
-                {
-                    if (elemDim.Dimensions.X > _maxElementDimensions.X)
-                        _maxElementDimensions.X = elemDim.Dimensions.X;
-                    if (elemDim.Dimensions.Y > _maxElementDimensions.Y)
-                        _maxElementDimensions.Y = elemDim.Dimensions.Y;
-                }
-            }
-            foreach (IElement element in _elements)
-            {
-                if (element is IDimensions elemDim)
-                    elemDim.Dimensions = _maxElementDimensions;
-            }
         }
 
         /// <summary>
@@ -142,7 +121,7 @@ namespace DinaFramework.Graphics
             get => _elements.IndexOf(_leftSelectedItem);
             set
             {
-                _leftSelectedItem = (value < 0 || value >= _listVisibleItems.Count) ? null : _leftSelectedItem = _elements.FirstOrDefault(_listVisibleItems[value]);
+                _leftSelectedItem = (value < 0 || value >= _listVisibleItems.Count) ? null : _leftSelectedItem = _elements.FirstOrDefault(e => e == _listVisibleItems[value]);
 
                 int selectedIndex = _listVisibleItems.IndexOf(_leftSelectedItem);
                 for (int index = 0; index < _listPanels.Count; index++)
@@ -160,9 +139,24 @@ namespace DinaFramework.Graphics
                 if (value < 0 || value >= _listVisibleItems.Count)
                     _rightSelectedItem = null;
                 else
-                    _rightSelectedItem = _elements.FirstOrDefault(_listVisibleItems[value]);
+                    _rightSelectedItem = _elements.FirstOrDefault(e => e == _listVisibleItems[value]);
             }
         }
+
+        /// <summary>
+        /// Indique si la liste est visible ou non.
+        /// </summary>
+        public bool Visible { get; set; } = true;
+
+        /// <summary>
+        /// Événements lorsqu'on clique droit sur un élément de la liste (en plus de le sélectionner).
+        /// </summary>
+        public event Action<int> OnRightClick;
+        /// <summary>
+        /// Événements lorsque l'on clique gauche sur un élément de la liste.
+        /// </summary>
+        public event Action<int> OnLeftClick;
+
 
         /// <summary>
         /// Met à jour l'état de la boîte de liste, y compris la gestion des clics sur les éléments.
@@ -180,32 +174,15 @@ namespace DinaFramework.Graphics
                     UpdateLeftSelectedItem(p, index);
                     _rightSelectedItem = null;
                     ContextMenuItemIndex = -1;
+                    OnLeftClick?.Invoke(_elements.IndexOf(_leftSelectedItem));
                 }
                 else if (p.IsRightClicked())
                 {
                     UpdateLeftSelectedItem(p, index, true);
                     _rightSelectedItem = _listVisibleItems[index];
                     ContextMenuItemIndex = index;
+                    OnRightClick?.Invoke(_elements.IndexOf(_rightSelectedItem));
                 }
-            }
-        }
-        private void UpdateLeftSelectedItem(Panel p, int index, bool removeselection = true)
-        {
-            if (_leftSelectedItem != null)
-            {
-                int previousIndex = _listVisibleItems.IndexOf(_leftSelectedItem);
-                _listPanels[previousIndex].BackgroundColor = Color.Transparent;
-            }
-
-            if (removeselection && _leftSelectedItem == _listVisibleItems[index])
-            {
-                p.BackgroundColor = Color.Transparent;
-                _leftSelectedItem = null;
-            }
-            else
-            {
-                p.BackgroundColor = _defaultSelectionColor;
-                _leftSelectedItem = _listVisibleItems[index];
             }
         }
         /// <summary>
@@ -214,6 +191,9 @@ namespace DinaFramework.Graphics
         /// <param name="spritebatch">L'objet SpriteBatch utilisé pour dessiner les éléments.</param>
         public void Draw(SpriteBatch spritebatch)
         {
+            if (!Visible)
+                return;
+
             _backgroundPanel.Draw(spritebatch);
             for (int index = 0; index < _listVisibleItems.Count; index++)
             {
@@ -259,6 +239,44 @@ namespace DinaFramework.Graphics
             }
         }
 
+        private void HarmonizeElementsDimensions()
+        {
+            _maxElementDimensions = Vector2.Zero;
+            foreach (IElement element in _elements)
+            {
+                if (element is IDimensions elemDim)
+                {
+                    if (elemDim.Dimensions.X > _maxElementDimensions.X)
+                        _maxElementDimensions.X = elemDim.Dimensions.X;
+                    if (elemDim.Dimensions.Y > _maxElementDimensions.Y)
+                        _maxElementDimensions.Y = elemDim.Dimensions.Y;
+                }
+            }
+            foreach (IElement element in _elements)
+            {
+                if (element is IDimensions elemDim)
+                    elemDim.Dimensions = _maxElementDimensions;
+            }
+        }
+        private void UpdateLeftSelectedItem(Panel p, int index, bool removeselection = true)
+        {
+            if (_leftSelectedItem != null)
+            {
+                int previousIndex = _listVisibleItems.IndexOf(_leftSelectedItem);
+                _listPanels[previousIndex].BackgroundColor = Color.Transparent;
+            }
+
+            if (removeselection && _leftSelectedItem == _listVisibleItems[index])
+            {
+                p.BackgroundColor = Color.Transparent;
+                _leftSelectedItem = null;
+            }
+            else
+            {
+                p.BackgroundColor = _defaultSelectionColor;
+                _leftSelectedItem = _listVisibleItems[index];
+            }
+        }
 
         // Servira quand j'implémenterais les barres de défilement
         private void ChangeVisibleItemList(int startindex)

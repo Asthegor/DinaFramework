@@ -18,46 +18,70 @@ namespace DinaFramework.Graphics
         private const float DELAY_KEY_STROKE = 0.5f;
         private const float REPEAT_INTERVAL = 0.25f;  // Intervalle entre les répétitions
 
-        private Group _inputTextGroup;
-        private Panel _panel;
-        private Text _placeHolder;
-        private Text _text;
-        private Text _cursor;
+        private readonly Group _inputTextGroup = [];
+        private readonly Panel _panel;
+        private readonly Text _placeHolder;
+        private readonly Text _text;
+        private readonly Text _cursor;
         private bool _visible;
         private bool _isActive;
 
-        private bool _onlyDigit;
+        private readonly bool _onlyDigit;
 
         private MouseState _oldMouseState;
         private KeyboardState _oldKeyboardState;
 
-        private Dictionary<Keys, float> _keyTimers;
+        private readonly Dictionary<Keys, float> _keyTimers = [];
 
         /// <summary>
         /// Visibilité du champ de texte.
         /// </summary>
         public bool Visible { get => _visible; set => _visible = value; }
 
-        public InputText(SpriteFont spritefont, string content, Color color, Vector2 position, Vector2 dimensions, Vector2 offset,
-                         Color backgroundcolor, Color bordercolor, int thickness = 1, string placeholder = "", Color placeholdercolor = new Color(),
+        /// <summary>
+        /// Initialise une nouvelle instance de la classe InputText avec les éléments spécifiés.
+        /// </summary>
+        /// <param name="font">Police utilisée pour afficher le texte.</param>
+        /// <param name="content">Contenu du texte.</param>
+        /// <param name="color">Couleur du texte.</param>
+        /// <param name="position">Position de la zone de saisie sur l'écran.</param>
+        /// <param name="dimensions">Taille de la zone de saisie sur l'écran.</param>
+        /// <param name="offset">Offset du cadre par rapport au texte.</param>
+        /// <param name="backgroundcolor">Couleur du fond.</param>
+        /// <param name="bordercolor">Couleur de la bordure.</param>
+        /// <param name="thickness">Épaisseur de la bordure.</param>
+        /// <param name="placeholder">Texte de remplacement.</param>
+        /// <param name="placeholdercolor">Couleur du texte de remplacement.</param>
+        /// <param name="onlyDigit">Indique si la zone de saisie ne doit contenir que des chiffres (par défaut : false).</param>
+        public InputText(SpriteFont font, string content, Color color, string placeholder, Color placeholdercolor, 
+                         Vector2 position, Vector2 dimensions, Vector2 offset,
+                         Color backgroundcolor, Color bordercolor, int thickness = 1, 
                          bool onlyDigit = false)
         {
+            if (string.IsNullOrEmpty(content) && string.IsNullOrEmpty(placeholder))
+            {
+                throw new ArgumentException("Au moins l’un des deux paramètres 'content' ou 'placeholder' doit être renseigné.");
+            }
             _onlyDigit = onlyDigit;
 
-            _inputTextGroup = new Group();
             Vector2 pos = Vector2.Zero;
 
+            _placeHolder = new Text(font, placeholder, placeholdercolor, pos + offset / 2);
             _panel = new Panel(pos, dimensions, backgroundcolor, bordercolor, thickness);
+            _text = new Text(font, content, color, pos + offset / 2);
 
-            _text = new Text(spritefont, content, color, pos + offset / 2);
-            _text.Dimensions = dimensions;
+            if (dimensions == default)
+            {
+                _panel.Dimensions = _placeHolder.Dimensions + offset;
+                _text.Dimensions = _placeHolder.Dimensions;
+                Dimensions = _panel.Dimensions;
+            }
 
-            _placeHolder = new Text(spritefont, placeholder, placeholdercolor, pos + offset / 2);
-            _placeHolder.Dimensions = dimensions;
             if (string.IsNullOrEmpty(placeholder))
                 _placeHolder.Visible = false;
 
-            _cursor = new Text(spritefont, "|", color);
+
+            _cursor = new Text(font, "|", color);
             _cursor.SetTimers(0.5f, 1f, -1); //0.5s d'attente, 1s d'affichage, -1: boucle infinie
             _cursor.Visible = false;
 
@@ -68,7 +92,6 @@ namespace DinaFramework.Graphics
 
             _inputTextGroup.Position = position;
 
-            _keyTimers = new Dictionary<Keys, float>();
             _isActive = false;
         }
         /// <summary>
@@ -95,8 +118,18 @@ namespace DinaFramework.Graphics
         /// Dimensions du champ de texte.
         /// </summary>
         public Vector2 Dimensions { get => _inputTextGroup.Dimensions; set => _inputTextGroup.Dimensions = value; }
+
+        /// <summary>
+        /// Ordre d'affichage (Z-order) de la zone de saisie.
+        /// </summary>
         public int ZOrder { get => _inputTextGroup.ZOrder; set => _inputTextGroup.ZOrder = value; }
 
+        /// <summary>
+        /// Met à jour l'état du champ de texte en fonction du temps écoulé et des entrées utilisateur.
+        /// Gère le focus via clic souris, l'affichage du curseur, du texte d'attente (placeholder)
+        /// et la saisie clavier avec prise en charge de la répétition automatique (key repeat).
+        /// </summary>
+        /// <param name="gametime">Temps écoulé depuis la dernière mise à jour de la frame.</param>
         public void Update(GameTime gametime)
         {
             MouseState mouseState = Mouse.GetState();
@@ -162,6 +195,10 @@ namespace DinaFramework.Graphics
             _oldMouseState = mouseState;
         }
 
+        /// <summary>
+        /// Dessine la zone de saisie à l'écran.
+        /// </summary>
+        /// <param name="spritebatch">L'instance de SpriteBatch utilisée pour dessiner le texte.</param>
         public void Draw(SpriteBatch spritebatch)
         {
             _inputTextGroup.Draw(spritebatch);
@@ -177,7 +214,7 @@ namespace DinaFramework.Graphics
             }
             else if (key == Keys.Back && _text.Content.Length > 0)
             {
-                _text.Content = _text.Content.Substring(0, _text.Content.Length - 1);
+                _text.Content = _text.Content[..^1];
             }
             UpdateCursorPosition();
         }
@@ -185,7 +222,7 @@ namespace DinaFramework.Graphics
         {
             if ((key >= Keys.D0 && key <= Keys.D9) || (key >= Keys.NumPad0 && key <= Keys.NumPad9))
             {
-                return key.ToString()[key.ToString().Length - 1].ToString();
+                return key.ToString()[^1].ToString();
             }
             if (!_onlyDigit)
             {

@@ -7,7 +7,6 @@ using Microsoft.Xna.Framework.Input;
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace DinaFramework.Graphics
 {
@@ -17,22 +16,22 @@ namespace DinaFramework.Graphics
     public class DropDown : Base, IUpdate, IDraw, IVisible, IPosition
     {
         private const int OFFSET_OPTIONS = 2;
-        private SpriteFont _font;
+        private readonly SpriteFont _font;
 
-        private List<string> _options;
+        private readonly List<string> _options;
         private int _selectedIndex;
 
         private bool _isExpanded;
         private bool _visible;
 
-        private Panel _panel;
-        private Text _text;
-        private Panel _panelArrow;
-        private List<Text> _listOptions;
-        private Panel _panelOptions;
+        private readonly Panel _panel;
+        private readonly Text _text;
+        private readonly Panel _panelArrow;
+        private readonly List<Text> _listOptions = [];
+        private readonly Panel _panelOptions;
 
 
-        private int _nbVisibleOptions;
+        private readonly int _nbVisibleOptions;
 
         private MouseState _oldMouseState;
         private Color _selectedOptionColor;
@@ -70,12 +69,13 @@ namespace DinaFramework.Graphics
             Vector2 panelArrowPos = position + new Vector2(panelDim.X - arrowTexture.Width - thickness, 0);
             _panelArrow = new Panel(panelArrowPos, new Vector2(arrowTexture.Width, Math.Max(dimensions.Y, arrowTexture.Height)), arrowTexture, 0);
 
-            _listOptions = new List<Text>();
             foreach (string option in options)
             {
-                Text t = new Text(font, option, textcolor);
-                t.Visible = false;
-                t.Dimensions = dimensions - new Vector2(thickness * 2, 0);
+                Text t = new Text(font, option, textcolor)
+                {
+                    Visible = false,
+                    Dimensions = dimensions - new Vector2(thickness * 2, 0)
+                };
                 _listOptions.Add(t);
             }
             _panelOptions = new Panel(position + new Vector2(0, _panel.Dimensions.Y), new Vector2(dimensions.X, (dimensions.Y + OFFSET_OPTIONS) * Math.Min(nbvisibleoptions, _listOptions.Count) + thickness), backgroundcolor, bordercolor, thickness);
@@ -180,7 +180,7 @@ namespace DinaFramework.Graphics
         /// <param name="gametime">Temps de jeu actuel.</param>
         public void Update(GameTime gametime)
         {
-            bool clickedAway = false;
+            bool clickedAway;
             MouseState mouseState = Mouse.GetState();
             if (_oldMouseState.LeftButton == ButtonState.Pressed && mouseState.LeftButton == ButtonState.Released)
             {

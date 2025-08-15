@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace DinaFramework.Functions
 {
@@ -32,5 +33,56 @@ namespace DinaFramework.Functions
             }
             return res;
         }
+        /// <summary>
+        /// Vérifie si une chaîne contient au moins un caractère dont le code ASCII ne correspond à aucune des plages spécifiées.
+        /// </summary>
+        /// <param name="str">La chaîne à analyser.</param>
+        /// <param name="ranges">
+        /// Tableau de plages de valeurs ASCII autorisées. Chaque tuple représente une plage inclusive (min, max).
+        /// </param>
+        /// <returns>
+        /// true si un caractère ne correspond à aucune des plages fournies ; false si tous les caractères respectent au moins une plage.
+        /// </returns>
+        public static bool AsciiCharOutOfrange(string str, params (int min, int max)[] ranges)
+        {
+            if (string.IsNullOrEmpty(str) || ranges == null || ranges.Length == 0)
+                return false;
+
+            foreach (char c in str)
+            {
+                bool inRange = false;
+                foreach (var (min, max) in ranges)
+                {
+                    if (c >= min && c <= max)
+                    {
+                        inRange = true;
+                        break;
+                    }
+                }
+
+                if (!inRange)
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Mélange pseudo-aléatoire pour usage non sécurisé (logique de jeu). 
+        /// Utilise <see cref="System.Random"/> ; l'avertissement CA5394 est supprimé car non pertinent ici.
+        /// </summary>
+        /// <param name="list">La liste à mélanger.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA5394:Do not use insecure randomness", Justification = "Utilisation sans impact sécurité pour le tirage de règles de jeu")]
+        private static void Shuffle(List<int> list)
+        {
+            Random rng = new();
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                int swapIndex = rng.Next(i + 1);
+                (list[i], list[swapIndex]) = (list[swapIndex], list[i]);
+            }
+        }
+
+
     }
 }

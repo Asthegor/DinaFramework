@@ -9,7 +9,7 @@ namespace DinaFramework.Core
     /// <summary>
     /// Classe abstraite de base représentant un élément avec une position, des dimensions et un ordre d'affichage.
     /// </summary>
-    public abstract class Base : IElement, IPosition, IDimensions, IZOrder
+    public abstract class Base : IElement
     {
         int _zorder;
         Vector2 _position;
@@ -47,9 +47,9 @@ namespace DinaFramework.Core
         /// <param name="zorder">Ordre d'affichage initial de l'élément. Par défaut, 0.</param>
         protected Base(Vector2 position = new Vector2(), Vector2 dimensions = new Vector2(), int zorder = 0)
         {
-            Position = position;
-            Dimensions = dimensions;
-            ZOrder = zorder;
+            this.Position = position;
+            this.Dimensions = dimensions;
+            this.ZOrder = zorder;
         }
         /// <summary>
         /// Initialise une nouvelle instance de la classe Base en copiant les propriétés d'un autre élément.
@@ -60,9 +60,9 @@ namespace DinaFramework.Core
         {
             ArgumentNullException.ThrowIfNull(@base);
 
-            Position = @base.Position;
-            Dimensions = @base.Dimensions;
-            ZOrder = @base.ZOrder;
+            this.Position = @base.Position;
+            this.Dimensions = @base.Dimensions;
+            this.ZOrder = @base.ZOrder;
         }
     }
 }

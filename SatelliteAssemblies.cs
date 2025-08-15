@@ -36,7 +36,7 @@ namespace DinaFramework.Assemblies
 
             foreach (var dir in Directory.GetDirectories(resourceFolder))
             {
-                string culture = Path.GetFileName(dir);
+                //string culture = Path.GetFileName(dir);
                 string dllPath = Path.Combine(dir, $"{game.GetType().Assembly.GetName().Name}.resources.dll");
 
                 if (File.Exists(dllPath))

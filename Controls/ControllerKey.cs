@@ -1,10 +1,10 @@
 ﻿using DinaFramework.Enums;
 using DinaFramework.Scenes;
+using DinaFramework.Services;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
-using System;
 using System.Collections.Generic;
 using System.Globalization;
 
@@ -25,7 +25,7 @@ namespace DinaFramework.Controls
         public ControllerAction Action { get; set; }
 
 
-        private static readonly List<ControllerKey> _controllers = new List<ControllerKey>();
+        private static readonly List<ControllerKey> _controllers = [];
 
         /// <summary>
         /// Retourne la liste de tous les contrôleurs.
@@ -67,10 +67,9 @@ namespace DinaFramework.Controls
         /// <returns>True si la touche est relàchée, sinon false.</returns>
         public abstract bool IsReleased();
         /// <summary>
-        /// Retourne une représentation sous forme de chaîne de la touche de contrôleur.
+        /// Retourne le SceneManager s'il est enregistré dans le ServiceLocator, sinon retourne null.
         /// </summary>
-        /// <returns>Une représentation sous forme de chaîne de la touche de contrôleur.</returns>
-        public new abstract string ToString();
+        public static SceneManager SceneManager => ServiceLocator.Exists(ServiceKey.SceneManager) ? ServiceLocator.Get<SceneManager>(ServiceKey.SceneManager) : null;
     }
     /// <summary>
     /// Classe représentant une touche de clavier.
@@ -113,8 +112,8 @@ namespace DinaFramework.Controls
             if (Action == ControllerAction.Pressed)
                 result = !_oldState.IsKeyDown(Key) && ks.IsKeyDown(Key) ? 1 : 0;
             _oldState = ks;
-            if (result != 0 && SceneManager.GetInstance() != null)
-                SceneManager.GetInstance().IsMouseVisible = true;
+            if (result != 0 && SceneManager != null)
+                SceneManager.IsMouseVisible = true;
             return result;
         }
         /// <summary>
@@ -122,11 +121,6 @@ namespace DinaFramework.Controls
         /// </summary>
         /// <returns>True si la touche est relâchée, sinon false.</returns>
         public override bool IsReleased() => Keyboard.GetState().IsKeyUp(Key);
-        /// <summary>
-        /// Retourne une représentation sous forme de chaîne de la touche de clavier.
-        /// </summary>
-        /// <returns>L'alias de la touche de clavier.</returns>
-        public override string ToString() { return Alias; }
 
         /// <summary>
         /// Vérifie si la touche de clavier est pressée de manière continue.
@@ -196,8 +190,8 @@ namespace DinaFramework.Controls
                 }
             }
             _oldState = gs;
-            if (result != 0)
-                SceneManager.GetInstance().IsMouseVisible = false;
+            if (result != 0 && SceneManager != null)
+                SceneManager.IsMouseVisible = false;
             return result;
         }
         /// <summary>
@@ -205,11 +199,6 @@ namespace DinaFramework.Controls
         /// </summary>
         /// <returns>True si le bouton est relâché, sinon false.</returns>
         public override bool IsReleased() => GamePad.GetState(_indexplayer).IsButtonUp(_button);
-        /// <summary>
-        /// Retourne une représentation sous forme de chaîne du bouton de manette.
-        /// </summary>
-        /// <returns>L'alias du bouton.</returns>
-        public override string ToString() { return Alias; }
 
         /// <summary>
         /// Vérifie si le bouton de manette est pressé de manière continue.
@@ -219,5 +208,6 @@ namespace DinaFramework.Controls
         {
             return GamePad.GetState(_indexplayer).IsButtonDown(_button) ? 1 : 0;
         }
+
     }
 }

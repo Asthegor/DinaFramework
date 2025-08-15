@@ -116,7 +116,11 @@ namespace DinaFramework.Graphics
         public Texture2D Texture
         {
             get { return _texture; }
-            set { _texture = value; }
+            set
+            {
+                ArgumentNullException.ThrowIfNull(value);
+                _texture = value;
+            }
         }
         /// <summary>
         /// Obtient ou définit le rectangle représentant la zone d'affichage du sprite.
@@ -286,6 +290,7 @@ namespace DinaFramework.Graphics
                 _visible = _visible,
             };
         }
+
         private Sprite() { }
     }
 }

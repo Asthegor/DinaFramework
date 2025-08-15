@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DinaFramework.Controls
 {
@@ -21,7 +22,7 @@ namespace DinaFramework.Controls
         /// </summary>
         public PlayerIndex Index { get; private set; }
 
-        private readonly Dictionary<string, ControllerKey> _keys;
+        private readonly Dictionary<string, ControllerKey> _keys = [];
 
         /// <summary>
         /// Initialise une nouvelle instance de la classe PlayerController.
@@ -33,12 +34,27 @@ namespace DinaFramework.Controls
         {
             ArgumentNullException.ThrowIfNull(controllerKeys);
 
+            if (controllerKeys.Length == 0)
+                throw new ArgumentException("At least one controller key must be provided.", nameof(controllerKeys));
+
+            if (controllerKeys.Any(k => k == null || string.IsNullOrWhiteSpace(k.ToString())))
+                throw new ArgumentException("Controller keys cannot be null or have empty names.", nameof(controllerKeys));
+
             Controller = controllerType;
             Index = playerIndex;
-            _keys = new Dictionary<string, ControllerKey>();
+
             foreach (ControllerKey key in controllerKeys)
-                _keys.Add(key.ToString(), key);
+            {
+                string alias = NormalizeAlias(key.Alias);
+
+                
+                if (_keys.ContainsKey(alias))
+                    throw new ArgumentException($"Duplicate controller key name detected: '{alias}'", nameof(controllerKeys));
+
+                _keys.Add(alias, key);
+            }
         }
+
         /// <summary>
         /// Accesseur pour obtenir ou définir une touche de contrôleur par son alias.
         /// </summary>
@@ -48,9 +64,16 @@ namespace DinaFramework.Controls
         {
             get
             {
-                ArgumentNullException.ThrowIfNull(alias);
+                ArgumentException.ThrowIfNullOrWhiteSpace(alias);
+                //if (alias.Trim().Length < 2)
+                //    throw new ArgumentException("Alias must be longer than 2 characters.", nameof(alias));
 
-                alias = char.ToUpper(alias[0]) + alias[1..];
+                alias = NormalizeAlias(alias);
+
+                _keys.TryGetValue(alias, out ControllerKey value);
+                return value;
+
+                /*
                 foreach (var kvp in _keys)
                 {
                     if (_keys.TryGetValue(alias, out ControllerKey value))
@@ -71,29 +94,32 @@ namespace DinaFramework.Controls
                     }
                 }
                 return null;
+                */
             }
             set
             {
                 ArgumentNullException.ThrowIfNull(alias);
 
-                alias = char.ToUpper(alias[0]) + alias[1..];
+                alias = NormalizeAlias(alias);
 
-                if (!_keys.ContainsKey(alias))
-                    _keys[alias] = value;
-                else if (value == null)
+                if (value == null)
                     _keys.Remove(alias);
+                else 
+                    _keys[alias] = value;
             }
         }
         /// <summary>
         /// Récupère une touche de contrôleur par son nom.
         /// </summary>
-        /// <param name="name">Le nom de la touche de contrôleur.</param>
+        /// <param name="alias">Alias de la touche de contrôleur.</param>
         /// <returns>La touche de contrôleur correspondante, ou null si elle n'est pas trouvée.</returns>
-        public ControllerKey GetKey(string name)
+        public ControllerKey GetKey(string alias) => this[alias];
+
+        private static string NormalizeAlias(string alias)
         {
-            if (_keys.TryGetValue(name, out ControllerKey value))
-                return value;
-            return null;
+            if (string.IsNullOrEmpty(alias))
+                return alias;
+            return char.ToUpper(alias[0]) + alias[1..];
         }
     }
 }

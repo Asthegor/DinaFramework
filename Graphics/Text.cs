@@ -13,25 +13,27 @@ namespace DinaFramework.Graphics
     /// <summary>
     /// Représente un texte à afficher avec des options de temporisation et d'alignement.
     /// </summary>
-    public class Text : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<Text>
+    public class Text : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<Text>, IElement
     {
-        SpriteFont _font;
-        string _content;
-        Color _color;
-        bool _visible;
+        private SpriteFont _font;
+        private string _content;
+        private Color _color;
+        private bool _visible;
 
-        HorizontalAlignment _halign;
-        VerticalAlignment _valign;
+        private HorizontalAlignment _halign;
+        private VerticalAlignment _valign;
 
-        Vector2 _displayposition;
+        private Vector2 _displayposition;
 
-        float _waitTime;
-        float _displayTime;
-        int _nbLoops;
-        float _timerWaitTime;
-        float _timerDisplayTime;
-        bool _wait;
-        bool _displayed;
+        private float _waitTime;
+        private float _displayTime;
+        private int _nbLoops;
+        private float _timerWaitTime;
+        private float _timerDisplayTime;
+        private bool _wait;
+        private bool _displayed;
+
+        private string _wrappedContent;
 
         /// <summary>
         /// Le contenu du texte.
@@ -42,13 +44,15 @@ namespace DinaFramework.Graphics
             set
             {
                 _content = value;
-                Vector2 currentDim = Dimensions;
-                Vector2 textDim = _font.MeasureString(TranslationManager.GetTranslation(value));
-                if (currentDim.X < textDim.X)
-                    currentDim.X = textDim.X;
-                if (currentDim.Y < textDim.Y)
-                    currentDim.Y = textDim.Y;
-                Dimensions = currentDim;
+                WrapText();
+                //Vector2 currentDim = Dimensions;
+                //string str = TranslationManager.GetTranslation(value);
+                //Vector2 textDim = _font.MeasureString(str);
+                //if (currentDim.X < textDim.X)
+                //    currentDim.X = textDim.X;
+                //if (currentDim.Y < textDim.Y)
+                //    currentDim.Y = textDim.Y;
+                //Dimensions = currentDim;
             }
         }
         /// <summary>
@@ -93,6 +97,7 @@ namespace DinaFramework.Graphics
             set
             {
                 base.Dimensions = value;
+                WrapText();
                 UpdateDisplayPosition();
             }
         }
@@ -120,6 +125,8 @@ namespace DinaFramework.Graphics
         /// <param name="zorder">L'ordre de superposition du texte (optionnel).</param>
         public Text(SpriteFont font, string content, Color color, Vector2 position = default, HorizontalAlignment horizontalalignment = HorizontalAlignment.Left, VerticalAlignment verticalalignment = VerticalAlignment.Top, int zorder = 0)
         {
+            ArgumentNullException.ThrowIfNull(font);
+
             _font = font;
             Content = content;
             _color = color;
@@ -154,16 +161,22 @@ namespace DinaFramework.Graphics
         /// <summary>
         /// Obtient les dimensions du texte à partir de la police et du contenu.
         /// </summary>
-        public Vector2 TextDimensions => _font.MeasureString(TranslationManager.GetTranslation(Content));
+        //public Vector2 TextDimensions => _font.MeasureString(TranslationManager.GetTranslation(Content));
+        public Vector2 TextDimensions => _font?.MeasureString(_wrappedContent ?? "") ?? Vector2.Zero;
+        /// <summary>
+        /// Permet d'indiquer si on veut ou non que le texte revienne automatiquement à la ligne.
+        /// </summary>
+        public bool Wrap { get; set; }
+
         /// <summary>
         /// Définit les alignements horizontal et vertical du texte.
         /// </summary>
-        /// <param name="halign">L'alignement horizontal du texte.</param>
-        /// <param name="valign">L'alignement vertical du texte.</param>
-        public void SetAlignments(HorizontalAlignment halign, VerticalAlignment valign)
+        /// <param name="horizontalAlignment">L'alignement horizontal du texte.</param>
+        /// <param name="verticalAlignment">L'alignement vertical du texte.</param>
+        public void SetAlignments(HorizontalAlignment horizontalAlignment = HorizontalAlignment.Left, VerticalAlignment verticalAlignment = VerticalAlignment.Top)
         {
-            _halign = halign;
-            _valign = valign;
+            _halign = horizontalAlignment;
+            _valign = verticalAlignment;
             UpdateDisplayPosition();
         }
         /// <summary>
@@ -174,8 +187,15 @@ namespace DinaFramework.Graphics
         {
             ArgumentNullException.ThrowIfNull(spritebatch);
             if (_visible && _displayed)
+            {
                 //Vector2 scale = TextDimensions / Dimensions;
-                spritebatch.DrawString(_font, TranslationManager.GetTranslation(Content), _displayposition, _color, 0, Vector2.Zero, Vector2.One, SpriteEffects.None, 0);
+                //spritebatch.DrawString(_font, TranslationManager.GetTranslation(Content), _displayposition, _color, 0, Vector2.Zero, Vector2.One, SpriteEffects.None, 0);
+
+                if (Wrap)
+                    spritebatch.DrawString(_font, _wrappedContent ?? "", _displayposition, _color);
+                else
+                    spritebatch.DrawString(_font, TranslationManager.GetTranslation(Content), _displayposition, _color);
+            }
         }
         /// <summary>
         /// Met à jour l'état du texte en fonction du temps écoulé.
@@ -217,7 +237,10 @@ namespace DinaFramework.Graphics
                 }
             }
         }
-        private void UpdateDisplayPosition()
+        /// <summary>
+        /// Permet de repositionner le texte.
+        /// </summary>
+        public void UpdateDisplayPosition()
         {
             Vector2 offset = new Vector2();
 
@@ -265,5 +288,55 @@ namespace DinaFramework.Graphics
             };
         }
         private Text() { }
+
+        private void WrapText()
+        {
+            if (_font == null || string.IsNullOrEmpty(_content))
+            {
+                _wrappedContent = _content;
+                return;
+            }
+
+            string raw = TranslationManager.GetTranslation(_content);
+            float maxWidth = Dimensions.X;
+
+            if (maxWidth <= 0f)
+            {
+                _wrappedContent = raw;
+                return;
+            }
+
+            string[] words = raw.Split(' ');
+            string line = "";
+            string result = "";
+
+            foreach (string word in words)
+            {
+                string testLine = string.IsNullOrEmpty(line) ? word : line + " " + word;
+                float lineWidth = _font.MeasureString(testLine).X;
+
+                if (lineWidth > maxWidth)
+                {
+                    if (!string.IsNullOrEmpty(line))
+                        result += line + "\n";
+
+                    line = word;
+                }
+                else
+                {
+                    line = testLine;
+                }
+            }
+
+            result += line;
+            _wrappedContent = result;
+
+            // Ajuste la hauteur si besoin
+            Vector2 textDim = _font.MeasureString(_wrappedContent);
+            if (Dimensions.Y < textDim.Y)
+            {
+                base.Dimensions = new Vector2(Dimensions.X, textDim.Y);
+            }
+        }
     }
 }

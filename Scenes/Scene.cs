@@ -17,8 +17,25 @@ namespace DinaFramework.Scenes
     /// Elle permet de gérer les ressources, les dimensions de l'écran, le rendu et les transitions entre les scènes.
     /// Les classes dérivées doivent implémenter les méthodes abstraites Load, Reset, Update, et Draw.
     /// </remarks>
-    public abstract class Scene : IGameObject, IResource
+    /// <remarks>
+    /// Initialise une nouvelle instance de la classe Scene avec un gestionnaire de scènes spécifié.
+    /// </remarks>
+    /// <param name="sceneManager">Le gestionnaire de scènes à associer à cette scène.</param>
+    /// <remarks>
+    /// La Scene est automatiquement créée lorsqu'on l'ajoute au gestionnaire de scènes par la fonction AddScene.
+    /// </remarks>
+    public abstract class Scene : IFullGameObject, IResource
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sceneManager"></param>
+        protected Scene(SceneManager sceneManager)
+        {
+            SceneManager = sceneManager;
+            SceneManager.OnResolutionChanged += HandleResolutionChanged;
+        }
+
         private bool _isSpritebatchBegin;
         /// <summary>
         /// Vérifie si un type donné est une sous-classe de Scene.
@@ -29,22 +46,12 @@ namespace DinaFramework.Scenes
         {
             return (type != null && typeof(Scene).IsAssignableFrom(type));
         }
-        private readonly SceneManager _sceneManager;
+
         /// <summary>
         /// Obtient le gestionnaire de scènes associé à cette scène.
         /// </summary>
-        protected SceneManager SceneManager => _sceneManager;
-        /// <summary>
-        /// Initialise une nouvelle instance de la classe Scene avec un gestionnaire de scènes spécifié.
-        /// </summary>
-        /// <param name="sceneManager">Le gestionnaire de scènes à associer à cette scène.</param>
-        /// <remarks>
-        /// La Scene est automatiquement créée lorsqu'on l'ajoute au gestionnaire de scènes par la fonction AddScene.
-        /// </remarks>
-        protected Scene(SceneManager sceneManager)
-        {
-            _sceneManager = sceneManager;
-        }
+        protected SceneManager SceneManager { get; private set; }
+
         /// <summary>
         /// Indique si la scène est chargée ou non.
         /// </summary>
@@ -52,23 +59,23 @@ namespace DinaFramework.Scenes
         /// <summary>
         /// Obtient les dimensions de l'écran du jeu.
         /// </summary>
-        protected Vector2 ScreenDimensions => _sceneManager.ScreenDimensions;
+        protected Vector2 ScreenDimensions => SceneManager.ScreenDimensions;
         /// <summary>
         /// Obtient le SpriteBatch utilisé pour dessiner les éléments graphiques de cette scène.
         /// </summary>
-        protected SpriteBatch SpriteBatch => _sceneManager.SpriteBatch;
+        protected SpriteBatch SpriteBatch => SceneManager.SpriteBatch;
         /// <summary>
         /// Obtient ou définit le progrès du chargement de la scène, compris entre 0 et 1.
         /// </summary>
         protected float LoadingProgress
         {
-            get => _sceneManager.LoadingProgress;
-            set => _sceneManager.LoadingProgress = value;
+            get => SceneManager.LoadingProgress;
+            set => SceneManager.LoadingProgress = value;
         }
         /// <summary>
         /// Obtient le gestionnaire de contenu utilisé pour charger les ressources de cette scène.
         /// </summary>
-        protected ContentManager Content => _sceneManager.Content;
+        protected ContentManager Content => SceneManager.Content;
         private bool _visible;
         /// <summary>
         /// Indique si cette scène est visible ou non.
@@ -101,7 +108,7 @@ namespace DinaFramework.Scenes
         /// <param name="resourceName">Le nom de la ressource.</param>
         /// <param name="resource">La ressource à ajouter.</param>
         /// <returns>Vrai si la ressource a été ajoutée avec succès, sinon faux.</returns>
-        public bool AddResource<T>(string resourceName, T resource) { return _sceneManager.AddResource(resourceName, resource); }
+        public bool AddResource<T>(string resourceName, T resource) { return SceneManager.AddResource(resourceName, resource); }
         /// <summary>
         /// Obtient une ressource par son nom.
         /// </summary>
@@ -114,25 +121,34 @@ namespace DinaFramework.Scenes
             if (string.IsNullOrEmpty(resourceName))
                 throw new ArgumentNullException(nameof(resourceName), "The parameter 'resourceName' must not be empty.");
 
-            return _sceneManager.GetResource<T>(resourceName);
+            return SceneManager.GetResource<T>(resourceName);
         }
         /// <summary>
         /// Supprime une ressource du gestionnaire de ressources.
         /// </summary>
         /// <param name="resourceName">Le nom de la ressource à supprimer.</param>
-        public void RemoveResource(string resourceName) { _sceneManager.RemoveResource(resourceName); }
+        public void RemoveResource(string resourceName) { SceneManager.RemoveResource(resourceName); }
         /// <summary>
         /// Quitte le jeu en cours en utilisant le gestionnaire de scènes.
         /// </summary>
-        protected void Exit() { _sceneManager.Exit(); }
+        protected void Exit() { SceneManager.Exit(); }
+        /// <summary>
+        /// Définit la scène actuelle à une nouvelle scène par son nom, avec ou sans écran de chargement.
+        /// </summary>
+        /// <param name="name">Le nom de la scène à définir comme actuelle.</param>
+        /// <param name="options">Options pour la transition de la scène.</param>
+        //protected void SetCurrentScene(string name, SceneTransitionOptions options)
+        //{
+        //    sceneManager.SetCurrentScene(name, options);
+        //}
         /// <summary>
         /// Définit la scène actuelle à une nouvelle scène par son nom, avec ou sans écran de chargement.
         /// </summary>
         /// <param name="name">Le nom de la scène à définir comme actuelle.</param>
         /// <param name="withLoadingScreen">Indique si un écran de chargement doit être affiché pendant la transition.</param>
-        protected void SetCurrentScene(string name, bool withLoadingScreen = false)
+        protected void SetCurrentScene(SceneKey name, bool withLoadingScreen = false)
         {
-            _sceneManager.SetCurrentScene(name, withLoadingScreen);
+            SceneManager.SetCurrentScene(name, withLoadingScreen);
         }
         /// <summary>
         /// Crée un RenderTarget2D avec les dimensions spécifiées.
@@ -141,7 +157,7 @@ namespace DinaFramework.Scenes
         /// <returns>Le RenderTarget2D créé.</returns>
         protected RenderTarget2D CreateRenderTarget2D(Vector2 dimensions)
         {
-            return new RenderTarget2D(_sceneManager.GraphicsDeviceManager.GraphicsDevice, (int)dimensions.X, (int)dimensions.Y);
+            return new RenderTarget2D(SceneManager.GraphicsDevice, (int)dimensions.X, (int)dimensions.Y);
         }
         /// <summary>
         /// Définit le RenderTarget2D pour le rendu des graphiques de cette scène.
@@ -149,7 +165,7 @@ namespace DinaFramework.Scenes
         /// <param name="renderTarget">Le RenderTarget2D à définir.</param>
         protected void SetRenderTarget2D(RenderTarget2D renderTarget)
         {
-            _sceneManager.SpriteBatch.GraphicsDevice.SetRenderTarget(renderTarget);
+            SceneManager.GraphicsDevice.SetRenderTarget(renderTarget);
         }
         /// <summary>
         /// Efface l'écran avec la couleur spécifiée.
@@ -157,7 +173,7 @@ namespace DinaFramework.Scenes
         /// <param name="color">La couleur utilisée pour effacer l'écran.</param>
         protected void ClearScreen(Color color)
         {
-            _sceneManager.SpriteBatch.GraphicsDevice.Clear(color);
+            SceneManager.GraphicsDevice.Clear(color);
         }
         /// <summary>
         /// Commence le processus de dessin des sprites, avec des options personnalisables.
@@ -171,8 +187,8 @@ namespace DinaFramework.Scenes
         /// <param name="transformMatrix">La matrice de transformation à appliquer aux sprites.</param>
         protected void BeginSpritebatch(SpriteSortMode sortMode = SpriteSortMode.Deferred, BlendState blendState = null, SamplerState samplerState = null, DepthStencilState depthStencilState = null, RasterizerState rasterizerState = null, Effect effect = null, Matrix? transformMatrix = null)
         {
-            _sceneManager.SpriteBatch.End();
-            _sceneManager.SpriteBatch.Begin(sortMode, blendState, samplerState, depthStencilState, rasterizerState, effect, transformMatrix);
+            SceneManager.SpriteBatch.End();
+            SceneManager.SpriteBatch.Begin(sortMode, blendState, samplerState, depthStencilState, rasterizerState, effect, transformMatrix);
             _isSpritebatchBegin = true;
         }
         /// <summary>
@@ -181,7 +197,7 @@ namespace DinaFramework.Scenes
         /// <param name="message">Le message à afficher sur l'écran de chargement.</param>
         protected void ResetLoadingScreen(string message)
         {
-            _sceneManager.ResetLoadingScreen(message);
+            SceneManager.ResetLoadingScreen(message);
         }
 
         /// <summary>
@@ -192,8 +208,27 @@ namespace DinaFramework.Scenes
             if (!_isSpritebatchBegin)
                 throw new SpriteBatchNotBeginException();
 
-            _sceneManager.EndSpritebatch();
+            SceneManager.EndSpritebatch();
             _isSpritebatchBegin = false;
+        }
+
+
+        // Gestion du changement de résolution de l'écran
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public event Action<Vector2> OnResolutionChanged;
+        private void HandleResolutionChanged(Vector2 newResolution)
+        {
+            OnResolutionChanged?.Invoke(newResolution);
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        public virtual void Dispose()
+        {
+            OnResolutionChanged = null; // Détache tous les abonnés
         }
     }
 }
