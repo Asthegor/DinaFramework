@@ -14,7 +14,7 @@ namespace DinaFramework.Core
     /// </summary>
     public class Group : Base, IDraw, IVisible, IEnumerator, IEnumerable, ICollide, IUpdate, IClickable, IColor
     {
-        readonly List<IElement> _elements = new List<IElement>();
+        private List<IElement> _elements = [];
         private int index;
         private Rectangle _rect;
         private bool _visible;
@@ -29,6 +29,7 @@ namespace DinaFramework.Core
         public Group(Vector2 position = default, Vector2 dimensions = default, int zorder = 0) : base(position, dimensions, zorder)
         {
             _color = Color.White;
+            Visible = true;
         }
         /// <summary>
         /// Initialise une nouvelle instance de la classe Group en copiant les éléments d'un autre groupe.
@@ -200,6 +201,9 @@ namespace DinaFramework.Core
         /// <param name="spritebatch">Objet SpriteBatch utilisé pour le rendu.</param>
         public void Draw(SpriteBatch spritebatch)
         {
+            if (!Visible)
+                return;
+
             foreach (var element in _elements)
             {
                 if (element is IDraw draw)

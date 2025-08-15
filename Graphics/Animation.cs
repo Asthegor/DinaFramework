@@ -15,7 +15,7 @@ namespace DinaFramework.Graphics
     /// </summary>
     public class Animation : Base, IReset, IUpdate, IDraw, IColor, ICollide, IVisible
     {
-        private readonly List<Texture2D> _frames = new List<Texture2D>();
+        private readonly List<Texture2D> _frames = [];
         private float _speed;
         private float _currentFrame;
         private Color _color;
@@ -134,10 +134,10 @@ namespace DinaFramework.Graphics
             set
             {
                 _flip = value;
-                if (value.X != 0)
-                    value.X /= Math.Abs(value.X);
-                if (value.Y != 0)
-                    value.Y /= Math.Abs(value.Y);
+                //if (value.X != 0)
+                //    value.X /= Math.Abs(value.X);
+                //if (value.Y != 0)
+                //    value.Y /= Math.Abs(value.Y);
             }
         }
         /// <summary>

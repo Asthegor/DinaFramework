@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
-namespace DinaFramework.Core
+namespace DinaFramework.Services
 {
     /// <summary>
     /// Fournit une implémentation simple pour la localisation de services, permettant d'enregistrer, de récupérer et de supprimer des services à l'aide de clés uniques.
@@ -8,7 +9,7 @@ namespace DinaFramework.Core
     public static class ServiceLocator
     {
         // Stockage interne des services enregistrés, associant une clé unique à chaque service.
-        private static readonly Dictionary<string, object> _dictionary = new Dictionary<string, object>();
+        private static readonly Dictionary<ServiceKey, object> _dictionary = [];
         /// <summary>
         /// Récupère un service enregistré à l'aide de sa clé.
         /// </summary>
@@ -16,17 +17,18 @@ namespace DinaFramework.Core
         /// <param name="key">Clé unique associée au service.</param>
         /// <returns>Le service correspondant à la clé spécifiée, casté en type T.</returns>
         /// <exception cref="KeyNotFoundException">Si la clé spécifiée n'existe pas dans le dictionnaire.</exception>
-        /// <exception cref="InvalidCastException">Si le service enregistré ne correspond pas au type T attendu.</exception>
-        public static T Retreive<T>(string key)
+        public static T Get<T>(ServiceKey key)
         {
-            return (T)_dictionary[key];
+            if (_dictionary != null && _dictionary.TryGetValue(key, out object result))
+                return (T)result;
+            return default;
         }
         /// <summary>
         /// Enregistre ou met à jour un service associé à une clé spécifique.
         /// </summary>
         /// <param name="key">Clé unique pour identifier le service.</param>
         /// <param name="value">Instance du service à enregistrer.</param>
-        public static void Register(string key, object value)
+        public static void Register(ServiceKey key, object value)
         {
             _dictionary[key] = value;
         }
@@ -35,9 +37,14 @@ namespace DinaFramework.Core
         /// </summary>
         /// <param name="key">Clé unique associée au service à supprimer.</param>
         /// <returns>Retourne <c>true</c> si le service a été supprimé avec succès, sinon <c>false</c>.</returns>
-        public static void Unregister(string key)
+        public static void Unregister(ServiceKey key)
         {
             _dictionary.Remove(key);
+        }
+
+        internal static bool Exists(ServiceKey v)
+        {
+            return _dictionary.ContainsKey(v);
         }
     }
 }

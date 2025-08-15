@@ -1,17 +1,20 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content;
+﻿#pragma warning disable CS1591 // Commentaire XML manquant pour le type ou le membre visible publiquement
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-
-using System;
-using System.Runtime.CompilerServices;
 
 namespace DinaFramework.Interfaces
 {
     /// <summary>
-    /// Définit un objet de jeu comprenant le chargement, la réinitialisation, la mise à jour et le dessin.
+    /// Définit un objet de jeu complet comprenant le chargement, la réinitialisation, la mise à jour et l'affichage.
     /// </summary>
-    public interface IGameObject : ILoad, IReset, IUpdate, IDraw
+    public interface IFullGameObject : ILoad, IReset, IUpdate, IDraw
     {}
+    /// <summary>
+    /// Définit un objet de jeu comprenant la mise à jour et l'affichage'.
+    /// </summary>
+    public interface IGameObject : IUpdate, IDraw
+    { }
+
     /// <summary>
     /// Représente un élément ayant une position, des dimensions et un ordre Z.
     /// </summary>
@@ -142,3 +145,4 @@ namespace DinaFramework.Interfaces
         public abstract bool Locked { get; set; }
     }
 }
+#pragma warning restore CS1591 // Commentaire XML manquant pour le type ou le membre visible publiquement

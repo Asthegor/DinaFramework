@@ -38,6 +38,15 @@ namespace DinaFramework.Enums
     /// </remarks>
     public enum IconMenuAlignment { None, Left, Right, Both, Max }
     /// <summary>
+    /// Définit le sens des items du menu.
+    /// </summary>
+    /// <remarks>
+    /// Les valeurs possibles sont :
+    /// - Vertical : Les items du menu sont disposés verticalement.
+    /// - Horizontal : Les items du menu sont disposés horizontalement.
+    /// </remarks>
+    public enum MenuItemDirection { Vertical, Horizontal }
+    /// <summary>
     /// Définit les actions possibles pour un contrôleur.
     /// </summary>
     /// <remarks>
@@ -87,7 +96,7 @@ namespace DinaFramework.Enums
     /// - BottomToTop : La progression va de bas en haut.
     /// - Max : Valeur maximale, généralement utilisée pour la validation ou pour définir une plage de modes.
     /// </remarks>
-    public enum ProgressBarMode { None, LeftToRight, RightToLeft, TopToBottom, BottomToTop, Max }
+    public enum ProgressDirection { None, LeftToRight, RightToLeft, TopToBottom, BottomToTop, Max }
     /// <summary>
     /// Définit les états d'une case à cocher.
     /// </summary>

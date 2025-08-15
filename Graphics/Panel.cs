@@ -1,5 +1,7 @@
 ﻿using DinaFramework.Core;
+using DinaFramework.Extensions;
 using DinaFramework.Interfaces;
+using DinaFramework.Services;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -8,6 +10,7 @@ using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Reflection;
 
 namespace DinaFramework.Graphics
 {
@@ -16,8 +19,14 @@ namespace DinaFramework.Graphics
     /// </summary>
     public class Panel : Base, IClickable, IColor, IDraw, IUpdate, IVisible, ICopyable<Panel>
     {
-        private List<Vector2> _positions = new List<Vector2>();
-        private List<Texture2D> _images = new List<Texture2D>();
+        private Dictionary<string, object> _originalValues = new Dictionary<string, object>();
+        private List<string> _modifiedValues = [];
+        private bool hasBeenRestored;
+        private bool saveOriginalValueCalled;
+        private bool saveCalled;
+
+        private List<Vector2> _positions = [];
+        private List<Texture2D> _images = [];
         private Texture2D _texture;
         private Rectangle _rectangleBackground;
         private Rectangle _rectangleBorder;
@@ -25,8 +34,12 @@ namespace DinaFramework.Graphics
         private Color _borderColor;
         private bool _visible;
         private MouseState _oldMouseState;
-        private bool _clicked;
+        private bool _leftClicked;
+        private bool _rightClicked;
         private bool _hover;
+        private bool _withRoundCorner;
+        private int _radiusCorner;
+
         private Panel() { } // ne sert qu'à la copie d'une instance
         /// <summary>
         /// Initialise une nouvelle instance de la classe Panel avec des paramètres par défaut.
@@ -35,13 +48,14 @@ namespace DinaFramework.Graphics
         /// <param name="dimensions">Dimensions du panneau.</param>
         /// <param name="backgroundcolor">Couleur d'arrière-plan.</param>
         /// <param name="zorder">Ordre de superposition (facultatif).</param>
-        public Panel(Vector2 position, Vector2 dimensions, Color backgroundcolor, int zorder = 0) : 
+        public Panel(Vector2 position, Vector2 dimensions, Color backgroundcolor, int zorder = 0) :
             base(position, dimensions, zorder)
         {
             BackgroundColor = backgroundcolor;
             BorderColor = backgroundcolor;
             Thickness = 0;
             CheckVisibility();
+            _oldMouseState = Mouse.GetState();
         }
         /// <summary>
         /// Initialise une nouvelle instance de la classe Panel avec une bordure spécifiée.
@@ -51,13 +65,18 @@ namespace DinaFramework.Graphics
         /// <param name="backgroundcolor">Couleur d'arrière-plan.</param>
         /// <param name="bordercolor">Couleur de la bordure.</param>
         /// <param name="thickness">Épaisseur de la bordure.</param>
+        /// <param name="withroundcorner"></param>
+        /// <param name="radius"></param>
         /// <param name="zorder">Ordre de superposition (facultatif).</param>
-        public Panel(Vector2 position, Vector2 dimensions, Color backgroundcolor, Color bordercolor, int thickness, int zorder = 0) :
+        public Panel(Vector2 position, Vector2 dimensions, Color backgroundcolor, Color bordercolor, int thickness, bool withroundcorner = false, int radius = 0, int zorder = 0) :
             this(position, dimensions, backgroundcolor, zorder)
         {
             BorderColor = bordercolor;
             Thickness = thickness;
             CheckVisibility();
+            _withRoundCorner = withroundcorner;
+            _radiusCorner = radius;
+            _oldMouseState = Mouse.GetState();
         }
         /// <summary>
         /// Initialise un nouveau panneau avec une image de fond et une épaisseur de bordure.
@@ -66,8 +85,10 @@ namespace DinaFramework.Graphics
         /// <param name="dimensions">Les dimensions du panneau.</param>
         /// <param name="image">L'image de fond du panneau.</param>
         /// <param name="borderThickness">L'épaisseur de la bordure.</param>
+        /// <param name="withroundcorner">Indique si on veut des coins arrondis.</param>
+        /// <param name="radius">Rayon de l'arrondi.</param>
         /// <param name="zorder">L'ordre Z du panneau (par défaut 0).</param>
-        public Panel(Vector2 position, Vector2 dimensions, Texture2D image, int borderThickness, int zorder = 0) : 
+        public Panel(Vector2 position, Vector2 dimensions, Texture2D image, int borderThickness, bool withroundcorner = false, int radius = 0, int zorder = 0) :
             base(position, dimensions, zorder)
         {
             ArgumentNullException.ThrowIfNull(image);
@@ -79,6 +100,9 @@ namespace DinaFramework.Graphics
             if (Dimensions == default)
                 Dimensions = new Vector2(image.Width, image.Height);
             CheckVisibility();
+            _withRoundCorner = withroundcorner;
+            _radiusCorner = radius;
+            _oldMouseState = Mouse.GetState();
         }
         /// <summary>
         /// Initialise un panneau avec une combinaison de textures pour les coins, bords et centre du panneau.
@@ -136,6 +160,7 @@ namespace DinaFramework.Graphics
             _positions.Add(new Vector2(position.X + cornerBottomLeft.Width, position.Y + cornerBottomLeft.Height));
 
             CheckVisibility();
+            _oldMouseState = Mouse.GetState();
         }
         /// <summary>
         /// Position du panneau.
@@ -242,11 +267,43 @@ namespace DinaFramework.Graphics
                 switch (_images.Count)
                 {
                     case 0:
-                        _texture ??= new Texture2D(spritebatch.GraphicsDevice, 1, 1);
-                        _texture.SetData(new[] { Color.White });
-                        if (_thickness > 0 && BorderColor != BackgroundColor)
-                            spritebatch.Draw(_texture, _rectangleBorder, null, BorderColor);
-                        spritebatch.Draw(_texture, _rectangleBackground, null, BackgroundColor);
+                        Texture2D texture = ServiceLocator.Get<Texture2D>(ServiceKey.Texture1px);
+
+                        if (_withRoundCorner)
+                        {
+                            Point pos = Position.ToPoint();
+                            Point dim = Dimensions.ToPoint();
+                            Rectangle rect1 = new Rectangle(new Point((int)pos.X + _radiusCorner, pos.Y), new Point(dim.X - _radiusCorner * 2, dim.Y));
+                            spritebatch.Draw(texture, rect1, BackgroundColor);
+                            Rectangle rect2 = new Rectangle(new Point((int)pos.X, pos.Y + _radiusCorner), new Point(dim.X, dim.Y - _radiusCorner * 2));
+                            spritebatch.Draw(texture, rect2, BackgroundColor);
+                            spritebatch.MaskCorners(Position, Dimensions, _radiusCorner, BackgroundColor);
+
+                            //// Dessin des arcs pour les coins arrondis
+                            //Point dim = Dimensions.ToPoint();
+                            ////dim -= new Point(_thickness * 2, _thickness * 2);
+                            //spritebatch.DrawArc(BorderColor, new Rectangle(Position.ToPoint(), dim), _radiusCorner, 90, 270);
+                            //spritebatch.DrawArc(BorderColor, new Rectangle(Position.ToPoint(), dim), _radiusCorner, 180, 90);
+                            //spritebatch.DrawArc(BorderColor, new Rectangle(Position.ToPoint(), dim), _radiusCorner, 270, 180);
+                            //spritebatch.DrawArc(BorderColor, new Rectangle(Position.ToPoint(), dim), _radiusCorner, 0, 90);
+
+                            //// Dessin des lignes entre les arcs
+                            //spritebatch.DrawLine(texture, BorderColor, Position + new Vector2(_radiusCorner - _thickness, 0), Position + new Vector2(Dimensions.X - _radiusCorner, 0), _thickness);
+                            //spritebatch.DrawLine(texture, BorderColor, Position + new Vector2(Dimensions.X - _thickness, _radiusCorner - _thickness), Position + Dimensions - new Vector2(_thickness, _radiusCorner), _thickness);
+                            //spritebatch.DrawLine(texture, BorderColor, Position + new Vector2(_radiusCorner - _thickness, Dimensions.Y - _thickness), Position + Dimensions - new Vector2(_radiusCorner, _thickness), _thickness);
+                            //spritebatch.DrawLine(texture, BorderColor, Position + new Vector2(0, _radiusCorner - _thickness), Position + new Vector2(0, Dimensions.Y - _radiusCorner), _thickness);
+
+                            // Dessin du rectangle intérieur (texture ou couleur de fond)
+                            Rectangle innerRect = new Rectangle((int)Position.X + _thickness / 2, (int)Position.Y + _thickness, (int)(Dimensions.X - 2 * _thickness), (int)(Dimensions.Y - 2 * _thickness));
+                            spritebatch.Draw(texture, innerRect, BackgroundColor);
+                        }
+                        else
+                        {
+                            spritebatch.Draw(texture, _rectangleBackground, BackgroundColor);
+                            if (_thickness > 0 && BorderColor != BackgroundColor)
+                                spritebatch.DrawRectangle(texture, _rectangleBackground, BorderColor, _thickness);
+                        }
+
                         break;
                     case 1:
                         if (_thickness == 0)
@@ -258,52 +315,41 @@ namespace DinaFramework.Graphics
                         }
                         else
                         {
-                            // Corner Top Left
-                            spritebatch.Draw(_images[0],
-                                             new Rectangle(Convert.ToInt32(_positions[0].X), Convert.ToInt32(_positions[0].Y), _thickness, _thickness),
-                                             new Rectangle(0, 0, _thickness, _thickness),
-                                             BackgroundColor);
-                            // Top
-                            spritebatch.Draw(_images[0],
-                                             new Rectangle(Convert.ToInt32(_positions[0].X + _thickness), Convert.ToInt32(_positions[0].Y), Convert.ToInt32(Dimensions.X - _thickness * 2.0f), _thickness),
-                                             new Rectangle(_thickness, 0, _images[0].Width - _thickness * 2, _thickness),
-                                             BackgroundColor);
-                            // Corner Top Right
-                            spritebatch.Draw(_images[0],
-                                             new Rectangle(Convert.ToInt32(_positions[0].X + Dimensions.X - _thickness), Convert.ToInt32(_positions[0].Y), _thickness, _thickness),
-                                             new Rectangle(_images[0].Width - _thickness, 0, _thickness, _thickness),
-                                             BackgroundColor);
-                            // Right
-                            spritebatch.Draw(_images[0],
-                                             new Rectangle(Convert.ToInt32(_positions[0].X + Dimensions.X - _thickness), Convert.ToInt32(_positions[0].Y + _thickness), _thickness, Convert.ToInt32(Dimensions.Y - _thickness * 2.0f)),
-                                             new Rectangle(_images[0].Width - _thickness, _thickness, _thickness, _images[0].Height - _thickness * 2),
-                                             BackgroundColor);
-                            // Corner Bottom Right
-                            spritebatch.Draw(_images[0],
-                                             new Rectangle(Convert.ToInt32(_positions[0].X + Dimensions.X - _thickness), Convert.ToInt32(_positions[0].Y + Dimensions.Y - _thickness), _thickness, _thickness),
-                                             new Rectangle(_images[0].Width - _thickness, _images[0].Height - _thickness, _thickness, _thickness),
-                                             BackgroundColor);
-                            // Bottom
-                            spritebatch.Draw(_images[0],
-                                             new Rectangle(Convert.ToInt32(_positions[0].X + _thickness), Convert.ToInt32(_positions[0].Y + Dimensions.Y - _thickness), Convert.ToInt32(Dimensions.X - _thickness * 2.0f), _thickness),
-                                             new Rectangle(_thickness, _images[0].Height - _thickness, _images[0].Width - _thickness * 2, _thickness),
-                                             BackgroundColor);
-                            // Corner Bottom Left
-                            spritebatch.Draw(_images[0],
-                                             new Rectangle(Convert.ToInt32(_positions[0].X), Convert.ToInt32(_positions[0].Y + Dimensions.Y - _thickness), _thickness, _thickness),
-                                             new Rectangle(0, _images[0].Height - _thickness, _thickness, _thickness),
-                                             BackgroundColor);
-                            // Left
-                            spritebatch.Draw(_images[0],
-                                             new Rectangle(Convert.ToInt32(_positions[0].X), Convert.ToInt32(_positions[0].Y + _thickness), _thickness, Convert.ToInt32(Dimensions.Y - _thickness * 2.0f)),
-                                             new Rectangle(0, _thickness, _thickness, _images[0].Height - _thickness * 2),
-                                             BackgroundColor);
-                            // Center
-                            spritebatch.Draw(_images[0],
-                                             new Rectangle(Convert.ToInt32(_positions[0].X + _thickness), Convert.ToInt32(_positions[0].Y + _thickness), Convert.ToInt32(Dimensions.X - _thickness * 2.0f), Convert.ToInt32(Dimensions.Y - _thickness * 2.0f)),
-                                             new Rectangle(_thickness, _thickness, _images[0].Width - _thickness * 2, _images[0].Height - _thickness * 2),
-                                             BackgroundColor);
+                            var img = _images[0];
+                            int x = (int)_positions[0].X;
+                            int y = (int)_positions[0].Y;
+                            int w = (int)Dimensions.X;
+                            int h = (int)Dimensions.Y;
+                            int iw = img.Width;
+                            int ih = img.Height;
+                            int t = _thickness;
 
+                            // Top Left
+                            spritebatch.Draw(img, new Rectangle(x, y, t, t), new Rectangle(0, 0, t, t), BackgroundColor);
+
+                            // Top
+                            spritebatch.Draw(img, new Rectangle(x + t, y, w - 2 * t, t), new Rectangle(t, 0, iw - 2 * t, t), BackgroundColor);
+
+                            // Top Right
+                            spritebatch.Draw(img, new Rectangle(x + w - t, y, t, t), new Rectangle(iw - t, 0, t, t), BackgroundColor);
+
+                            // Right
+                            spritebatch.Draw(img, new Rectangle(x + w - t, y + t, t, h - 2 * t), new Rectangle(iw - t, t, t, ih - 2 * t), BackgroundColor);
+
+                            // Bottom Right
+                            spritebatch.Draw(img, new Rectangle(x + w - t, y + h - t, t, t), new Rectangle(iw - t, ih - t, t, t), BackgroundColor);
+
+                            // Bottom
+                            spritebatch.Draw(img, new Rectangle(x + t, y + h - t, w - 2 * t, t), new Rectangle(t, ih - t, iw - 2 * t, t), BackgroundColor);
+
+                            // Bottom Left
+                            spritebatch.Draw(img, new Rectangle(x, y + h - t, t, t), new Rectangle(0, ih - t, t, t), BackgroundColor);
+
+                            // Left
+                            spritebatch.Draw(img, new Rectangle(x, y + t, t, h - 2 * t), new Rectangle(0, t, t, ih - 2 * t), BackgroundColor);
+
+                            // Center
+                            spritebatch.Draw(img, new Rectangle(x + t, y + t, w - 2 * t, h - 2 * t), new Rectangle(t, t, iw - 2 * t, ih - 2 * t), BackgroundColor);
                         }
                         break;
                     case 9:
@@ -363,41 +409,87 @@ namespace DinaFramework.Graphics
         }
 
         /// <summary>
-        /// Libère les ressources utilisées par le panneau.
-        /// </summary>
-        public void Dispose()
-        {
-            _texture.Dispose();
-        }
-
-        /// <summary>
         /// Met à jour l'état du panneau en fonction des interactions utilisateur.
         /// </summary>
         /// <param name="gametime">Temps de jeu actuel.</param>
         public void Update(GameTime gametime)
         {
-            MouseState mouseState = Mouse.GetState();
-            _clicked = false;
-            if (_rectangleBackground.Contains(mouseState.Position))
+            MouseState currentMouseState = Mouse.GetState();
+
+            _hover = _rectangleBackground.Contains(currentMouseState.Position);
+            if (_hover)
             {
-                _hover = true;
-                if (_oldMouseState.LeftButton == ButtonState.Pressed && mouseState.LeftButton == ButtonState.Released)
-                    _clicked = true;
+                saveCalled = false;
+                if (!saveOriginalValueCalled)
+                {
+                    _originalValues = SaveValues();
+                    saveOriginalValueCalled = true;
+                    saveCalled = true;
+                }
+                OnHovered?.Invoke(this);
+                if (saveCalled)
+                {
+                    _modifiedValues.Clear();
+                    // Compare les valeurs originales avec les valeurs modifiées
+                    _modifiedValues = _originalValues.GetModifiedKeys(SaveValues());
+                }
+                hasBeenRestored = false;
             }
             else
-                _hover = false;
-            _oldMouseState = mouseState;
+            {
+                if (!hasBeenRestored)
+                {
+                    RestoreOriginalValues(_modifiedValues);
+                    hasBeenRestored = true;
+                    saveOriginalValueCalled = false;
+                }
+            }
+
+            // Vérifie si le clic a eu lieu
+            _leftClicked = _hover && currentMouseState.LeftButton == ButtonState.Released && _oldMouseState.LeftButton == ButtonState.Pressed;
+            if (_leftClicked)
+                OnClicked?.Invoke(this);
+
+            _rightClicked = _hover && currentMouseState.RightButton == ButtonState.Released && _oldMouseState.RightButton == ButtonState.Pressed;
+            if (_rightClicked)
+                OnRightClicked?.Invoke(this);
+
+            _oldMouseState = currentMouseState;
         }
         /// <summary>
-        /// Détermine si le panneau a été cliqué.
+        /// Détermine si le panneau a été cliqué (clic droit ou gauche).
         /// </summary>
         /// <returns>True si cliqué, sinon false.</returns>
-        public bool IsClicked() => _clicked;
+        public bool IsClicked() => _leftClicked || _rightClicked;
+        /// <summary>
+        /// Détermine si le panneau a été cliqué avec le bouton gauche.
+        /// </summary>
+        /// <returns>True si cliqué, sinon false.</returns>
+        public bool IsLeftClicked() => _leftClicked;
+        /// <summary>
+        /// Détermine si le panneau a été cliqué avec le bouton droit.
+        /// </summary>
+        /// <returns>True si cliqué, sinon false.</returns>
+        public bool IsRightClicked() => _rightClicked;
         /// <summary>
         /// Détermine si le panneau est survolé par la souris.
         /// </summary>
         /// <returns>True si survolé, sinon false.</returns>
         public bool IsHovered() => _hover;
+
+        /// <summary>
+        /// Déclenche les événements lorsque le panneau est survolé.
+        /// </summary>
+        public event Action<Panel> OnHovered;
+        /// <summary>
+        /// Déclenche les événements lorsque le panneau est cliqué avec le bouton gauche.
+        /// </summary>
+        public event Action<Panel> OnClicked;
+        /// <summary>
+        /// Déclenche les événements lorsque le panneau est cliqué avec le bouton gauche.
+        /// </summary>
+        public event Action<Panel> OnRightClicked;
+
         internal void SetVisible(bool visible)
         {
             _visible = visible;
@@ -408,15 +500,16 @@ namespace DinaFramework.Graphics
         /// <returns>Une nouvelle instance de Panel avec les mêmes propriétés.</returns>
         public Panel Copy()
         {
-            List<Texture2D> copiedTextures = new List<Texture2D>();
+            List<Texture2D> copiedTextures = [];
             foreach (Texture2D texture in _images)
                 copiedTextures.Add(texture);
             return new Panel()
             {
                 _borderColor = _borderColor,
-                _clicked = _clicked,
+                _leftClicked = _leftClicked,
+                _rightClicked = _rightClicked,
                 _images = copiedTextures,
-                _positions = _positions,
+                _positions = [.. _positions],
                 _oldMouseState = _oldMouseState,
                 _rectangleBackground = _rectangleBackground,
                 _texture = _texture,
@@ -431,5 +524,49 @@ namespace DinaFramework.Graphics
                 ZOrder = ZOrder
             };
         }
+
+        private Dictionary<string, object> SaveValues()
+        {
+            Dictionary<string, object> values = new Dictionary<string, object>();
+            // Récupère toutes les propriétés publiques du Panel et les enregistre dans le dictionnaire.
+            Type type = this.GetType();
+            PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            foreach (PropertyInfo property in properties)
+            {
+                values[property.Name] = property.GetValue(this);
+            }
+            return values;
+        }
+        private void RestoreOriginalValues(List<string> modifiedKeys = default)
+        {
+            if (modifiedKeys.Count == 0)
+            {
+                foreach (KeyValuePair<string, object> pair in _originalValues)
+                {
+                    // Utilise la réflexion pour définir la valeur de la propriété correspondante.
+                    PropertyInfo property = this.GetType().GetProperty(pair.Key);
+                    if (property != null)
+                    {
+                        property.SetValue(this, pair.Value);
+                    }
+                }
+            }
+            else
+            {
+                foreach (string key in modifiedKeys)
+                {
+                    if (_originalValues.ContainsKey(key))
+                    {
+                        PropertyInfo property = this.GetType().GetProperty(key);
+                        if (property != null)
+                        {
+                            property.SetValue(this, _originalValues[key]);
+                        }
+                    }
+                }
+            }
+        }
+
     }
 }

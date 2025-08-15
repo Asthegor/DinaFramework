@@ -6,6 +6,8 @@ using DinaFramework.Translation;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
+using System;
+
 namespace DinaFramework.Graphics
 {
     /// <summary>
@@ -13,8 +15,8 @@ namespace DinaFramework.Graphics
     /// </summary>
     public class ShadowText : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<ShadowText>
     {
-        Text _text;
-        Text _shadow;
+        private Text _text;
+        private Text _shadow;
         Vector2 _offset;
         /// <summary>
         /// Initialise une nouvelle instance de la classe ShadowText avec les paramètres spécifiés.
@@ -31,6 +33,8 @@ namespace DinaFramework.Graphics
         public ShadowText(SpriteFont font, string content, Color color, Vector2 position, Color shadowcolor, Vector2 offset,
                           HorizontalAlignment halign = default, VerticalAlignment valign = default, int zorder = 0)
         {
+            ArgumentNullException.ThrowIfNull(font);
+
             _text = new Text(font, content, color, position, halign, valign, zorder);
             _shadow = new Text(font, content, shadowcolor, position + offset, halign, valign, zorder - 1);
             Offset = offset;
@@ -177,6 +181,7 @@ namespace DinaFramework.Graphics
                 ZOrder = ZOrder
             };
         }
+
         private ShadowText() { }
     }
 }
