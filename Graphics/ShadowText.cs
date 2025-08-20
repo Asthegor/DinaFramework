@@ -1,7 +1,7 @@
 ﻿using DinaFramework.Core;
 using DinaFramework.Enums;
 using DinaFramework.Interfaces;
-using DinaFramework.Translation;
+using DinaFramework.Localization;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -71,7 +71,7 @@ namespace DinaFramework.Graphics
         /// </summary>
         public string Content
         {
-            get { return TranslationManager.GetTranslation(_text.Content); }
+            get { return _text.Content; }
             set
             {
                 _shadow.Content = value;

@@ -35,8 +35,8 @@ namespace DinaFramework.Scenes
 
             (float screenW, float screenH) = SceneManager.ScreenDimensions;
 
-            float maxWidth = screenW * 0.8f;
-            float maxHeight = screenH * 0.8f;
+            float maxWidth = screenW * 0.4f;
+            float maxHeight = screenH * 0.4f;
 
             float ratioX = maxWidth / logo.Width;
             float ratioY = maxHeight / logo.Height;

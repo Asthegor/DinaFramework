@@ -1,7 +1,7 @@
 ﻿using DinaFramework.Core;
 using DinaFramework.Enums;
 using DinaFramework.Interfaces;
-using DinaFramework.Translation;
+using DinaFramework.Localization;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -133,7 +133,7 @@ namespace DinaFramework.Graphics
             _wait = false;
             _displayposition = position;
             Position = position;
-            Dimensions = _font.MeasureString(TranslationManager.GetTranslation(Content));
+            Dimensions = _font.MeasureString(LocalizationManager.GetTranslation(Content));
             SetAlignments(horizontalalignment, verticalalignment);
             ZOrder = zorder;
             _displayed = true;
@@ -194,7 +194,7 @@ namespace DinaFramework.Graphics
                 if (Wrap)
                     spritebatch.DrawString(_font, _wrappedContent ?? "", _displayposition, _color);
                 else
-                    spritebatch.DrawString(_font, TranslationManager.GetTranslation(Content), _displayposition, _color);
+                    spritebatch.DrawString(_font, LocalizationManager.GetTranslation(Content), _displayposition, _color);
             }
         }
         /// <summary>
@@ -297,7 +297,7 @@ namespace DinaFramework.Graphics
                 return;
             }
 
-            string raw = TranslationManager.GetTranslation(_content);
+            string raw = LocalizationManager.GetTranslation(_content);
             float maxWidth = Dimensions.X;
 
             if (maxWidth <= 0f)

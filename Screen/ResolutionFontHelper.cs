@@ -1,0 +1,73 @@
+﻿using DinaFramework.Enums;
+
+using Microsoft.Xna.Framework;
+
+namespace DinaFramework.Screen
+{
+    /// <summary>
+    /// 
+    /// </summary>
+    public static class ResolutionFontManager
+    {
+        private const int W720 = 1280, H720 = 720;
+        private const int W1080 = 1920, H1080 = 1080;
+        private const int W1440 = 2560, H1440 = 1440;
+        private const int W4K = 3840, H4K = 2160;
+
+        private const long A720 = W720 * H720;
+        private const long A1080 = W1080 * H1080;
+        private const long A1440 = W1440 * H1440;
+        private const long A4K = W4K * H4K;
+
+        private const double Threshold720 = A720 * 0.8;
+        private const double Threshold1080 = A1080 * 0.8;
+        private const double Threshold1440 = A1440 * 0.8;
+        private const double Threshold4K = A4K * 0.8;
+
+        /// <summary>
+        /// Permet de récupérer le type de taille de police selon la résolution d'écran fournie.
+        /// </summary>
+        /// <param name="screenResolution">Résolution de l'écran.</param>
+        /// <returns></returns>
+        public static ResolutionFontSize GetFontSizeForResolution(Vector2 screenResolution)
+        {
+            return GetFontSizeForResolution((int)screenResolution.X, (int)screenResolution.Y);
+        }
+        /// <summary>
+        /// Permet de récupérer le type de taille de police selon la résolution d'écran fournie.
+        /// </summary>
+        /// <param name="screenWidth">Largeur de l'écran.</param>
+        /// <param name="screenHeight">Hauteur de l'écran.</param>
+        /// <returns>Type de taille de police.</returns>
+        public static ResolutionFontSize GetFontSizeForResolution(int screenWidth, int screenHeight)
+        {
+            // 1) On “ramène” la résolution à la plus grande zone 16:9 qui tient dedans
+            (int w16x9, int h16x9) = FitInside16x9(screenWidth, screenHeight);
+
+            // 2) On classe par aire, avec 1080p = Large
+            double area = w16x9 * h16x9;
+
+            return area switch
+            {
+                < Threshold720 => ResolutionFontSize.Small,
+                < Threshold1080 => ResolutionFontSize.Medium,
+                < Threshold1440 => ResolutionFontSize.Large,
+                < Threshold4K => ResolutionFontSize.XL,
+                _ => ResolutionFontSize.XXL
+            };
+        }
+
+        /// Calcule la plus grande surface 16:9 qui rentre dans (W,H) sans déborder
+        public static (int width, int height) FitInside16x9(int width, int height)
+        {
+            // Essai par la largeur
+            int hByW = (width * 9) / 16;
+            if (hByW <= height)
+                return (width, hByW);
+
+            // Sinon on s’aligne sur la hauteur
+            int wByH = (height * 16) / 9;
+            return (wByH, height);
+        }
+    }
+}

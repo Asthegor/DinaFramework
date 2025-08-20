@@ -17,13 +17,6 @@ namespace DinaFramework.Scenes
     /// Elle permet de gérer les ressources, les dimensions de l'écran, le rendu et les transitions entre les scènes.
     /// Les classes dérivées doivent implémenter les méthodes abstraites Load, Reset, Update, et Draw.
     /// </remarks>
-    /// <remarks>
-    /// Initialise une nouvelle instance de la classe Scene avec un gestionnaire de scènes spécifié.
-    /// </remarks>
-    /// <param name="sceneManager">Le gestionnaire de scènes à associer à cette scène.</param>
-    /// <remarks>
-    /// La Scene est automatiquement créée lorsqu'on l'ajoute au gestionnaire de scènes par la fonction AddScene.
-    /// </remarks>
     public abstract class Scene : IFullGameObject, IResource
     {
         /// <summary>
@@ -33,7 +26,7 @@ namespace DinaFramework.Scenes
         protected Scene(SceneManager sceneManager)
         {
             SceneManager = sceneManager;
-            SceneManager.OnResolutionChanged += HandleResolutionChanged;
+            SceneManager.OnResolutionChanged += HandleSceneResolutionChanged;
         }
 
         private bool _isSpritebatchBegin;
@@ -178,17 +171,11 @@ namespace DinaFramework.Scenes
         /// <summary>
         /// Commence le processus de dessin des sprites, avec des options personnalisables.
         /// </summary>
-        /// <param name="sortMode">Le mode de tri des sprites.</param>
-        /// <param name="blendState">L'état de fusion des sprites.</param>
-        /// <param name="samplerState">L'état de l'échantillonneur.</param>
-        /// <param name="depthStencilState">L'état du stencil de profondeur.</param>
-        /// <param name="rasterizerState">L'état du rasterizer.</param>
-        /// <param name="effect">L'effet appliqué aux sprites.</param>
-        /// <param name="transformMatrix">La matrice de transformation à appliquer aux sprites.</param>
-        protected void BeginSpritebatch(SpriteSortMode sortMode = SpriteSortMode.Deferred, BlendState blendState = null, SamplerState samplerState = null, DepthStencilState depthStencilState = null, RasterizerState rasterizerState = null, Effect effect = null, Matrix? transformMatrix = null)
+        /// <param name="spritebatch">Spritebatch</param>
+        protected void BeginSpritebatch(SpriteBatch spritebatch)
         {
-            SceneManager.SpriteBatch.End();
-            SceneManager.SpriteBatch.Begin(sortMode, blendState, samplerState, depthStencilState, rasterizerState, effect, transformMatrix);
+            SceneManager.EndSpriteBatch(spritebatch);
+            SceneManager.BeginSpriteBatch(spritebatch);
             _isSpritebatchBegin = true;
         }
         /// <summary>
@@ -203,12 +190,12 @@ namespace DinaFramework.Scenes
         /// <summary>
         /// Termine le processus de dessin des sprites.
         /// </summary>
-        protected void EndSpritebatch()
+        protected void EndSpritebatch(SpriteBatch spritebatch)
         {
             if (!_isSpritebatchBegin)
                 throw new SpriteBatchNotBeginException();
 
-            SceneManager.EndSpritebatch();
+            SceneManager.EndSpriteBatch(spritebatch);
             _isSpritebatchBegin = false;
         }
 
@@ -218,10 +205,10 @@ namespace DinaFramework.Scenes
         /// <summary>
         /// 
         /// </summary>
-        public event Action<Vector2> OnResolutionChanged;
-        private void HandleResolutionChanged(Vector2 newResolution)
+        public event Action OnResolutionChanged;
+        private void HandleSceneResolutionChanged()
         {
-            OnResolutionChanged?.Invoke(newResolution);
+            OnResolutionChanged?.Invoke();
         }
         /// <summary>
         /// 

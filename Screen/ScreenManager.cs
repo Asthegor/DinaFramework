@@ -1,15 +1,10 @@
-﻿using DinaFramework.Enums;
-using DinaFramework.Interfaces;
-using DinaFramework.Services;
+﻿using DinaFramework.Services;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DinaFramework.Screen
 {
@@ -23,21 +18,25 @@ namespace DinaFramework.Screen
     public class ScreenManager
     {
         private readonly GraphicsDeviceManager _graphics;
+        private readonly GameWindow _window;
 
         /// <summary>
         /// Initialise une nouvelle instance de la classe ScreenManager et l'enregistre éventuellement dans le ServiceLocator.
         /// </summary>
         /// <param name="graphics"> L'instance de GraphicsDeviceManager utilisée pour modifier les paramètres d'affichage.</param>
-        private ScreenManager(GraphicsDeviceManager graphics)
+        /// <param name="window"></param>
+        private ScreenManager(GraphicsDeviceManager graphics, GameWindow window)
         {
             _graphics = graphics ?? throw new ArgumentNullException(nameof(graphics));
+            _window = window;
+            _window.ClientSizeChanged += HandleResize;
         }
 
         /// <summary>
         /// Permet de récupérer la liste des résolutions de la carte graphique.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<DisplayMode> AvailableResolutions => GraphicsAdapter.DefaultAdapter.SupportedDisplayModes;
+        public static IEnumerable<DisplayMode> AvailableResolutions => GraphicsAdapter.DefaultAdapter.SupportedDisplayModes;
 
         /// <summary>
         /// Permet de savoir si l'affiche est en mode plein écran (true) ou fenêtré (false).
@@ -53,7 +52,7 @@ namespace DinaFramework.Screen
         /// <summary>
         /// Actions lors du changement de résolution.
         /// </summary>
-        public event Action<Vector2> OnResolutionChanged;
+        public event Action OnResolutionChanged;
 
         /// <summary>
         /// Définit la résolution d'affichage du jeu.
@@ -65,7 +64,7 @@ namespace DinaFramework.Screen
             _graphics.PreferredBackBufferWidth = width;
             _graphics.PreferredBackBufferHeight = height;
             _graphics.ApplyChanges();
-            OnResolutionChanged?.Invoke(new Vector2(width, height));
+            OnResolutionChanged?.Invoke();
         }
 
         /// <summary>
@@ -82,9 +81,22 @@ namespace DinaFramework.Screen
         /// Crée une instance de ScreenManager et l'enregistre dans le ServiceLocator.
         /// </summary>
         /// <param name="graphics"></param>
-        public static void Initialize(GraphicsDeviceManager graphics)
+        /// <param name="window"></param>
+        public static void Initialize(GraphicsDeviceManager graphics, GameWindow window)
         {
-            ServiceLocator.Register(ServiceKey.ScreenManager, new ScreenManager(graphics));
+            ServiceLocator.Register(ServiceKey.ScreenManager, new ScreenManager(graphics, window));
+        }
+
+        private void HandleResize(object sender, EventArgs e)
+        {
+            int newWidth = _window.ClientBounds.Width;
+            int newHeight = _window.ClientBounds.Height;
+
+            if (newWidth != _graphics.PreferredBackBufferWidth ||
+                newHeight != _graphics.PreferredBackBufferHeight)
+            {
+                SetResolution(newWidth, newHeight);
+            }
         }
     }
 

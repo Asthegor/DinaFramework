@@ -21,6 +21,8 @@ namespace DinaFramework.Menus
         Func<MenuItem, MenuItem> _selection;
         Func<MenuItem, MenuItem> _deselection;
         Func<MenuItem, MenuItem> _activation;
+        private Color _disabledColor = Color.DarkGray;
+
         /// <summary>
         /// Fonction exécutée lors de la sélection de l'élément de menu.
         /// </summary>
@@ -132,6 +134,14 @@ namespace DinaFramework.Menus
             }
         }
         /// <summary>
+        /// Couleur lorsque le MenuItem est déactivé.
+        /// </summary>
+        public Color DisableColor
+        {
+            get => _disabledColor;
+            set => _disabledColor = value;
+        }
+        /// <summary>
         /// Le contenu du texte associé à l'élément de menu.
         /// </summary>
         public string Content
@@ -224,11 +234,11 @@ namespace DinaFramework.Menus
         //    if (_visible)
         //    {
         //        Color previousColor = Color.White;
-        //        if (_item is IColor colorItem)
+        //        if (_item is IColor coloredItem)
         //        {
-        //            previousColor = colorItem.Color;
+        //            previousColor = coloredItem.Color;
         //            if (State == MenuItemState.Disable)
-        //                colorItem.Color = Color.DarkGray;
+        //                coloredItem.Color = Color.DarkGray;
         //        }
 
         //        if (_item is IDraw item)
@@ -247,16 +257,16 @@ namespace DinaFramework.Menus
             if (!_visible || _item is not IDraw drawableItem)
                 return;
 
-            IColor colorItem = _item as IColor;
-            Color? originalColor = colorItem?.Color;
+            IColor coloredItem = _item as IColor;
+            Color? originalColor = coloredItem?.Color;
 
-            if (colorItem != null && State == MenuItemState.Disable)
-                colorItem.Color = Color.DarkGray;
+            if (coloredItem != null && State == MenuItemState.Disable)
+                coloredItem.Color = _disabledColor;
 
             drawableItem.Draw(spritebatch);
 
-            if (colorItem != null && originalColor.HasValue)
-                colorItem.Color = originalColor.Value;
+            if (coloredItem != null && originalColor.HasValue)
+                coloredItem.Color = originalColor.Value;
         }
     }
 }
