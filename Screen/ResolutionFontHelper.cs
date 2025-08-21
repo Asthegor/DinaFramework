@@ -4,8 +4,10 @@ using Microsoft.Xna.Framework;
 
 namespace DinaFramework.Screen
 {
+
     /// <summary>
-    /// 
+    /// Gestionnaire de taille de police adaptée à la résolution d'écran.
+    /// Détermine la taille de police à utiliser selon la résolution 16:9 la plus grande qui tient dans l'écran.
     /// </summary>
     public static class ResolutionFontManager
     {
@@ -57,7 +59,12 @@ namespace DinaFramework.Screen
             };
         }
 
-        /// Calcule la plus grande surface 16:9 qui rentre dans (W,H) sans déborder
+        /// <summary>
+        /// Calcule la plus grande zone 16:9 qui rentre dans les dimensions données sans dépasser.
+        /// </summary>
+        /// <param name="width">Largeur disponible.</param>
+        /// <param name="height">Hauteur disponible.</param>
+        /// <returns>Largeur et hauteur de la zone 16:9 maximale.</returns>
         public static (int width, int height) FitInside16x9(int width, int height)
         {
             // Essai par la largeur

@@ -1,5 +1,6 @@
 ﻿using DinaFramework.Core;
 using DinaFramework.Enums;
+using DinaFramework.Events;
 using DinaFramework.Interfaces;
 
 using Microsoft.Xna.Framework;
@@ -7,7 +8,6 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 using System;
-using System.Linq;
 
 namespace DinaFramework.Graphics
 {
@@ -46,9 +46,9 @@ namespace DinaFramework.Graphics
         /// <summary>
         /// Action appelée lorsque la valeur du slider change.
         /// </summary>
-        public event Action<float> OnValueChanged;
+        public event EventHandler<SliderValueEventArgs> OnValueChanged;
         /// <summary>
-        /// 
+        /// Position du slider.
         /// </summary>
         public new Vector2 Position
         {
@@ -60,6 +60,9 @@ namespace DinaFramework.Graphics
                 _thumb.Position = value;
             }
         }
+        /// <summary>
+        /// Dimensions du slider.
+        /// </summary>
         public new Vector2 Dimensions
         {
             get => base.Dimensions;
@@ -186,7 +189,7 @@ namespace DinaFramework.Graphics
             {
                 Value = newValue;
                 UpdateThumbPosition();
-                OnValueChanged?.Invoke(Value);
+                OnValueChanged?.Invoke(this, new SliderValueEventArgs(Value));
             }
         }
 

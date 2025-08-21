@@ -1,4 +1,5 @@
 ﻿using DinaFramework.Interfaces;
+using DinaFramework.Services;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -17,7 +18,7 @@ namespace DinaFramework.Graphics
         private Vector2 _position;
         private Vector2 _origin;
         private Vector2 _scale;
-        private Texture2D _texture;
+
         /// <summary>
         /// Initialise une ligne en utilisant une position de départ et une position de fin.
         /// </summary>
@@ -68,12 +69,10 @@ namespace DinaFramework.Graphics
         /// <param name="spritebatch">L'objet SpriteBatch utilisé pour dessiner la ligne.</param>
         public void Draw(SpriteBatch spritebatch)
         {
-            if (_texture == null)
-            {
-                _texture = new Texture2D(spritebatch.GraphicsDevice, 1, 1);
-                _texture.SetData([Color.White]);
-            }
-            spritebatch.Draw(_texture, _position, null, Color, _angle, _origin, _scale, SpriteEffects.None, 0);
+            ArgumentNullException.ThrowIfNull(spritebatch, nameof(spritebatch));
+            Texture2D texture = ServiceLocator.Get<Texture2D>(ServiceKey.Texture1px);
+            if (texture != null)
+                spritebatch.Draw(texture, _position, null, Color, _angle, _origin, _scale, SpriteEffects.None, 0);
         }
         /// <summary>
         /// Crée une copie de la ligne actuelle.
@@ -86,12 +85,13 @@ namespace DinaFramework.Graphics
                 _origin = _origin,
                 _position = _position,
                 _scale = _scale,
-                _texture = _texture,
+                //_texture = _texture,
                 Color = Color,
                 Thickness = Thickness,
             };
         }
 
         private Line() { }
+
     }
 }

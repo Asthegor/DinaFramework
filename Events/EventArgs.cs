@@ -1,0 +1,178 @@
+﻿using DinaFramework.Graphics;
+using DinaFramework.Scenes;
+using DinaFramework.Screen;
+
+using System;
+
+namespace DinaFramework.Events
+{
+    /// <summary>
+    /// Contient les informations d'un événement lié à un <see cref="Button"/>.
+    /// </summary>
+    public class ButtonEventArgs : EventArgs
+    {
+        /// <summary>
+        /// Le bouton qui a déclenché l'événement.
+        /// </summary>
+        public Button Button { get; }
+
+        /// <summary>
+        /// Initialise une nouvelle instance de <see cref="ButtonEventArgs"/> pour le bouton spécifié.
+        /// </summary>
+        /// <param name="button">Le bouton associé à l'événement.</param>
+        public ButtonEventArgs(Button button) => Button = button;
+    }
+
+    /// <summary>
+    /// Contient les informations d'un événement lié à une <see cref="CheckBox"/>.
+    /// </summary>
+    public class CheckBoxEventArgs : EventArgs
+    {
+        /// <summary>
+        /// La case à cocher qui a déclenché l'événement.
+        /// </summary>
+        public CheckBox CheckBox { get; }
+
+        /// <summary>
+        /// Initialise une nouvelle instance de <see cref="CheckBoxEventArgs"/> pour la CheckBox spécifiée.
+        /// </summary>
+        /// <param name="checkBox">La CheckBox associée à l'événement.</param>
+        public CheckBoxEventArgs(CheckBox checkBox) => CheckBox = checkBox;
+    }
+
+    /// <summary>
+    /// Contient les informations d'un événement lié à une <see cref="ListBox"/>.
+    /// </summary>
+    public class ListBoxEventArgs : EventArgs
+    {
+        /// <summary>
+        /// La liste qui a déclenché l'événement.
+        /// </summary>
+        public ListBox ListBox { get; }
+
+        /// <summary>
+        /// Initialise une nouvelle instance de <see cref="ListBoxEventArgs"/> pour la ListBox spécifiée.
+        /// </summary>
+        /// <param name="listBox">La ListBox associée à l'événement.</param>
+        public ListBoxEventArgs(ListBox listBox) => ListBox = listBox;
+    }
+
+    /// <summary>
+    /// Contient les informations d'un clic sur un élément d'une <see cref="ListBox"/>.
+    /// </summary>
+    public class ListBoxClickEventArgs : EventArgs
+    {
+        /// <summary>
+        /// L'index de l'élément cliqué dans la liste.
+        /// </summary>
+        public int Index { get; }
+
+        /// <summary>
+        /// Initialise une nouvelle instance de <see cref="ListBoxClickEventArgs"/> pour l'index spécifié.
+        /// </summary>
+        /// <param name="index">L'index de l'élément cliqué.</param>
+        public ListBoxClickEventArgs(int index) => Index = index;
+    }
+
+    /// <summary>
+    /// Contient les informations d'un événement lié à un <see cref="Panel"/>.
+    /// </summary>
+    public class PanelEventArgs : EventArgs
+    {
+        /// <summary>
+        /// Le panneau qui a déclenché l'événement.
+        /// </summary>
+        public Panel Panel { get; }
+
+        /// <summary>
+        /// Initialise une nouvelle instance de <see cref="PanelEventArgs"/> pour le panneau spécifié.
+        /// </summary>
+        /// <param name="panel">Le panneau associé à l'événement.</param>
+        public PanelEventArgs(Panel panel) => Panel = panel;
+    }
+
+    /// <summary>
+    /// Contient les informations d'un événement lié à un <see cref="Slider"/>.
+    /// </summary>
+    public class SliderEventArgs : EventArgs
+    {
+        /// <summary>
+        /// Le slider qui a déclenché l'événement.
+        /// </summary>
+        public Slider Slider { get; }
+
+        /// <summary>
+        /// Initialise une nouvelle instance de <see cref="SliderEventArgs"/> pour le slider spécifié.
+        /// </summary>
+        /// <param name="slider">Le slider associé à l'événement.</param>
+        public SliderEventArgs(Slider slider) => Slider = slider;
+    }
+
+    /// <summary>
+    /// Contient les informations d'un changement de valeur d'un <see cref="Slider"/>.
+    /// </summary>
+    public class SliderValueEventArgs : EventArgs
+    {
+        /// <summary>
+        /// La nouvelle valeur du slider.
+        /// </summary>
+        public float Value { get; }
+
+        /// <summary>
+        /// Initialise une nouvelle instance de <see cref="SliderValueEventArgs"/> avec la valeur spécifiée.
+        /// </summary>
+        /// <param name="value">La valeur du slider.</param>
+        public SliderValueEventArgs(float value) => Value = value;
+    }
+
+    /// <summary>
+    /// Contient les informations d'un événement lié à une <see cref="Scene"/>.
+    /// </summary>
+    public class SceneEventArgs : EventArgs
+    {
+        /// <summary>
+        /// La scène qui a déclenché l'événement.
+        /// </summary>
+        public Scene Scene { get; }
+
+        /// <summary>
+        /// Initialise une nouvelle instance de <see cref="SceneEventArgs"/> pour la scène spécifiée.
+        /// </summary>
+        /// <param name="scene">La scène associée à l'événement.</param>
+        public SceneEventArgs(Scene scene) => Scene = scene;
+    }
+
+    /// <summary>
+    /// Contient les informations d'un événement lié au <see cref="SceneManager"/>.
+    /// </summary>
+    public class SceneManagerEventArgs : EventArgs
+    {
+        /// <summary>
+        /// Le SceneManager qui a déclenché l'événement.
+        /// </summary>
+        public SceneManager SceneManager { get; }
+
+        /// <summary>
+        /// Initialise une nouvelle instance de <see cref="SceneManagerEventArgs"/> pour le SceneManager spécifié.
+        /// </summary>
+        /// <param name="sceneManager">Le SceneManager associé à l'événement.</param>
+        public SceneManagerEventArgs(SceneManager sceneManager) => SceneManager = sceneManager;
+    }
+
+    /// <summary>
+    /// Contient les informations d'un événement lié au <see cref="ScreenManager"/>.
+    /// </summary>
+    public class ScreenManagerEventArgs : EventArgs
+    {
+        /// <summary>
+        /// Le ScreenManager qui a déclenché l'événement.
+        /// </summary>
+        public ScreenManager ScreenManager { get; }
+
+        /// <summary>
+        /// Initialise une nouvelle instance de <see cref="ScreenManagerEventArgs"/> pour le ScreenManager spécifié.
+        /// </summary>
+        /// <param name="screenManager">Le ScreenManager associé à l'événement.</param>
+        public ScreenManagerEventArgs(ScreenManager screenManager) => ScreenManager = screenManager;
+    }
+}

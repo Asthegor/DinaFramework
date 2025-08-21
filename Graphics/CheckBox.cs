@@ -1,6 +1,9 @@
 ﻿using DinaFramework.Core;
 using DinaFramework.Enums;
+using DinaFramework.Events;
+using DinaFramework.Extensions;
 using DinaFramework.Interfaces;
+using DinaFramework.Services;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -19,9 +22,6 @@ namespace DinaFramework.Graphics
         private bool _useTextures;
         private Texture2D _checkedTexture;
         private Texture2D _uncheckedTexture;
-        private Color _checkedColor;
-        private Color _uncheckedColor;
-        private static Texture2D _pixelTexture;
         private MouseState _oldMouseState;
 
         /// <summary>
@@ -35,8 +35,8 @@ namespace DinaFramework.Graphics
         public CheckBox(Color checkedColor, Color uncheckedColor, Vector2 position, Vector2 dimensions, int zorder = 0) :
             base(position, dimensions, zorder)
         {
-            _checkedColor = checkedColor;
-            _uncheckedColor = uncheckedColor;
+            CheckedColor = checkedColor;
+            UncheckedColor = uncheckedColor;
             Position = position;
             Initialize();
         }
@@ -59,6 +59,7 @@ namespace DinaFramework.Graphics
         }
         private void Initialize()
         {
+            LockedColor = Color.White * 0.75f;
             Visible = true;
             State = CheckBoxState.Unchecked;
         }
@@ -96,6 +97,10 @@ namespace DinaFramework.Graphics
         /// </summary>
         public bool Locked { get; set; }
         /// <summary>
+        /// Couleur à utiliser lorsque la case est verrouillée.
+        /// </summary>
+        public Color LockedColor { get; set; }
+        /// <summary>
         /// État actuel de la case à cocher (cochée ou non cochée).
         /// </summary>
         public CheckBoxState State { get; set; }
@@ -103,7 +108,7 @@ namespace DinaFramework.Graphics
         /// <summary>
         /// Événement déclenché lorsqu'on clique sur la case à cocher. Utile pour réagir immédiatement au changement d'état par l'utilisateur.
         /// </summary>
-        public event Action OnClicked;
+        public event EventHandler<CheckBoxEventArgs> OnClicked;
         /// <summary>
         /// Obtient ou définit l'état coché de la case. True si la case est cochée, false sinon.
         /// Cette propriété simplifie l'accès à l'état en évitant de manipuler l'énumération CheckBoxState directement.
@@ -113,6 +118,14 @@ namespace DinaFramework.Graphics
             get => State == CheckBoxState.Checked;
             set => State = value ? CheckBoxState.Checked : CheckBoxState.Unchecked;
         }
+        /// <summary>
+        /// Couleur quand la case est cochée.
+        /// </summary>
+        public Color CheckedColor { get; set; } = Color.White;
+        /// <summary>
+        /// Couleur quand la case est décochée.
+        /// </summary>
+        public Color UncheckedColor { get; set; } = Color.White;
 
         /// <summary>
         /// Met à jour l'état de la case à cocher (gestion des clics et des interactions).
@@ -128,7 +141,7 @@ namespace DinaFramework.Graphics
                     if (_checkBoxRect.Contains(new Point(ms.X, ms.Y)))
                     {
                         IsChecked = !IsChecked; // on inverse l'état
-                        OnClicked?.Invoke();
+                        OnClicked?.Invoke(this, new CheckBoxEventArgs(this));
                     }
                 }
             }
@@ -144,48 +157,31 @@ namespace DinaFramework.Graphics
 
             if (Visible)
             {
-                float ratio = 1;
-                if (Locked)
-                    ratio = 0.75f;
                 if (_useTextures)
                 {
                     if (State == CheckBoxState.Checked)
-                        spritebatch.Draw(_checkedTexture, _checkBoxRect, Color.White * ratio);
+                    {
+                        if (_checkedTexture != null)
+                            spritebatch.Draw(_checkedTexture, _checkBoxRect, Locked ? LockedColor : CheckedColor);
+                    }
                     else
                     {
-                        spritebatch.Draw(_uncheckedTexture, _checkBoxRect, Color.White * ratio);
+                        if (_uncheckedTexture != null)
+                            spritebatch.Draw(_uncheckedTexture, _checkBoxRect, Locked ? LockedColor : UncheckedColor);
                     }
                 }
                 else
                 {
                     // Dessine un rectangle non plein
+                    Texture2D pixel = ServiceLocator.Get<Texture2D>(ServiceKey.Texture1px);
                     if (State == CheckBoxState.Checked)
-                        DrawRectangle(spritebatch, _checkBoxRect, _checkedColor * ratio, isFilled: true);
+                        spritebatch.DrawRectangle(pixel, _checkBoxRect, CheckedColor, isFilled: true);
                     else
-                        DrawRectangle(spritebatch, _checkBoxRect, _uncheckedColor * ratio, isFilled: false);
+                        spritebatch.DrawRectangle(pixel, _checkBoxRect, UncheckedColor, isFilled: false);
                 }
             }
         }
-        private static void DrawRectangle(SpriteBatch spritebatch, Rectangle rectangle, Color color, bool isFilled)
-        {
-            ArgumentNullException.ThrowIfNull(spritebatch);
 
-            _pixelTexture ??= new Texture2D(spritebatch.GraphicsDevice, 1, 1);
-            _pixelTexture.SetData([Color.White]);
-            // Dessine un rectangle non plein
-            if (isFilled)
-                spritebatch.Draw(_pixelTexture, rectangle, color);
-            else
-            {
-                // Lignes horizontales
-                spritebatch.Draw(_pixelTexture, new Rectangle(rectangle.Left, rectangle.Top, rectangle.Width, 1), color);
-                spritebatch.Draw(_pixelTexture, new Rectangle(rectangle.Left, rectangle.Bottom - 1, rectangle.Width, 1), color);
-
-                // Lignes verticales
-                spritebatch.Draw(_pixelTexture, new Rectangle(rectangle.Left, rectangle.Top, 1, rectangle.Height), color);
-                spritebatch.Draw(_pixelTexture, new Rectangle(rectangle.Right - 1, rectangle.Top, 1, rectangle.Height), color);
-            }
-        }
 
         /// <summary>
         /// Crée une copie de la case à cocher actuelle.
@@ -196,9 +192,9 @@ namespace DinaFramework.Graphics
             return new CheckBox()
             {
                 _checkBoxRect = _checkBoxRect,
-                _checkedColor = _checkedColor,
+                CheckedColor = CheckedColor,
                 _checkedTexture = _checkedTexture,
-                _uncheckedColor = _uncheckedColor,
+                UncheckedColor = UncheckedColor,
                 _uncheckedTexture = _uncheckedTexture,
                 _useTextures = _useTextures,
                 Dimensions = Dimensions,
@@ -207,6 +203,7 @@ namespace DinaFramework.Graphics
                 Visible = Visible,
                 ZOrder = ZOrder,
                 Locked = Locked,
+                LockedColor = LockedColor,
             };
         }
         private CheckBox() { }

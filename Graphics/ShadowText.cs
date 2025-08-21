@@ -1,7 +1,6 @@
 ﻿using DinaFramework.Core;
 using DinaFramework.Enums;
 using DinaFramework.Interfaces;
-using DinaFramework.Localization;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -15,8 +14,8 @@ namespace DinaFramework.Graphics
     /// </summary>
     public class ShadowText : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<ShadowText>
     {
-        private Text _text;
-        private Text _shadow;
+        private DFText _text;
+        private DFText _shadow;
         Vector2 _offset;
         /// <summary>
         /// Initialise une nouvelle instance de la classe ShadowText avec les paramètres spécifiés.
@@ -35,8 +34,8 @@ namespace DinaFramework.Graphics
         {
             ArgumentNullException.ThrowIfNull(font);
 
-            _text = new Text(font, content, color, position, halign, valign, zorder);
-            _shadow = new Text(font, content, shadowcolor, position + offset, halign, valign, zorder - 1);
+            _text = new DFText(font, content, color, position, halign, valign, zorder);
+            _shadow = new DFText(font, content, shadowcolor, position + offset, halign, valign, zorder - 1);
             Offset = offset;
         }
         /// <summary>

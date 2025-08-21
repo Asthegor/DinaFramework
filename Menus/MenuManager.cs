@@ -155,7 +155,7 @@ namespace DinaFramework.Menus
         {
             IElement title = (shadowcolor.HasValue && shadowoffset.HasValue)
                         ? new ShadowText(font, text, color, position, shadowcolor.Value, shadowoffset.Value, zorder: zorder)
-                        : new Text(font, text, color, position, zorder: zorder);
+                        : new DFText(font, text, color, position, zorder: zorder);
             AddTitleToGroups(title);
             return title;
         }
@@ -197,7 +197,7 @@ namespace DinaFramework.Menus
         {
             foreach (var title in _titles)
             {
-                if (title is Text titletext)
+                if (title is DFText titletext)
                     titletext.Font = font;
             }
             if (_centeredTitles)
@@ -406,14 +406,9 @@ namespace DinaFramework.Menus
 
             // Mise à jour des dimensions du panneau
             _background.Dimensions = _itemsGroup.Dimensions + borderSpacing * 2.0f;
-            //_background.Dimensions = new Vector2(_itemsGroup.Dimensions.X + borderSpacing * 2.0f, _itemsGroup.Dimensions.Y + borderSpacing * 2.0f);
-            //_itemsGroup.Dimensions = new Vector2(_itemsGroup.Dimensions.X + borderSpacing * 2.0f, _itemsGroup.Dimensions.Y + borderSpacing * 2.0f);
-            //_background.Dimensions = _itemsGroup.Position - _itemsGroup.Dimensions;
 
             if (_iconRight != null)
                 _background.Dimensions += new Vector2(_iconRight.Dimensions.X, 0);
-            //if (bkgnotexist)
-            //    _itemsGroup.Add(_background);
 
             // Mise à jour du ZOrder du panneau
             int index = 0;
@@ -425,8 +420,6 @@ namespace DinaFramework.Menus
                     MenuItem menuitem = (MenuItem)item;
                     if ((index == 0 || min_zorder > menuitem.ZOrder))
                         min_zorder = ((MenuItem)item).ZOrder;
-                    // Mise à jour des positions des items
-                    //menuitem.Position = new Vector2(menuitem.Position.X + borderSpacing, menuitem.Position.Y + borderSpacing);
                 }
                 index++;
             }
@@ -584,9 +577,6 @@ namespace DinaFramework.Menus
                 }
                 if (_iconRight != null && (IconAlignment == IconMenuAlignment.Right || IconAlignment == IconMenuAlignment.Both))
                 {
-                    //float iconRightPos = _background != null ? _background.Position.X + _background.Dimensions.X - _iconRight.Dimensions.X - _borderSpacing
-                    //                                         : _itemsGroup.Position.X + _itemsGroup.Dimensions.X + _iconSpacing;
-
                     _iconRight.Position = new Vector2(_items[_currentitemindex].Position.X + _items[_currentitemindex].TextDimensions.X + _iconSpacing.X,
                                                       _items[_currentitemindex].Position.Y + (_items[_currentitemindex].TextDimensions.Y - _iconRight.Dimensions.Y) / 2.0f);
                     _iconRight.Draw(spritebatch);
@@ -618,34 +608,26 @@ namespace DinaFramework.Menus
             Rectangle mouseRect = new(mousePos, Point.Zero);
 
             Rectangle menuItemsGroupRect = new Rectangle(_itemsGroup.Position.ToPoint(), _itemsGroup.Dimensions.ToPoint());
+            MenuItem hoveredItem = null;
             if (menuItemsGroupRect.Contains(mousePos))
             {
-
                 foreach (MenuItem item in _items)
                 {
-                    if (item.State == MenuItemState.Disable)
-                        continue;
-
                     Rectangle itemRect = new(item.Position.ToPoint(), item.Dimensions.ToPoint());
-
-                    if (_oldMouseState.Position != mousePos && itemRect.Intersects(mouseRect))
+                    if (item.State != MenuItemState.Disable && itemRect.Intersects(mouseRect))
                     {
-                        if (CurrentItem != item)
-                        {
-                            CurrentItem?.Deselection?.Invoke(CurrentItem);
-                            item.Selection?.Invoke(item);
-                            CurrentItem = item;
-                        }
+                        hoveredItem = item;
+                        break;
                     }
                 }
             }
-            else
+
+            if (CurrentItem != hoveredItem)
             {
-                if (CurrentItem != null)
-                {
-                    CurrentItem.Deselection?.Invoke(CurrentItem);
-                    CurrentItem = null;
-                }
+                CurrentItem?.Deselection?.Invoke(CurrentItem);
+                if (hoveredItem != null)
+                    hoveredItem.Selection?.Invoke(hoveredItem);
+                CurrentItem = hoveredItem;
             }
 
             bool clicked = _oldMouseState.LeftButton == ButtonState.Pressed && ms.LeftButton == ButtonState.Released;

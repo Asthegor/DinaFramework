@@ -13,7 +13,7 @@ namespace DinaFramework.Graphics
     /// <summary>
     /// Représente un texte à afficher avec des options de temporisation et d'alignement.
     /// </summary>
-    public class Text : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<Text>, IElement
+    public class DFText : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<DFText>, IElement
     {
         private SpriteFont _font;
         private string _content;
@@ -45,14 +45,6 @@ namespace DinaFramework.Graphics
             {
                 _content = value;
                 WrapText();
-                //Vector2 currentDim = Dimensions;
-                //string str = TranslationManager.GetTranslation(value);
-                //Vector2 textDim = _font.MeasureString(str);
-                //if (currentDim.X < textDim.X)
-                //    currentDim.X = textDim.X;
-                //if (currentDim.Y < textDim.Y)
-                //    currentDim.Y = textDim.Y;
-                //Dimensions = currentDim;
             }
         }
         /// <summary>
@@ -123,7 +115,7 @@ namespace DinaFramework.Graphics
         /// <param name="horizontalalignment">L'alignement horizontal du texte (optionnel).</param>
         /// <param name="verticalalignment">L'alignement vertical du texte (optionnel).</param>
         /// <param name="zorder">L'ordre de superposition du texte (optionnel).</param>
-        public Text(SpriteFont font, string content, Color color, Vector2 position = default, HorizontalAlignment horizontalalignment = HorizontalAlignment.Left, VerticalAlignment verticalalignment = VerticalAlignment.Top, int zorder = 0)
+        public DFText(SpriteFont font, string content, Color color, Vector2 position = default, HorizontalAlignment horizontalalignment = HorizontalAlignment.Left, VerticalAlignment verticalalignment = VerticalAlignment.Top, int zorder = 0)
         {
             ArgumentNullException.ThrowIfNull(font);
 
@@ -161,7 +153,6 @@ namespace DinaFramework.Graphics
         /// <summary>
         /// Obtient les dimensions du texte à partir de la police et du contenu.
         /// </summary>
-        //public Vector2 TextDimensions => _font.MeasureString(TranslationManager.GetTranslation(Content));
         public Vector2 TextDimensions => _font?.MeasureString(_wrappedContent ?? "") ?? Vector2.Zero;
         /// <summary>
         /// Permet d'indiquer si on veut ou non que le texte revienne automatiquement à la ligne.
@@ -188,9 +179,6 @@ namespace DinaFramework.Graphics
             ArgumentNullException.ThrowIfNull(spritebatch);
             if (_visible && _displayed)
             {
-                //Vector2 scale = TextDimensions / Dimensions;
-                //spritebatch.DrawString(_font, TranslationManager.GetTranslation(Content), _displayposition, _color, 0, Vector2.Zero, Vector2.One, SpriteEffects.None, 0);
-
                 if (Wrap)
                     spritebatch.DrawString(_font, _wrappedContent ?? "", _displayposition, _color);
                 else
@@ -237,10 +225,7 @@ namespace DinaFramework.Graphics
                 }
             }
         }
-        /// <summary>
-        /// Permet de repositionner le texte.
-        /// </summary>
-        public void UpdateDisplayPosition()
+        private void UpdateDisplayPosition()
         {
             Vector2 offset = new Vector2();
 
@@ -261,9 +246,9 @@ namespace DinaFramework.Graphics
         /// Crée une copie de l'objet actuel.
         /// </summary>
         /// <returns>Une nouvelle instance de Text avec les mêmes propriétés.</returns>
-        public Text Copy()
+        public DFText Copy()
         {
-            return new Text()
+            return new DFText()
             {
                 _color = _color,
                 _content = _content,
@@ -287,7 +272,7 @@ namespace DinaFramework.Graphics
                 ZOrder = ZOrder
             };
         }
-        private Text() { }
+        private DFText() { }
 
         private void WrapText()
         {

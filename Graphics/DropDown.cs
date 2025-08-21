@@ -25,9 +25,9 @@ namespace DinaFramework.Graphics
         private bool _visible;
 
         private readonly Panel _panel;
-        private readonly Text _text;
+        private readonly DFText _text;
         private readonly Panel _panelArrow;
-        private readonly List<Text> _listOptions = [];
+        private readonly List<DFText> _listOptions = [];
         private readonly Panel _panelOptions;
 
 
@@ -50,7 +50,7 @@ namespace DinaFramework.Graphics
         /// <param name="bordercolor">Couleur de la bordure du menu déroulant.</param>
         /// <param name="thickness">Épaisseur de la bordure.</param>
         /// <param name="nbvisibleoptions">Nombre d'options visibles à afficher par défaut.</param>
-        public DropDown(SpriteFont font, Texture2D arrowTexture, Vector2 position, Vector2 dimensions, List<string> options, Color textcolor, Color selectedoptioncolor, Color backgroundcolor, Color bordercolor, int thickness = 1, int nbvisibleoptions = 5)
+        public DropDown(SpriteFont font, Texture2D arrowTexture, Vector2 position, Vector2 dimensions, IReadOnlyList<string> options, Color textcolor, Color selectedoptioncolor, Color backgroundcolor, Color bordercolor, int thickness = 1, int nbvisibleoptions = 5)
             : base(position, dimensions)
         {
             ArgumentNullException.ThrowIfNull(arrowTexture);
@@ -58,20 +58,20 @@ namespace DinaFramework.Graphics
 
             _font = font;
 
-            _options = options;
+            _options = [.. options];
             _selectedOptionColor = selectedoptioncolor;
             _nbVisibleOptions = nbvisibleoptions;
 
             Vector2 panelDim = dimensions;
             _panel = new Panel(position, panelDim, backgroundcolor, bordercolor, thickness);
-            _text = new Text(font, "", textcolor, position + new Vector2(thickness, thickness));
+            _text = new DFText(font, "", textcolor, position + new Vector2(thickness, thickness));
 
             Vector2 panelArrowPos = position + new Vector2(panelDim.X - arrowTexture.Width - thickness, 0);
             _panelArrow = new Panel(panelArrowPos, new Vector2(arrowTexture.Width, Math.Max(dimensions.Y, arrowTexture.Height)), arrowTexture, 0);
 
             foreach (string option in options)
             {
-                Text t = new Text(font, option, textcolor)
+                DFText t = new DFText(font, option, textcolor)
                 {
                     Visible = false,
                     Dimensions = dimensions - new Vector2(thickness * 2, 0)
@@ -112,7 +112,7 @@ namespace DinaFramework.Graphics
             {
                 bool exists = false;
                 int index = -1;
-                foreach (Text t in _listOptions)
+                foreach (DFText t in _listOptions)
                 {
                     index++;
                     if (t.Content == value)
@@ -168,7 +168,7 @@ namespace DinaFramework.Graphics
             _text.Content = "";
             _panelOptions.Visible = false;
 
-            foreach (Text tb in _listOptions)
+            foreach (DFText tb in _listOptions)
             {
                 tb.Visible = false;
                 tb.Color = _text.Color;
@@ -188,7 +188,7 @@ namespace DinaFramework.Graphics
                 clickedAway = true;
 
                 _panelOptions.Visible = false;
-                foreach (Text option in _listOptions)
+                foreach (DFText option in _listOptions)
                     option.Visible = false;
 
                 // Si l'utilisateur clique sur la flèche, dépliez la liste déroulante
@@ -250,7 +250,7 @@ namespace DinaFramework.Graphics
                 if (_isExpanded)
                 {
                     _panelOptions.Draw(spritebatch);
-                    foreach (Text option in _listOptions)
+                    foreach (DFText option in _listOptions)
                         option.Draw(spritebatch);
                 }
             }

@@ -1,4 +1,5 @@
-﻿using DinaFramework.Exceptions;
+﻿using DinaFramework.Events;
+using DinaFramework.Exceptions;
 using DinaFramework.Interfaces;
 
 using Microsoft.Xna.Framework;
@@ -20,13 +21,14 @@ namespace DinaFramework.Scenes
     public abstract class Scene : IFullGameObject, IResource
     {
         /// <summary>
-        /// 
+        /// Initialise une nouvelle instance de la classe <see cref="Scene"/> et lie la scène au gestionnaire de scènes spécifié.
+        /// S'abonne également à l'événement de changement de résolution pour que la scène puisse réagir aux modifications de l'écran.
         /// </summary>
-        /// <param name="sceneManager"></param>
+        /// <param name="sceneManager">Le <see cref="SceneManager"/> qui gère cette scène.</param>
         protected Scene(SceneManager sceneManager)
         {
             SceneManager = sceneManager;
-            SceneManager.OnResolutionChanged += HandleSceneResolutionChanged;
+            SceneManager.OnResolutionChanged += (sender, e) => HandleSceneResolutionChanged(e.Scene);
         }
 
         private bool _isSpritebatchBegin;
@@ -129,15 +131,6 @@ namespace DinaFramework.Scenes
         /// Définit la scène actuelle à une nouvelle scène par son nom, avec ou sans écran de chargement.
         /// </summary>
         /// <param name="name">Le nom de la scène à définir comme actuelle.</param>
-        /// <param name="options">Options pour la transition de la scène.</param>
-        //protected void SetCurrentScene(string name, SceneTransitionOptions options)
-        //{
-        //    sceneManager.SetCurrentScene(name, options);
-        //}
-        /// <summary>
-        /// Définit la scène actuelle à une nouvelle scène par son nom, avec ou sans écran de chargement.
-        /// </summary>
-        /// <param name="name">Le nom de la scène à définir comme actuelle.</param>
         /// <param name="withLoadingScreen">Indique si un écran de chargement doit être affiché pendant la transition.</param>
         protected void SetCurrentScene(SceneKey name, bool withLoadingScreen = false)
         {
@@ -203,15 +196,16 @@ namespace DinaFramework.Scenes
         // Gestion du changement de résolution de l'écran
 
         /// <summary>
-        /// 
+        /// Événement déclenché lorsque la résolution de la scène change.
+        /// Les abonnés peuvent réagir à ce changement pour ajuster le rendu ou l'interface.
         /// </summary>
-        public event Action OnResolutionChanged;
-        private void HandleSceneResolutionChanged()
+        public event EventHandler<SceneEventArgs> OnResolutionChanged;
+        private void HandleSceneResolutionChanged(Scene scene)
         {
-            OnResolutionChanged?.Invoke();
+            OnResolutionChanged?.Invoke(scene, new SceneEventArgs(scene));
         }
         /// <summary>
-        /// 
+        /// Détache tous les abonnés à l'événement <see cref="OnResolutionChanged"/>.
         /// </summary>
         public virtual void Dispose()
         {

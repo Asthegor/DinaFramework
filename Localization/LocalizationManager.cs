@@ -111,12 +111,6 @@ namespace DinaFramework.Localization
             var translation = GetTranslation(key);
             _currentCulture = previous;
             return translation;
-
-            //var previousLanguage = CurrentLanguage;
-            //CurrentLanguage = culture;
-            //var translation = GetTranslation(key);
-            //CurrentLanguage = previousLanguage;
-            //return translation;
         }
 
         /// <summary>
@@ -161,39 +155,24 @@ namespace DinaFramework.Localization
             }
             return new List<string>(cultures).ToArray();
 
-            //var cultures = new List<string>();
-            //foreach (var assembly in _assemblies)
-            //{
-            //    var assemblyPath = Path.GetDirectoryName(assembly.Location);
-            //    AddCulturesFromSubdirectories(assemblyPath, cultures, assembly);
-            //}
-            //_availableLanguages = [.. cultures];
-            //return _availableLanguages;
         }
 
-        //private static void AddCulturesFromSubdirectories(string directoryPath, List<string> cultures, Assembly assembly)
         private static void AddCulturesFromSubdirectories(string directoryPath, HashSet<string> cultures, Assembly assembly)
         {
             foreach (var directory in Directory.GetDirectories(directoryPath))
             {
                 var cultureName = Path.GetFileName(directory);
-
                 try
                 {
-                    // Tenter de créer la culture sans provoquer d'erreur si le nom est invalide
                     var culture = new CultureInfo(cultureName);
                     var satellitePath = Path.Combine(directory, $"{assembly.GetName().Name}.resources.dll");
                     if (File.Exists(satellitePath))
-                    {
                         cultures.Add(cultureName);
-                    }
                 }
                 catch (CultureNotFoundException)
                 {
                     // Ignorer les dossiers non valides, mais ne pas bloquer la recherche des autres sous-répertoires
                 }
-
-                // Appel récursif pour les sous-répertoires
                 AddCulturesFromSubdirectories(directory, cultures, assembly);
             }
         }

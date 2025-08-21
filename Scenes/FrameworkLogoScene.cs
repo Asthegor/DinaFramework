@@ -1,5 +1,4 @@
-﻿using DinaFramework.Interfaces;
-using DinaFramework.Internal;
+﻿using DinaFramework.Internal;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;

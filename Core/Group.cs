@@ -12,7 +12,9 @@ namespace DinaFramework.Core
     /// <summary>
     /// Représente un groupe d'éléments, gérant leur affichage, visibilité, couleur et interactions.
     /// </summary>
-    public class Group : Base, IDraw, IVisible, IEnumerator, IEnumerable, ICollide, IUpdate, IClickable, IColor
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1710:Identifiers should have correct suffix", 
+        Justification = "Group est clair dans le contexte du framework.")]
+    public class Group : Base, IDraw, IVisible, IEnumerable<IElement>, ICollide, IUpdate, IClickable, IColor
     {
         private List<IElement> _elements = [];
         private int index;
@@ -177,11 +179,10 @@ namespace DinaFramework.Core
         /// <summary>
         /// Retourne un énumérateur pour parcourir les éléments du groupe.
         /// </summary>
-        public IEnumerator GetEnumerator()
-        {
-            Reset();
-            return this;
-        }
+        public IEnumerator<IElement> GetEnumerator() => _elements.GetEnumerator();
+
+        // Implémentation non générique obligatoire par IEnumerable
+        IEnumerator IEnumerable.GetEnumerator() => _elements.GetEnumerator();
 
         /// <summary>
         /// Vérifie si le groupe entre en collision avec un autre élément.

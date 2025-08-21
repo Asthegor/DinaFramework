@@ -18,9 +18,9 @@ namespace DinaFramework.Menus
     {
         private bool _visible;
         private readonly object _item;
-        Func<MenuItem, MenuItem> _selection;
-        Func<MenuItem, MenuItem> _deselection;
-        Func<MenuItem, MenuItem> _activation;
+        private Func<MenuItem, MenuItem> _selection;
+        private Func<MenuItem, MenuItem> _deselection;
+        private Func<MenuItem, MenuItem> _activation;
         private Color _disabledColor = Color.DarkGray;
 
         /// <summary>
@@ -148,13 +148,13 @@ namespace DinaFramework.Menus
         {
             get
             {
-                if (_item is Text textitem)
+                if (_item is DFText textitem)
                     return textitem.Content;
                 return default;
             }
             set
             {
-                if (_item is Text textitem)
+                if (_item is DFText textitem)
                     textitem.Content = value;
             }
         }
@@ -174,13 +174,13 @@ namespace DinaFramework.Menus
         {
             get
             {
-                if (_item is Text textitem)
+                if (_item is DFText textitem)
                     return textitem.Font;
                 return null;
             }
             set
             {
-                if (_item is Text textitem)
+                if (_item is DFText textitem)
                     textitem.Font = value;
             }
         }
@@ -203,7 +203,7 @@ namespace DinaFramework.Menus
                         Func<MenuItem, MenuItem> activation = null,
                         Vector2 position = default,
                         HorizontalAlignment halign = HorizontalAlignment.Left, VerticalAlignment valign = VerticalAlignment.Top) :
-            this(new Text(font, text, color, position, halign, valign, 0), selection, deselection, activation, position)
+            this(new DFText(font, text, color, position, halign, valign, 0), selection, deselection, activation, position)
         {
         }
         /// <summary>
@@ -229,25 +229,7 @@ namespace DinaFramework.Menus
             Visible = true;
             State = MenuItemState.Enable;
         }
-        //public void Draw(SpriteBatch spritebatch)
-        //{
-        //    if (_visible)
-        //    {
-        //        Color previousColor = Color.White;
-        //        if (_item is IColor coloredItem)
-        //        {
-        //            previousColor = coloredItem.Color;
-        //            if (State == MenuItemState.Disable)
-        //                coloredItem.Color = Color.DarkGray;
-        //        }
 
-        //        if (_item is IDraw item)
-        //            item.Draw(spritebatch);
-
-        //        if (_item is IColor colorItem2)
-        //            colorItem2.Color = previousColor;
-        //    }
-        //}
         /// <summary>
         /// Dessine l'élément de menu à l'écran, en respectant sa visibilité et son état.
         /// </summary>

@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace DinaFramework.Controls
@@ -65,43 +66,14 @@ namespace DinaFramework.Controls
             get
             {
                 ArgumentException.ThrowIfNullOrWhiteSpace(alias);
-                //if (alias.Trim().Length < 2)
-                //    throw new ArgumentException("Alias must be longer than 2 characters.", nameof(alias));
-
                 alias = NormalizeAlias(alias);
-
                 _keys.TryGetValue(alias, out ControllerKey value);
                 return value;
-
-                /*
-                foreach (var kvp in _keys)
-                {
-                    if (_keys.TryGetValue(alias, out ControllerKey value))
-                        return value;
-
-                    switch (kvp.Value)
-                    {
-                        case KeyboardKey:
-                            if (_keys.ContainsKey("Key_" + alias))
-                                return _keys["Key_" + alias];
-                            break;
-                        case GamepadButton:
-                            if (_keys.ContainsKey("Button_" + alias))
-                                return _keys["Button_" + alias];
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                return null;
-                */
             }
             set
             {
                 ArgumentNullException.ThrowIfNull(alias);
-
                 alias = NormalizeAlias(alias);
-
                 if (value == null)
                     _keys.Remove(alias);
                 else 
@@ -119,7 +91,7 @@ namespace DinaFramework.Controls
         {
             if (string.IsNullOrEmpty(alias))
                 return alias;
-            return char.ToUpper(alias[0]) + alias[1..];
+            return char.ToUpper(alias[0], CultureInfo.InvariantCulture) + alias[1..];
         }
     }
 }

@@ -28,23 +28,24 @@ namespace DinaFramework.Controls
         private static readonly List<ControllerKey> _controllers = [];
 
         /// <summary>
-        /// Retourne la liste de tous les contrôleurs.
+        /// Liste publique de tous les ControllerKey existants.
+        /// Exposée intentionnellement pour permettre l'ajout automatique des instances dans le constructeur.
         /// </summary>
-        /// <returns>La liste de tous les contrôleurs.</returns>
-        public static List<ControllerKey> GetControllers() => _controllers;
+        public static IReadOnlyList<ControllerKey> Controllers => _controllers;
 
         /// <summary>
+        /// Permet d'ajouter automatiquement la classe enfant à la liste des controllers.
         /// </summary>
         protected ControllerKey()
         {
-            GetControllers().Add(this);
+            _controllers.Add(this);
         }
         /// <summary>
         /// Réinitialise toutes les touches de contrôleur.
         /// </summary>
         public static void ResetAllKeys()
         {
-            foreach (var controller in GetControllers())
+            foreach (var controller in Controllers)
                 controller.Reset();
         }
         /// <summary>

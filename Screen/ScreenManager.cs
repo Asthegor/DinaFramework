@@ -1,4 +1,5 @@
-﻿using DinaFramework.Services;
+﻿using DinaFramework.Events;
+using DinaFramework.Services;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -52,7 +53,7 @@ namespace DinaFramework.Screen
         /// <summary>
         /// Actions lors du changement de résolution.
         /// </summary>
-        public event Action OnResolutionChanged;
+        public event EventHandler<ScreenManagerEventArgs> OnResolutionChanged;
 
         /// <summary>
         /// Définit la résolution d'affichage du jeu.
@@ -64,7 +65,7 @@ namespace DinaFramework.Screen
             _graphics.PreferredBackBufferWidth = width;
             _graphics.PreferredBackBufferHeight = height;
             _graphics.ApplyChanges();
-            OnResolutionChanged?.Invoke();
+            OnResolutionChanged?.Invoke(this, new ScreenManagerEventArgs(this));
         }
 
         /// <summary>

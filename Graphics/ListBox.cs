@@ -1,4 +1,5 @@
 ﻿using DinaFramework.Core;
+using DinaFramework.Events;
 using DinaFramework.Interfaces;
 
 using Microsoft.Xna.Framework;
@@ -42,7 +43,7 @@ namespace DinaFramework.Graphics
         /// <param name="items">Liste des éléments à afficher dans la boîte de liste.</param>
         /// <param name="position">Position initiale de la boîte de liste.</param>
         /// <param name="nbvisibleelements">Nombre d'éléments visibles dans la boîte de liste. Par défaut, tous les éléments sont visibles.</param>
-        public ListBox(List<IElement> items, Vector2 position = default, int nbvisibleelements = -1)
+        public ListBox(IReadOnlyList<IElement> items, Vector2 position = default, int nbvisibleelements = -1)
         {
             ArgumentNullException.ThrowIfNull(items);
             foreach (var item in items)
@@ -104,14 +105,7 @@ namespace DinaFramework.Graphics
         public override Vector2 Dimensions
         {
             get => base.Dimensions;
-            set
-            {
-                //Vector2 offset = base.Dimensions - value;
-
-                //foreach (IElement t in _elements)
-                //    t.Dimensions = new Vector2(t.Dimensions.X, t.Dimensions.Y + offset.Y);
-                base.Dimensions = value;
-            }
+            set => base.Dimensions = value;
         }
         /// <summary>
         /// Obtient ou définit l'élément sélectionné dans la boîte de liste par son index.
@@ -151,11 +145,11 @@ namespace DinaFramework.Graphics
         /// <summary>
         /// Événements lorsqu'on clique droit sur un élément de la liste (en plus de le sélectionner).
         /// </summary>
-        public event Action<int> OnRightClick;
+        public event EventHandler<ListBoxClickEventArgs> OnRightClick;
         /// <summary>
         /// Événements lorsque l'on clique gauche sur un élément de la liste.
         /// </summary>
-        public event Action<int> OnLeftClick;
+        public event EventHandler<ListBoxClickEventArgs> OnLeftClick;
 
 
         /// <summary>
@@ -174,14 +168,14 @@ namespace DinaFramework.Graphics
                     UpdateLeftSelectedItem(p, index);
                     _rightSelectedItem = null;
                     ContextMenuItemIndex = -1;
-                    OnLeftClick?.Invoke(_elements.IndexOf(_leftSelectedItem));
+                    OnLeftClick?.Invoke(this, new ListBoxClickEventArgs(_elements.IndexOf(_leftSelectedItem)));
                 }
                 else if (p.IsRightClicked())
                 {
                     UpdateLeftSelectedItem(p, index, true);
                     _rightSelectedItem = _listVisibleItems[index];
                     ContextMenuItemIndex = index;
-                    OnRightClick?.Invoke(_elements.IndexOf(_rightSelectedItem));
+                    OnRightClick?.Invoke(this, new ListBoxClickEventArgs(_elements.IndexOf(_rightSelectedItem)));
                 }
             }
         }
@@ -216,7 +210,6 @@ namespace DinaFramework.Graphics
             if (_elements.Count < _nbVisibleItems)
             {
                 _listVisibleItems.Add(element);
-                //UpdateVisibleItemPosition(element);
             }
         }
         /// <summary>

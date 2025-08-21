@@ -1,4 +1,5 @@
 ﻿using DinaFramework.Core;
+using DinaFramework.Events;
 using DinaFramework.Extensions;
 using DinaFramework.Interfaces;
 using DinaFramework.Services;
@@ -109,55 +110,50 @@ namespace DinaFramework.Graphics
         /// </summary>
         /// <param name="position">La position du panneau.</param>
         /// <param name="dimensions">Les dimensions du panneau.</param>
-        /// <param name="cornerTopLeft">Texture du coin supérieur gauche.</param>
-        /// <param name="top">Texture du bord supérieur.</param>
-        /// <param name="cornerTopRight">Texture du coin supérieur droit.</param>
-        /// <param name="right">Texture du bord droit.</param>
-        /// <param name="cornerBottomRight">Texture du coin inférieur droit.</param>
-        /// <param name="bottom">Texture du bord inférieur.</param>
-        /// <param name="cornerBottomLeft">Texture du coin inférieur gauche.</param>
-        /// <param name="left">Texture du bord gauche.</param>
-        /// <param name="center">Texture du centre du panneau.</param>
+        /// <param name="topLeft">Texture du coin supérieur gauche.</param>
+        /// <param name="topCenter">Texture du bord supérieur.</param>
+        /// <param name="topRight">Texture du coin supérieur droit.</param>
+        /// <param name="middleRight">Texture du bord droit.</param>
+        /// <param name="bottomRight">Texture du coin inférieur droit.</param>
+        /// <param name="bottomCenter">Texture du bord inférieur.</param>
+        /// <param name="bottomLeft">Texture du coin inférieur gauche.</param>
+        /// <param name="middleLeft">Texture du bord gauche.</param>
+        /// <param name="middleCenter">Texture du centre du panneau.</param>
         /// <param name="zorder">L'ordre Z du panneau (par défaut 0).</param>
-        public Panel(Vector2 position, Vector2 dimensions, Texture2D cornerTopLeft, Texture2D top, Texture2D cornerTopRight, Texture2D right, Texture2D cornerBottomRight, Texture2D bottom, Texture2D cornerBottomLeft, Texture2D left, Texture2D center, int zorder = 0) : base(position, dimensions, zorder)
+        public Panel(Vector2 position, Vector2 dimensions, Texture2D topLeft, Texture2D topCenter, Texture2D topRight, Texture2D middleLeft, Texture2D middleCenter, Texture2D middleRight, Texture2D bottomLeft, Texture2D bottomCenter, Texture2D bottomRight, int zorder = 0) : base(position, dimensions, zorder)
         {
-            ArgumentNullException.ThrowIfNull(cornerTopLeft);
-            ArgumentNullException.ThrowIfNull(top);
-            ArgumentNullException.ThrowIfNull(cornerTopRight);
-            ArgumentNullException.ThrowIfNull(right);
-            ArgumentNullException.ThrowIfNull(cornerBottomRight);
-            ArgumentNullException.ThrowIfNull(bottom);
-            ArgumentNullException.ThrowIfNull(cornerBottomLeft);
-            ArgumentNullException.ThrowIfNull(left);
-            ArgumentNullException.ThrowIfNull(center);
+            ArgumentNullException.ThrowIfNull(topLeft);
+            ArgumentNullException.ThrowIfNull(topCenter);
+            ArgumentNullException.ThrowIfNull(topRight);
+            ArgumentNullException.ThrowIfNull(middleLeft);
+            ArgumentNullException.ThrowIfNull(middleCenter);
+            ArgumentNullException.ThrowIfNull(middleRight);
+            ArgumentNullException.ThrowIfNull(bottomLeft);
+            ArgumentNullException.ThrowIfNull(bottomCenter);
+            ArgumentNullException.ThrowIfNull(bottomRight);
 
             BackgroundColor = Color.White;
-            _images.Add(cornerTopLeft);
+
+            _images.Add(topLeft);
             _positions.Add(position);
+            _images.Add(topCenter);
+            _positions.Add(new Vector2(position.X + topLeft.Width, position.Y));
+            _images.Add(topRight);
+            _positions.Add(new Vector2(position.X + dimensions.X - topRight.Width, position.Y));
 
-            _images.Add(top);
-            _positions.Add(new Vector2(position.X + cornerTopLeft.Width, position.Y));
+            _images.Add(middleLeft);
+            _positions.Add(new Vector2(position.X, position.Y + topLeft.Height));
+            _images.Add(middleCenter);
+            _positions.Add(new Vector2(position.X + bottomLeft.Width, position.Y + bottomLeft.Height));
+            _images.Add(middleRight);
+            _positions.Add(new Vector2(position.X + dimensions.X - middleRight.Width, position.Y + topRight.Height));
 
-            _images.Add(cornerTopRight);
-            _positions.Add(new Vector2(position.X + dimensions.X - cornerTopRight.Width, position.Y));
-
-            _images.Add(right);
-            _positions.Add(new Vector2(position.X + dimensions.X - right.Width, position.Y + cornerTopRight.Height));
-
-            _images.Add(cornerBottomRight);
-            _positions.Add(new Vector2(position.X + dimensions.X - cornerBottomRight.Width, position.Y + dimensions.Y - cornerBottomRight.Height));
-
-            _images.Add(bottom);
-            _positions.Add(new Vector2(position.X + cornerBottomLeft.Width, position.Y + dimensions.Y - bottom.Height));
-
-            _images.Add(cornerBottomLeft);
-            _positions.Add(new Vector2(position.X, position.Y + dimensions.Y - cornerBottomLeft.Height));
-
-            _images.Add(left);
-            _positions.Add(new Vector2(position.X, position.Y + cornerTopLeft.Height));
-
-            _images.Add(center);
-            _positions.Add(new Vector2(position.X + cornerBottomLeft.Width, position.Y + cornerBottomLeft.Height));
+            _images.Add(bottomLeft);
+            _positions.Add(new Vector2(position.X, position.Y + dimensions.Y - bottomLeft.Height));
+            _images.Add(bottomCenter);
+            _positions.Add(new Vector2(position.X + bottomLeft.Width, position.Y + dimensions.Y - bottomCenter.Height));
+            _images.Add(bottomRight);
+            _positions.Add(new Vector2(position.X + dimensions.X - bottomRight.Width, position.Y + dimensions.Y - bottomRight.Height));
 
             CheckVisibility();
             _oldMouseState = Mouse.GetState();
@@ -278,20 +274,6 @@ namespace DinaFramework.Graphics
                             Rectangle rect2 = new Rectangle(new Point((int)pos.X, pos.Y + _radiusCorner), new Point(dim.X, dim.Y - _radiusCorner * 2));
                             spritebatch.Draw(texture, rect2, BackgroundColor);
                             spritebatch.MaskCorners(Position, Dimensions, _radiusCorner, BackgroundColor);
-
-                            //// Dessin des arcs pour les coins arrondis
-                            //Point dim = Dimensions.ToPoint();
-                            ////dim -= new Point(_thickness * 2, _thickness * 2);
-                            //spritebatch.DrawArc(BorderColor, new Rectangle(Position.ToPoint(), dim), _radiusCorner, 90, 270);
-                            //spritebatch.DrawArc(BorderColor, new Rectangle(Position.ToPoint(), dim), _radiusCorner, 180, 90);
-                            //spritebatch.DrawArc(BorderColor, new Rectangle(Position.ToPoint(), dim), _radiusCorner, 270, 180);
-                            //spritebatch.DrawArc(BorderColor, new Rectangle(Position.ToPoint(), dim), _radiusCorner, 0, 90);
-
-                            //// Dessin des lignes entre les arcs
-                            //spritebatch.DrawLine(texture, BorderColor, Position + new Vector2(_radiusCorner - _thickness, 0), Position + new Vector2(Dimensions.X - _radiusCorner, 0), _thickness);
-                            //spritebatch.DrawLine(texture, BorderColor, Position + new Vector2(Dimensions.X - _thickness, _radiusCorner - _thickness), Position + Dimensions - new Vector2(_thickness, _radiusCorner), _thickness);
-                            //spritebatch.DrawLine(texture, BorderColor, Position + new Vector2(_radiusCorner - _thickness, Dimensions.Y - _thickness), Position + Dimensions - new Vector2(_radiusCorner, _thickness), _thickness);
-                            //spritebatch.DrawLine(texture, BorderColor, Position + new Vector2(0, _radiusCorner - _thickness), Position + new Vector2(0, Dimensions.Y - _radiusCorner), _thickness);
 
                             // Dessin du rectangle intérieur (texture ou couleur de fond)
                             Rectangle innerRect = new Rectangle((int)Position.X + _thickness / 2, (int)Position.Y + _thickness, (int)(Dimensions.X - 2 * _thickness), (int)(Dimensions.Y - 2 * _thickness));
@@ -426,7 +408,7 @@ namespace DinaFramework.Graphics
                     saveOriginalValueCalled = true;
                     saveCalled = true;
                 }
-                OnHovered?.Invoke(this);
+                OnHovered?.Invoke(this, new PanelEventArgs(this));
                 if (saveCalled)
                 {
                     _modifiedValues.Clear();
@@ -448,11 +430,11 @@ namespace DinaFramework.Graphics
             // Vérifie si le clic a eu lieu
             _leftClicked = _hover && currentMouseState.LeftButton == ButtonState.Released && _oldMouseState.LeftButton == ButtonState.Pressed;
             if (_leftClicked)
-                OnClicked?.Invoke(this);
+                OnClicked?.Invoke(this, new PanelEventArgs(this));
 
             _rightClicked = _hover && currentMouseState.RightButton == ButtonState.Released && _oldMouseState.RightButton == ButtonState.Pressed;
             if (_rightClicked)
-                OnRightClicked?.Invoke(this);
+                OnRightClicked?.Invoke(this, new PanelEventArgs(this));
 
             _oldMouseState = currentMouseState;
         }
@@ -480,15 +462,15 @@ namespace DinaFramework.Graphics
         /// <summary>
         /// Déclenche les événements lorsque le panneau est survolé.
         /// </summary>
-        public event Action<Panel> OnHovered;
+        public event EventHandler<PanelEventArgs> OnHovered;
         /// <summary>
         /// Déclenche les événements lorsque le panneau est cliqué avec le bouton gauche.
         /// </summary>
-        public event Action<Panel> OnClicked;
+        public event EventHandler<PanelEventArgs> OnClicked;
         /// <summary>
         /// Déclenche les événements lorsque le panneau est cliqué avec le bouton gauche.
         /// </summary>
-        public event Action<Panel> OnRightClicked;
+        public event EventHandler<PanelEventArgs> OnRightClicked;
 
         internal void SetVisible(bool visible)
         {

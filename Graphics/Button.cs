@@ -1,6 +1,6 @@
 ﻿using DinaFramework.Core;
+using DinaFramework.Events;
 using DinaFramework.Interfaces;
-using DinaFramework.Menus;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -14,8 +14,9 @@ namespace DinaFramework.Graphics
     /// </summary>
     public class Button : Base, IUpdate, IDraw, ICopyable<Button>, ILocked
     {
-        private Text _text;
+        private DFText _text;
         private Panel _background;
+        private Panel _hover;
         private Sprite _lockedSprite;
         private Vector2 _margin = new Vector2(10, 10);
         private Color _lockedColor = Color.Transparent;
@@ -25,6 +26,7 @@ namespace DinaFramework.Graphics
         private bool _isHovered;
         private bool _isPressed;
 
+
         /// <summary>
         /// Initialise un nouveau bouton avec texte et fond coloré.
         /// </summary>
@@ -33,7 +35,7 @@ namespace DinaFramework.Graphics
         {
             ArgumentNullException.ThrowIfNull(font);
 
-            _text = new Text(font, content, textColor, horizontalalignment: Enums.HorizontalAlignment.Center, verticalalignment: Enums.VerticalAlignment.Center);
+            _text = new DFText(font, content, textColor, horizontalalignment: Enums.HorizontalAlignment.Center, verticalalignment: Enums.VerticalAlignment.Center);
             _margin = margin != default ? margin : _margin;
 
             Vector2 backgroundDim = _text.TextDimensions + _margin * 2;
@@ -44,9 +46,8 @@ namespace DinaFramework.Graphics
 
             _background = new Panel(Position, Dimensions, Color.Transparent, Color.Transparent, 1, withroundcorner, cornerradius);
 
-            if (onClick != null) OnClicked += onClick;
-
-            if (onHover != null) OnHovered += onHover;
+            RegisterOnClick(onClick);
+            RegisterOnHover(onHover);
 
             UpdateTextPosition();
             _text.Dimensions = Dimensions;
@@ -74,8 +75,8 @@ namespace DinaFramework.Graphics
             Dimensions = new Vector2(backgroundImage.Width, backgroundImage.Height);
             _background = new Panel(Position, Dimensions, backgroundImage, 0);
 
-            if (onClick  != null) OnClicked += onClick;
-            if (onHover != null) OnHovered += onHover;
+            RegisterOnClick(onClick);
+            RegisterOnHover(onHover);
         }
 
         /// <summary>
@@ -91,11 +92,12 @@ namespace DinaFramework.Graphics
                     _background.Position = value;
                 if (_lockedSprite != null)
                     _lockedSprite.Position = value;
+                UpdateHoverImagePosition();
                 UpdateTextPosition();
             }
         }
         /// <summary>
-        /// 
+        /// Dimensions du bouton.
         /// </summary>
         public new Vector2 Dimensions
         {
@@ -107,6 +109,8 @@ namespace DinaFramework.Graphics
                     _background.Dimensions = value;
                 if (_text != null)
                     _text.Dimensions = value;
+                if (_hover != null)
+                    _hover.Dimensions = value;
             }
         }
 
@@ -203,10 +207,10 @@ namespace DinaFramework.Graphics
             _lockedColor = lockedColor;
         }
 
-    /// <summary>
-    /// Met à jour l'état du bouton.
-    /// </summary>
-    /// <param name="gametime"></param>
+        /// <summary>
+        /// Met à jour l'état du bouton.
+        /// </summary>
+        /// <param name="gametime"></param>
         public void Update(GameTime gametime)
         {
             if (_background == null)
@@ -226,7 +230,7 @@ namespace DinaFramework.Graphics
             if (hoveredNow != _isHovered)
             {
                 _isHovered = hoveredNow;
-                OnHovered?.Invoke(this);
+                OnHovered?.Invoke(this, new ButtonEventArgs(this));
             }
 
             if (_isHovered)
@@ -236,7 +240,7 @@ namespace DinaFramework.Graphics
                 if (clickedNow && !_isPressed)
                 {
                     _isPressed = true;
-                    OnClicked?.Invoke(this);
+                    OnClicked?.Invoke(this, new ButtonEventArgs(this));
                 }
                 else if (!clickedNow)
                 {
@@ -262,7 +266,10 @@ namespace DinaFramework.Graphics
             if (Locked && _lockedColor != Color.Transparent)
                 _background.BackgroundColor = _lockedColor;
 
-            _background.Draw(spritebatch);
+            if (_isHovered && _hover != null)
+                _hover.Draw(spritebatch);
+            else
+                _background.Draw(spritebatch);
 
             if (Locked)
             {
@@ -282,16 +289,51 @@ namespace DinaFramework.Graphics
                 return;
             _background = new Panel(Position, Dimensions, backgroundImage, 0);
         }
+        /// <summary>
+        /// Définit les images pour le fond. les images du centre et du milieu pourront être agrandies en hauteur ou largeur.
+        /// </summary>
+        public void SetBackgroundImages(params Texture2D[] textures)
+        {
+            ArgumentNullException.ThrowIfNull(textures, nameof(textures));
+            _background = CreatePanel(textures);
+        }
+        /// <summary>
+        /// Permet de définir une image lors du survol de la souris.
+        /// Si null, on enlève l'image lors du survol.
+        /// </summary>
+        /// <param name="hoverImage"></param>
+        public void SetHoverImage(Texture2D hoverImage)
+        {
+            if (hoverImage == null)
+            {
+                _hover = null;
+                return;
+            }
+            _hover = new Panel(default, default, hoverImage, 0);
+            UpdateHoverImagePosition();
+        }
+        /// <summary>
+        /// Permet de définir les images lors du survol de la souris.
+        /// </summary>
+        /// <param name="textures">Liste des 9 textures dans cet ordre précis :
+        /// Top    Left, Top    Center, Top    Right,
+        /// Middle Left, Middle Center, Middle Right,
+        /// Bottom Left, Bottom Center, Bottom Right</param>
+        public void SetHoverImages(params Texture2D[] textures)
+        {
+            ArgumentNullException.ThrowIfNull(textures, nameof(textures));
+            _hover = CreatePanel(textures);
+        }
 
         /// <summary>
         /// Événement déclenché quand le bouton est cliqué.
         /// </summary>
-        public event Action<Button> OnClicked;
+        public event EventHandler<ButtonEventArgs> OnClicked;
 
         /// <summary>
         /// Événement déclenché quand le bouton est survolé.
         /// </summary>
-        public event Action<Button> OnHovered;
+        public event EventHandler<ButtonEventArgs> OnHovered;
 
         /// <summary>
         /// Crée une copie du bouton (sans les événements).
@@ -327,6 +369,33 @@ namespace DinaFramework.Graphics
             if (_text == null || _background == null)
                 return;
             _text.Position = _background.Position;
+        }
+        private void UpdateHoverImagePosition()
+        {
+            if (_hover == null)
+                return;
+            Vector2 offset = Dimensions - _hover.Dimensions;
+            _hover.Position = Position + offset / 2;
+        }
+        private Panel CreatePanel(Texture2D[] textures)
+        {
+            if (textures.Length != 9)
+                throw new ArgumentException("Nine textures required for a 9-slice panel.");
+
+            return new Panel(Position, Dimensions,
+                textures[0], textures[1], textures[2],
+                textures[3], textures[4], textures[5],
+                textures[6], textures[7], textures[8]);
+        }
+        private void RegisterOnClick(Action<Button> onClick)
+        {
+            if (onClick != null)
+                OnClicked += (sender, e) => onClick(e.Button);
+        }
+        private void RegisterOnHover(Action<Button> onHover)
+        {
+            if (onHover != null)
+                OnHovered += (sender, e) => onHover(e.Button);
         }
     }
 }

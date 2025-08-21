@@ -1,4 +1,5 @@
 ﻿using DinaFramework.Controls;
+using DinaFramework.Events;
 using DinaFramework.Exceptions;
 using DinaFramework.Interfaces;
 using DinaFramework.Screen;
@@ -12,8 +13,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace DinaFramework.Scenes
@@ -73,7 +72,7 @@ namespace DinaFramework.Scenes
             Content = new ContentManager(_game.Services, contentRootDirectory);
 
             _screenManager = ServiceLocator.Get<ScreenManager>(ServiceKey.ScreenManager);
-            _screenManager.OnResolutionChanged += HandleSceneManagerResolutionChanged;
+            _screenManager.OnResolutionChanged += (sender, e) => HandleSceneManagerResolutionChanged();
 
             _frameworkLogoShown = true;
 
@@ -89,8 +88,8 @@ namespace DinaFramework.Scenes
             _currentScene = null;
             _loadingScreen = null;
             _screenManager = ServiceLocator.Get<ScreenManager>(ServiceKey.ScreenManager);
-            _screenManager.OnResolutionChanged += HandleSceneManagerResolutionChanged;
-            
+            _screenManager.OnResolutionChanged += (sender, e) => HandleSceneManagerResolutionChanged();
+
             // Par défaut, on utilise le clavier
             Controller = DefaultControls.DefaultKeyboard;
 
@@ -139,10 +138,10 @@ namespace DinaFramework.Scenes
             _scenes.Remove(name);
         }
         /// <summary>
-        /// 
+        /// Définit la scène actuelle à une nouvelle scène par son nom, avec un écran de chargement optionnel.
         /// </summary>
-        /// <param key="name"></param>
-        /// <param key="withLoadingScreen"></param>
+        /// <param key="name">Le nom de la scène à définir comme actuelle.</param>
+        /// <param key="withLoadingScreen">Indique si un écran de chargement doit être affiché pendant la transition.</param>
         public async void SetCurrentScene(SceneKey name, bool withLoadingScreen = false)
         {
             // Interception du premier appel utilisateur
@@ -153,11 +152,11 @@ namespace DinaFramework.Scenes
                 _nextSceneWithLoading = withLoadingScreen;
 
                 // Ajoute la scène interne du framework (non visible par l’utilisateur)
-                if (!_scenes.ContainsKey(SceneKey.FrameworkLogo))
-                    _scenes[SceneKey.FrameworkLogo] = new FrameworkLogoScene(this); // Pas besoin de type public
+                if (!_scenes.ContainsKey(SceneKeys.FrameworkLogo))
+                    _scenes[SceneKeys.FrameworkLogo] = new FrameworkLogoScene(this); // Pas besoin de type public
 
 #pragma warning disable CS4014
-                BaseSetCurrentScene(SceneKey.FrameworkLogo, false); // Pas d'écran de chargement
+                BaseSetCurrentScene(SceneKeys.FrameworkLogo, false); // Pas d'écran de chargement
 #pragma warning restore CS4014
 
                 return;
@@ -167,11 +166,6 @@ namespace DinaFramework.Scenes
             await BaseSetCurrentScene(name, withLoadingScreen);
 #pragma warning restore CA2007
         }
-        /// <summary>
-        /// Définit la scène actuelle à une nouvelle scène par son nom, avec un écran de chargement optionnel.
-        /// </summary>
-        /// <param key="name">Le nom de la scène à définir comme actuelle.</param>
-        /// <param key="withLoadingScreen">Indique si un écran de chargement doit être affiché pendant la transition.</param>
         private async Task BaseSetCurrentScene(SceneKey name, bool withLoadingScreen = false)
         {
             if (!_scenes.TryGetValue(name, out Scene value))
@@ -220,10 +214,6 @@ namespace DinaFramework.Scenes
                 _currentSceneLoaded = true;
             }
         }
-        /// <summary>
-        /// Réinitialise l'écran de chargement avec un nouveau message.
-        /// </summary>
-        /// <param key="message">Le message à afficher sur l'écran de chargement.</param>
         internal void ContinueToNextScene()
         {
             SetCurrentScene(_nextSceneName, _nextSceneWithLoading);
@@ -281,9 +271,9 @@ namespace DinaFramework.Scenes
             _loadingScreen = (Scene)Activator.CreateInstance(type, this);
         }
         /// <summary>
-        /// 
+        /// Réinitialise l'écran de chargement (progression) et modifie le message affiché.
         /// </summary>
-        /// <param name="message"></param>
+        /// <param name="message">Message affiché dans l'écran de chargement.</param>
         public void ResetLoadingScreen(string message)
         {
             _loadingScreen.Reset();
@@ -341,66 +331,19 @@ namespace DinaFramework.Scenes
         }
         #endregion
 
-        #region === Sauvegarde / Chargement ===
-        /// <summary>
-        /// Charge un objet depuis un fichier crypté et le désérialise dans le type spécifié.
-        /// </summary>
-        /// <typeparam key="T">Le type de l'objet à charger.</typeparam>
-        /// <param key="filePath">Le chemin du fichier crypté.</param>
-        /// <returns>L'objet désérialisé, ou la valeur par défaut si le fichier n'existe pas ou est vide.</returns>
-        public static T LoadObjectFromEncryptFile<T>(string filePath)
-        {
-            if (File.Exists(filePath))
-            {
-                string encryptString = File.ReadAllText(filePath);
-                if (string.IsNullOrEmpty(encryptString))
-                    return default;
-                string jsonString = DLACryptographie.EncryptDecrypt.DecryptText(encryptString);
-                return JsonSerializer.Deserialize<T>(jsonString, _jsonOptions);
-            }
-
-            return default;
-        }
-        /// <summary>
-        /// Sauvegarde un objet dans un fichier en format crypté, avec possibilité de remplacer le fichier existant.
-        /// </summary>
-        /// <typeparam key="T">Le type de l'objet à sauvegarder.</typeparam>
-        /// <param key="obj">L'objet à sauvegarder.</param>
-        /// <param key="fileFullname">Le chemin complet du fichier.</param>
-        /// <param key="overwritten">Indique si le fichier doit être écrasé.</param>
-        /// <returns>Vrai si l'objet a été sauvegardé avec succès, sinon faux.</returns>
-        public static bool SaveObjectToFile<T>(T obj, string fileFullname, bool overwritten = true)
-        {
-            try
-            {
-                string jsonString = JsonSerializer.Serialize(obj, _jsonOptions);
-                string encryptString = DLACryptographie.EncryptDecrypt.EncryptText(jsonString);
-
-                if (overwritten)
-                    File.WriteAllText(fileFullname, encryptString);
-                else
-                    File.AppendAllText(fileFullname, encryptString);
-                return true;
-            }
-            catch (Exception ex) when (!(ex is OutOfMemoryException || ex is StackOverflowException))
-            {
-                return false;
-            }
-        }
-        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-        #endregion
-
         #region === SpriteBatch / Rendu ===
         /// <summary>
-        /// 
+        /// Met à jour les paramètres actuels utilisés pour le rendu des sprites via un <see cref="SpriteBatch"/>.
+        /// Chaque paramètre est optionnel ; si aucun paramètre n’est fourni, les valeurs actuelles restent inchangées.
         /// </summary>
-        /// <param name="sortMode"></param>
-        /// <param name="blendState"></param>
-        /// <param name="samplerState"></param>
-        /// <param name="depthStencilState"></param>
-        /// <param name="rasterizerState"></param>
-        /// <param name="effect"></param>
-        /// <param name="matrix"></param>
+        /// <param name="sortMode">Le mode de tri des sprites. Si null, conserve la valeur actuelle.</param>
+        /// <param name="blendState">L'état de mélange des couleurs. Si null, conserve la valeur actuelle.</param>
+        /// <param name="samplerState">L'état de l'échantillonneur pour le filtrage des textures. Si null, conserve la valeur actuelle.</param>
+        /// <param name="depthStencilState">L'état de profondeur/stencil pour le rendu. Si null, conserve la valeur actuelle.</param>
+        /// <param name="rasterizerState">L'état de rasterisation pour le rendu. Si null, conserve la valeur actuelle.</param>
+        /// <param name="effect">L'effet (shader) à appliquer lors du rendu. Si null, conserve la valeur actuelle.</param>
+        /// <param name="matrix">La matrice de transformation pour le rendu des sprites. Si null, conserve la valeur actuelle.</param>
+
         public void SetSpriteBatchParameters(
             SpriteSortMode? sortMode = null,
             BlendState blendState = null,
@@ -419,9 +362,9 @@ namespace DinaFramework.Scenes
             _currentMatrix = matrix ?? _currentMatrix;
         }
         /// <summary>
-        /// 
+        /// Démarre le rendu des sprites en utilisant le <see cref="SpriteBatch"/> fourni et les paramètres actuellement configurés.
         /// </summary>
-        /// <param name="spritebatch"></param>
+        /// <param name="spritebatch">Le SpriteBatch utilisé pour le rendu. Si null, la méthode ne fait rien.</param>
         public void BeginSpriteBatch(SpriteBatch spritebatch)
         {
             spritebatch?.Begin(
@@ -435,9 +378,9 @@ namespace DinaFramework.Scenes
                 );
         }
         /// <summary>
-        /// 
+        /// Termine le rendu des sprites sur le <see cref="SpriteBatch"/> fourni.
         /// </summary>
-        /// <param name="spritebatch"></param>
+        /// <param name="spritebatch">Le SpriteBatch utilisé pour le rendu. Si null, la méthode ne fait rien.</param>
         public static void EndSpriteBatch(SpriteBatch spritebatch)
         {
             spritebatch?.End();
@@ -451,18 +394,30 @@ namespace DinaFramework.Scenes
         {
             return new RenderTarget2D(GraphicsDevice, dimensions.X, dimensions.Y);
         }
-        internal void EndSpritebatch()
+
+        /// <summary>
+        /// Configure le <see cref="GraphicsDevice"/> pour dessiner sur un <see cref="RenderTarget2D"/> spécifique,
+        /// puis démarre le rendu des sprites avec le <see cref="SpriteBatch"/> fourni.
+        /// </summary>
+        /// <param name="spritebatch">Le SpriteBatch utilisé pour le rendu. Ne peut pas être null.</param>
+        /// <param name="renderTarget">Le RenderTarget2D sur lequel dessiner. Ne peut pas être null.</param>
+        public void BeginSpriteBatchRenderTarget(SpriteBatch spritebatch, RenderTarget2D renderTarget)
         {
-            SpriteBatch.End();
-            SpriteBatch.GraphicsDevice.SetRenderTarget(null);
-
-            SpriteBatch.Begin(SpriteSortMode.Deferred, _blendState);
-
-            if (_temporaryBlendState)
-            {
-                _blendState = BlendState.AlphaBlend;
-                _temporaryBlendState = false;
-            }
+            ArgumentNullException.ThrowIfNull(spritebatch, nameof(spritebatch));
+            ArgumentNullException.ThrowIfNull(renderTarget, nameof(renderTarget));
+            spritebatch.GraphicsDevice.SetRenderTarget(renderTarget);
+            BeginSpriteBatch(spritebatch);
+        }
+        /// <summary>
+        /// Termine le rendu avec le <see cref="SpriteBatch"/> sur un <see cref="RenderTarget2D"/> 
+        /// et rétablit le <see cref="GraphicsDevice"/> pour dessiner sur l'écran principal.
+        /// </summary>
+        /// <param name="spritebatch">Le SpriteBatch utilisé pour le rendu. Ne peut pas être null.</param>
+        public static void EndSpriteBatchRenderTarget(SpriteBatch spritebatch)
+        {
+            ArgumentNullException.ThrowIfNull(spritebatch, nameof(spritebatch));
+            EndSpriteBatch(spritebatch);
+            spritebatch.GraphicsDevice.SetRenderTarget(null);
         }
         /// <summary>
         /// Permet de remettre les paramèetres du SpriteBatch aux valeurs par défaut.
@@ -485,9 +440,12 @@ namespace DinaFramework.Scenes
         /// </summary>
         public void Exit() { _game.Exit(); }
         /// <summary>
-        /// 
+        /// Événement déclenché lorsque la résolution de la scène change.
+        /// Les abonnés peuvent réagir à ce changement pour ajuster le rendu ou l'interface.
         /// </summary>
-        public event Action OnResolutionChanged;
+#pragma warning disable CS0067
+        public event EventHandler<SceneEventArgs> OnResolutionChanged;
+#pragma warning restore CS0067
         private void HandleSceneManagerResolutionChanged()
         {
             if (_currentScene != null)
@@ -529,6 +487,7 @@ namespace DinaFramework.Scenes
         private Color _backgroundcolor;
 
         // SpriteBatch parameters
+#pragma warning disable CS0649
         private BlendState _currentBlendState = BlendState.AlphaBlend;
         private SpriteSortMode _currentSpriteSortMode = SpriteSortMode.Deferred;
         private SamplerState _currentSamplerState;
@@ -543,6 +502,7 @@ namespace DinaFramework.Scenes
         private RasterizerState _defaultRasterizerState;
         private Effect _defaultEffect;
         private Matrix? _defaultMatrix;
+#pragma warning restore CS0649
         #endregion
 
         #region === Propriétés publiques ===
@@ -591,15 +551,6 @@ namespace DinaFramework.Scenes
         /// </summary>
         public PlayerController Controller { get; set; }
         #endregion
-
-
-        #region À trier
-
-
-        private BlendState _blendState = BlendState.AlphaBlend;
-        private bool _temporaryBlendState;
-        #endregion
-
     }
 }
 

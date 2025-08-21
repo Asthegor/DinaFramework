@@ -1,4 +1,4 @@
-﻿#pragma warning disable CS1591 // Commentaire XML manquant pour le type ou le membre visible publiquement
+﻿#pragma warning disable CS1591 // Pour ne pas devoir avoir un commentaire sur les membre des interfaces
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -145,4 +145,4 @@ namespace DinaFramework.Interfaces
         public abstract bool Locked { get; set; }
     }
 }
-#pragma warning restore CS1591 // Commentaire XML manquant pour le type ou le membre visible publiquement
+#pragma warning restore CS1591 // Pour ne pas devoir avoir un commentaire sur les membre des interfaces

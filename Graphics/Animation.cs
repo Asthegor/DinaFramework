@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace DinaFramework.Graphics
 {
@@ -15,7 +16,7 @@ namespace DinaFramework.Graphics
     /// </summary>
     public class Animation : Base, IReset, IUpdate, IDraw, IColor, ICollide, IVisible
     {
-        private readonly List<Texture2D> _frames = [];
+        private readonly ReadOnlyCollection<Texture2D> _frames;
         private float _speed;
         private float _currentFrame;
         private Color _color;
@@ -42,7 +43,7 @@ namespace DinaFramework.Graphics
         /// <param name="flip">Facteur de retournement de l'animation (par défaut : (1, 1)).</param>
         /// <param name="visible">Indique si l'animation est visible (par défaut : true).</param>
         /// <param name="zorder">Ordre de superposition de l'animation (par défaut : 0).</param>
-        public Animation(List<Texture2D> frames, float speed, int nbRepetitions = -1, Vector2 position = default, Vector2 dimensions = default, Vector2 origin = default, float rotation = 0, Vector2 scale = default, Vector2 flip = default, bool visible = true, int zorder = default) : base(position, dimensions, zorder)
+        public Animation(ReadOnlyCollection<Texture2D> frames, float speed, int nbRepetitions = -1, Vector2 position = default, Vector2 dimensions = default, Vector2 origin = default, float rotation = 0, Vector2 scale = default, Vector2 flip = default, bool visible = true, int zorder = default) : base(position, dimensions, zorder)
         {
             ArgumentNullException.ThrowIfNull(frames);
             if (frames.Count == 0)
@@ -155,10 +156,10 @@ namespace DinaFramework.Graphics
         /// <param name="gametime">Temps de jeu écoulé depuis la dernière mise à jour.</param>
         public void Update(GameTime gametime)
         {
+            ArgumentNullException.ThrowIfNull(gametime);
+
             if (Visible && _currentRepetition != 0)
             {
-                ArgumentNullException.ThrowIfNull(gametime);
-
                 _currentFrame += Convert.ToSingle(gametime.ElapsedGameTime.TotalSeconds) * _speed;
                 if (_currentFrame >= _frames.Count)
                 {

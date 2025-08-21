@@ -72,7 +72,8 @@ namespace DinaFramework.Functions
         /// Utilise <see cref="System.Random"/> ; l'avertissement CA5394 est supprimé car non pertinent ici.
         /// </summary>
         /// <param name="list">La liste à mélanger.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA5394:Do not use insecure randomness", Justification = "Utilisation sans impact sécurité pour le tirage de règles de jeu")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA5394:Do not use insecure randomness", 
+            Justification = "Utilisation sans impact sécurité")]
         private static void Shuffle(List<int> list)
         {
             Random rng = new();

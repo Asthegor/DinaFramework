@@ -1,6 +1,4 @@
-﻿#pragma warning disable CA1002 // Ne pas exposer de listes génériques
-#pragma warning disable CS1591 // Commentaire XML manquant pour le type ou le membre visible publiquement
-namespace DinaFramework.Functions
+﻿namespace DinaFramework.Functions
 {
     using Microsoft.Xna.Framework.Graphics;
 
@@ -8,10 +6,26 @@ namespace DinaFramework.Functions
     using System.Collections.Generic;
     using System.Globalization;
     using System.Resources;
-
+    /// <summary>
+    /// Fournit des outils pour valider la compatibilité entre les chaînes d’une ressource localisée
+    /// et les caractères pris en charge par une <see cref="SpriteFont"/>.
+    /// </summary>
     public static class SpriteFontValidator
     {
-        public static List<(string Key, string Value, char InvalidChar)> CheckResourceValuesWithSpriteFont(SpriteFont font, Type resourceType, string cultureCode)
+        /// <summary>
+        /// Vérifie toutes les chaînes d’une ressource localisée pour une culture donnée,
+        /// et retourne la liste des entrées contenant du premier caractère non supporté par la <see cref="SpriteFont"/>.
+        /// </summary>
+        /// <param name="font">Police <see cref="SpriteFont"/> utilisée pour vérifier les caractères disponibles.</param>
+        /// <param name="resourceType">Type de la classe ressource (.resx) contenant les traductions.</param>
+        /// <param name="cultureCode">Code de culture (ex. "fr-FR", "en-US").</param>
+        /// <returns>
+        /// Une liste de tuples contenant la clé de ressource, sa valeur et le premier caractère invalide rencontré.
+        /// </returns>
+        /// <exception cref="ArgumentException">
+        /// Lancée si le code culture est vide, ou si la classe ressource ne contient pas de <see cref="ResourceManager"/>.
+        /// </exception>
+        public static IReadOnlyList<(string Key, string Value, char InvalidChar)> CheckResourceValuesWithSpriteFont(SpriteFont font, Type resourceType, string cultureCode)
         {
             if (string.IsNullOrWhiteSpace(cultureCode))
                 throw new ArgumentException("Code culture invalide", nameof(cultureCode));
@@ -63,6 +77,3 @@ namespace DinaFramework.Functions
     }
 
 }
-
-#pragma warning restore CS1591 // Commentaire XML manquant pour le type ou le membre visible publiquement
-#pragma warning restore CA1002 // Ne pas exposer de listes génériques

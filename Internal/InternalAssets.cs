@@ -9,10 +9,6 @@ namespace DinaFramework.Internal
     {
         private static Texture2D _circle;
         private static Texture2D _logo;
-
-        /// <summary>
-        /// Texture d’un coin arrondi (1 quadrant, en PNG transparent).
-        /// </summary>
         public static Texture2D Circle(GraphicsDevice device)
         {
             if (_circle == null)
