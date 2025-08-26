@@ -76,5 +76,43 @@ namespace DinaFramework.Screen
             int wByH = (height * 16) / 9;
             return (wByH, height);
         }
+
+        /// <summary>
+        /// Fournit le ratio selon la résolution (référence : ResolutionFontSize.Large)
+        /// </summary>
+        /// <param name="screenWidth">Largeur de l'écran.</param>
+        /// <param name="screenHeight">Hauteur de l'écran.</param>
+        /// <returns>Ratio entre les types de taille de police de résolution.</returns>
+        public static float GetRatioFromResolution(int screenWidth, int screenHeight)
+        {
+            ResolutionFontSize resFontSize = GetFontSizeForResolution(screenWidth, screenHeight);
+            return GetRatioForResolutionFontSize(resFontSize);
+        }
+        /// <summary>
+        /// Fournit le ratio selon la résolution (référence : ResolutionFontSize.Large)
+        /// </summary>
+        /// <param name="screenDimensions">Dimensions de l'écran.</param>
+        /// <returns>Ratio entre les types de taille de police de résolution.</returns>
+        public static float GetRatioForResolution(Vector2 screenDimensions)
+        {
+            return GetRatioFromResolution((int)screenDimensions.X, (int)screenDimensions.Y);
+        }
+        /// <summary>
+        /// Fournit le ratio selon le type de taille de police de la résolution d'écran fourni.
+        /// </summary>
+        /// <param name="resolutionFontSize">Te type de taille de police de la résolution d'écran.</param>
+        /// <returns>Ratio entre les types de taille de police de résolution.</returns>
+        public static float GetRatioForResolutionFontSize(ResolutionFontSize resolutionFontSize)
+        {
+            return resolutionFontSize switch
+            {
+                ResolutionFontSize.Small => 0.5f,
+                ResolutionFontSize.Medium => 0.75f,
+                ResolutionFontSize.Large => 1f,
+                ResolutionFontSize.XL => 1.25f,
+                ResolutionFontSize.XXL => 1.5f,
+                _ => 1f // Par défaut, on renvoie toujours 1.
+            };
+        }
     }
 }

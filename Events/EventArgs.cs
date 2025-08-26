@@ -39,7 +39,22 @@ namespace DinaFramework.Events
         /// <param name="checkBox">La CheckBox associée à l'événement.</param>
         public CheckBoxEventArgs(CheckBox checkBox) => CheckBox = checkBox;
     }
+    /// <summary>
+    /// Contient les informations d'un événement lié à un <see cref="DFText"/>.
+    /// </summary>
+    public class DFTextEventArgs : EventArgs
+    {
+        /// <summary>
+        /// Le DFText qui a déclenché l'événement.
+        /// </summary>
+        public DFText Text { get; }
 
+        /// <summary>
+        /// Initialise une nouvelle instance de <see cref="DFTextEventArgs"/> pour le DFText spécifié.
+        /// </summary>
+        /// <param name="text">Le DFText associé à l'événement.</param>
+        public DFTextEventArgs(DFText text) => Text = text;
+    }
     /// <summary>
     /// Contient les informations d'un événement lié à une <see cref="ListBox"/>.
     /// </summary>

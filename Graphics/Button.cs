@@ -1,11 +1,14 @@
 ﻿using DinaFramework.Core;
 using DinaFramework.Events;
+using DinaFramework.Extensions;
 using DinaFramework.Interfaces;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using System;
+using System.Collections.Generic;
+using System.Reflection;
 
 namespace DinaFramework.Graphics
 {
@@ -14,6 +17,12 @@ namespace DinaFramework.Graphics
     /// </summary>
     public class Button : Base, IUpdate, IDraw, ICopyable<Button>, ILocked
     {
+        private Dictionary<string, object> _originalValues = new Dictionary<string, object>();
+        private List<string> _modifiedValues = [];
+        private bool hasBeenRestored;
+        private bool saveOriginalValueCalled;
+        private bool saveCalled;
+
         private DFText _text;
         private Panel _background;
         private Panel _hover;
@@ -82,35 +91,40 @@ namespace DinaFramework.Graphics
         /// <summary>
         /// Position du bouton.
         /// </summary>
-        public new Vector2 Position
+        public override Vector2 Position
         {
             get => base.Position;
             set
             {
+                Vector2 offset = value - base.Position;
                 base.Position = value;
+
                 if (_background != null)
-                    _background.Position = value;
+                    _background.Position += offset;
                 if (_lockedSprite != null)
-                    _lockedSprite.Position = value;
-                UpdateHoverImagePosition();
-                UpdateTextPosition();
+                    _lockedSprite.Position += offset;
+                if (_hover != null)
+                    _hover.Position += offset;
+                if (_text != null)
+                    _text.Position += offset;
             }
         }
         /// <summary>
         /// Dimensions du bouton.
         /// </summary>
-        public new Vector2 Dimensions
+        public override Vector2 Dimensions
         {
             get => base.Dimensions;
             set
             {
+                Vector2 offset = value - base.Dimensions;
                 base.Dimensions = value;
                 if (_background != null)
-                    _background.Dimensions = value;
+                    _background.Dimensions += offset;
                 if (_text != null)
-                    _text.Dimensions = value;
+                    _text.Dimensions += offset;
                 if (_hover != null)
-                    _hover.Dimensions = value;
+                    _hover.Dimensions += offset;
             }
         }
 
@@ -230,11 +244,26 @@ namespace DinaFramework.Graphics
             if (hoveredNow != _isHovered)
             {
                 _isHovered = hoveredNow;
-                OnHovered?.Invoke(this, new ButtonEventArgs(this));
             }
 
             if (_isHovered)
             {
+                saveCalled = false;
+                if (!saveOriginalValueCalled)
+                {
+                    _originalValues = SaveValues();
+                    saveOriginalValueCalled = true;
+                    saveCalled = true;
+                }
+                OnHovered?.Invoke(this, new ButtonEventArgs(this));
+                if (saveCalled)
+                {
+                    _modifiedValues.Clear();
+                    // Compare les valeurs originales avec les valeurs modifiées
+                    _modifiedValues = _originalValues.GetModifiedKeys(SaveValues());
+                }
+                hasBeenRestored = false;
+
                 bool clickedNow = _background.IsClicked();
 
                 if (clickedNow && !_isPressed)
@@ -250,6 +279,12 @@ namespace DinaFramework.Graphics
             else
             {
                 _isPressed = false;
+                if (!hasBeenRestored)
+                {
+                    RestoreOriginalValues(_modifiedValues);
+                    hasBeenRestored = true;
+                    saveOriginalValueCalled = false;
+                }
             }
         }
 
@@ -396,6 +431,49 @@ namespace DinaFramework.Graphics
         {
             if (onHover != null)
                 OnHovered += (sender, e) => onHover(e.Button);
+        }
+
+        private Dictionary<string, object> SaveValues()
+        {
+            Dictionary<string, object> values = new Dictionary<string, object>();
+            // Récupère toutes les propriétés publiques du Panel et les enregistre dans le dictionnaire.
+            Type type = this.GetType();
+            PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            foreach (PropertyInfo property in properties)
+            {
+                values[property.Name] = property.GetValue(this);
+            }
+            return values;
+        }
+        private void RestoreOriginalValues(List<string> modifiedKeys = default)
+        {
+            if (modifiedKeys.Count == 0)
+            {
+                foreach (KeyValuePair<string, object> pair in _originalValues)
+                {
+                    // Utilise la réflexion pour définir la valeur de la propriété correspondante.
+                    PropertyInfo property = this.GetType().GetProperty(pair.Key);
+                    if (property != null)
+                    {
+                        property.SetValue(this, pair.Value);
+                    }
+                }
+            }
+            else
+            {
+                foreach (string key in modifiedKeys)
+                {
+                    if (_originalValues.ContainsKey(key))
+                    {
+                        PropertyInfo property = this.GetType().GetProperty(key);
+                        if (property != null)
+                        {
+                            property.SetValue(this, _originalValues[key]);
+                        }
+                    }
+                }
+            }
         }
     }
 }

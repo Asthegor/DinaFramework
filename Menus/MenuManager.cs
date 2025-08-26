@@ -25,7 +25,7 @@ namespace DinaFramework.Menus
         private static SceneManager SceneManager => ServiceLocator.Get<SceneManager>(ServiceKey.SceneManager);
         private Vector2 _iconSpacing = DEFAULT_SPACING;
         private List<IElement> _elements = [];
-        private List<IElement> _titles = [];
+        private List<IText> _titles = [];
         private Group _itemsGroup = [];
         private List<MenuItem> _items = [];
         private readonly Vector2 _itemspacing;
@@ -151,11 +151,13 @@ namespace DinaFramework.Menus
         /// <param name="shadowoffset">Décalage de l'ombre (facultatif).</param>
         /// <param name="zorder">Ordre de superposition du titre.</param>
         /// <returns>L'élément titre ajouté.</returns>
-        public IElement AddTitle(SpriteFont font, string text, Vector2 position, Color color, Color? shadowcolor = null, Vector2? shadowoffset = null, int zorder = 0)
+        public IText AddTitle(SpriteFont font, string text, Vector2 position, Color color, Color? shadowcolor = null, Vector2? shadowoffset = null, int zorder = 0)
         {
-            IElement title = (shadowcolor.HasValue && shadowoffset.HasValue)
-                        ? new ShadowText(font, text, color, position, shadowcolor.Value, shadowoffset.Value, zorder: zorder)
-                        : new DFText(font, text, color, position, zorder: zorder);
+            IText title;
+            if (shadowcolor.HasValue && shadowoffset.HasValue)
+                title = new ShadowText(font, text, color, position, shadowcolor.Value, shadowoffset.Value, zorder: zorder);
+            else
+                title = new DFText(font, text, color, position, zorder: zorder);
             AddTitleToGroups(title);
             return title;
         }
@@ -164,7 +166,7 @@ namespace DinaFramework.Menus
         /// </summary>
         /// <param name="title">L'élément titre à ajouter.</param>
         /// <returns>L'élément titre ajouté.</returns>
-        public IElement AddTitle(IElement title)
+        public IText AddTitle(IText title)
         {
             AddTitleToGroups(title);
             return title;
@@ -186,7 +188,6 @@ namespace DinaFramework.Menus
                     titlePos.X = (screendimensions.X - titleTextDim.X) / 2.0f;
                     titleElement.Position = titlePos;
                 }
-
             }
         }
         /// <summary>
@@ -199,6 +200,8 @@ namespace DinaFramework.Menus
             {
                 if (title is DFText titletext)
                     titletext.Font = font;
+                if (title is ShadowText titleshadowtext)
+                    titleshadowtext.Font = font;
             }
             if (_centeredTitles)
                 CenterTitles(_titleScreenDimensions);
@@ -509,9 +512,9 @@ namespace DinaFramework.Menus
 
         //------------------------------------------------------------------
         // Méthodes privées
-        private void AddTitleToGroups(IElement title)
+        private void AddTitleToGroups(IText title)
         {
-            _elements.Add(title);
+            _elements.Add((IElement)title);
             _titles.Add(title);
             SortElements();
         }

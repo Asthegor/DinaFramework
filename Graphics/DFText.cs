@@ -1,10 +1,12 @@
 ﻿using DinaFramework.Core;
 using DinaFramework.Enums;
+using DinaFramework.Events;
 using DinaFramework.Interfaces;
 using DinaFramework.Localization;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 
 using System;
 
@@ -13,7 +15,7 @@ namespace DinaFramework.Graphics
     /// <summary>
     /// Représente un texte à afficher avec des options de temporisation et d'alignement.
     /// </summary>
-    public class DFText : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<DFText>, IElement
+    public class DFText : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<DFText>, IDrawingElement
     {
         private SpriteFont _font;
         private string _content;
@@ -158,6 +160,10 @@ namespace DinaFramework.Graphics
         /// Permet d'indiquer si on veut ou non que le texte revienne automatiquement à la ligne.
         /// </summary>
         public bool Wrap { get; set; }
+        /// <summary>
+        /// Déclenche les événements lorsque le panneau est survolé.
+        /// </summary>
+        public event EventHandler<DFTextEventArgs> OnHovered;
 
         /// <summary>
         /// Définit les alignements horizontal et vertical du texte.
@@ -223,6 +229,11 @@ namespace DinaFramework.Graphics
                         }
                     }
                 }
+            }
+            bool hovered = (new Rectangle(Position.ToPoint(), Dimensions.ToPoint())).Contains(Mouse.GetState().Position);
+            if (Visible && hovered)
+            {
+                OnHovered?.Invoke(this, new DFTextEventArgs(this));
             }
         }
         private void UpdateDisplayPosition()

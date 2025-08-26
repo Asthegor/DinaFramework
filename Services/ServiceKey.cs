@@ -28,6 +28,11 @@ namespace DinaFramework.Services
         /// </summary>
         public static readonly ServiceKey ScreenManager = new ServiceKey("ScreenManager");
 
+        /// <summary>
+        /// Clé représentant la texture de la flèche d'une liste déroulante.
+        /// </summary>
+        public static readonly ServiceKey DropDownArrow = new("DropDownArrow"); 
+
 
         /// <summary>
         /// Crée une nouvelle instance de <see cref="ServiceKey"/> à partir d'une chaîne de caractères.

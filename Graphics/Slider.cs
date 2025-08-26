@@ -18,6 +18,9 @@ namespace DinaFramework.Graphics
     /// </summary>
     public class Slider : Base, IGameObject
     {
+        private static Slider? _capturedSlider;
+        private static bool _isDragging;
+
         /// <summary>
         /// Valeur minimale du slider.
         /// </summary>
@@ -50,14 +53,17 @@ namespace DinaFramework.Graphics
         /// <summary>
         /// Position du slider.
         /// </summary>
-        public new Vector2 Position
+        public override Vector2 Position
         {
             get => base.Position;
             set
             {
+                Vector2 offset = value - base.Position;
                 base.Position = value;
-                _track.Position = value;
-                _thumb.Position = value;
+                if(_track != null)
+                    _track.Position += offset;
+                if (_thumb != null)
+                    _thumb.Position += offset;
             }
         }
         /// <summary>
@@ -76,7 +82,7 @@ namespace DinaFramework.Graphics
 
         private readonly Panel _track;
         private readonly Panel _thumb;
-        private bool _isDragging;
+        //private bool _isDragging;
 
         /// <summary>
         /// Crée un nouveau slider.
@@ -115,53 +121,48 @@ namespace DinaFramework.Graphics
             Vector2 mousePos = new Vector2(mouse.X, mouse.Y);
 
             Rectangle thumbBounds = new Rectangle(_thumb.Position.ToPoint(), _thumb.Dimensions.ToPoint());
+            if (mouse.LeftButton == ButtonState.Pressed && _capturedSlider == null && thumbBounds.Contains(mousePos))
+                _capturedSlider = this;
 
-            if (mouse.LeftButton == ButtonState.Pressed && !_isDragging && thumbBounds.Contains(mousePos))
-            {
-                _isDragging = true;
-            }
-
-            if (_isDragging && mouse.LeftButton == ButtonState.Pressed)
-            {
+            if (_capturedSlider == this && mouse.LeftButton == ButtonState.Pressed)
                 UpdateValueFromMouse(mousePos);
-            }
 
             Rectangle trackBounds = new Rectangle(_track.Position.ToPoint(), _track.Dimensions.ToPoint());
-            if (mouse.LeftButton == ButtonState.Pressed && !_isDragging && trackBounds.Contains(mousePos))
-            {
-                // Gère clic à gauche/droite ou haut/bas selon l’orientation et le sens
-                switch (SliderOrientation)
-                {
-                    case ProgressDirection.LeftToRight:
-                        if (mousePos.X < thumbBounds.Left)
-                            SetValue(Value - Step);
-                        else if (mousePos.X > thumbBounds.Right)
-                            SetValue(Value + Step);
-                        break;
-                    case ProgressDirection.RightToLeft:
-                        if (mousePos.X > thumbBounds.Right)
-                            SetValue(Value - Step);
-                        else if (mousePos.X < thumbBounds.Left)
-                            SetValue(Value + Step);
-                        break;
-                    case ProgressDirection.TopToBottom:
-                        if (mousePos.Y < thumbBounds.Top)
-                            SetValue(Value + Step);
-                        else if (mousePos.Y > thumbBounds.Bottom)
-                            SetValue(Value - Step);
-                        break;
-                    case ProgressDirection.BottomToTop:
-                        if (mousePos.Y > thumbBounds.Bottom)
-                            SetValue(Value + Step);
-                        else if (mousePos.Y < thumbBounds.Top)
-                            SetValue(Value - Step);
-                        break;
-                }
-            }
+            if (mouse.LeftButton == ButtonState.Pressed && _capturedSlider == null && trackBounds.Contains(mousePos))
+                HandleTrackClick(mousePos, thumbBounds);
 
-            if (mouse.LeftButton == ButtonState.Released)
+            if (mouse.LeftButton == ButtonState.Released && _capturedSlider == this)
+                _capturedSlider = null;
+        }
+        private void HandleTrackClick(Vector2 mousePos, Rectangle thumbBounds)
+        {
+            // Gère clic à gauche/droite ou haut/bas selon l’orientation et le sens
+            switch (SliderOrientation)
             {
-                _isDragging = false;
+                case ProgressDirection.LeftToRight:
+                    if (mousePos.X < thumbBounds.Left)
+                        SetValue(Value - Step);
+                    else if (mousePos.X > thumbBounds.Right)
+                        SetValue(Value + Step);
+                    break;
+                case ProgressDirection.RightToLeft:
+                    if (mousePos.X > thumbBounds.Right)
+                        SetValue(Value - Step);
+                    else if (mousePos.X < thumbBounds.Left)
+                        SetValue(Value + Step);
+                    break;
+                case ProgressDirection.TopToBottom:
+                    if (mousePos.Y < thumbBounds.Top)
+                        SetValue(Value + Step);
+                    else if (mousePos.Y > thumbBounds.Bottom)
+                        SetValue(Value - Step);
+                    break;
+                case ProgressDirection.BottomToTop:
+                    if (mousePos.Y > thumbBounds.Bottom)
+                        SetValue(Value + Step);
+                    else if (mousePos.Y < thumbBounds.Top)
+                        SetValue(Value - Step);
+                    break;
             }
         }
 

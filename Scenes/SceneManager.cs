@@ -2,6 +2,7 @@
 using DinaFramework.Events;
 using DinaFramework.Exceptions;
 using DinaFramework.Interfaces;
+using DinaFramework.Internal;
 using DinaFramework.Screen;
 using DinaFramework.Services;
 
@@ -95,7 +96,10 @@ namespace DinaFramework.Scenes
 
             var pixel = new Texture2D(GraphicsDevice, 1, 1);
             pixel.SetData([Color.White]);
+
+            // Enregistrement des textures dans le ServiceLocator
             ServiceLocator.Register(ServiceKey.Texture1px, pixel);
+            ServiceLocator.Register(ServiceKey.DropDownArrow, InternalAssets.DropDownArrow(GraphicsDevice));
         }
         #endregion
 

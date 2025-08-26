@@ -21,10 +21,12 @@
     <Compile Remove="GlobalSuppressions.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Remove="Resources\DropDownArrow.png" />
     <None Remove="Resources\Logo.png" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\CircleMask.png" />
+    <EmbeddedResource Include="Resources\DropDownArrow.png" />
     <EmbeddedResource Include="Resources\Logo.png" />
   </ItemGroup>
   <ItemGroup>

@@ -7,12 +7,14 @@ using Microsoft.Xna.Framework.Graphics;
 
 using System;
 
+using static System.Net.Mime.MediaTypeNames;
+
 namespace DinaFramework.Graphics
 {
     /// <summary>
     /// Représente un texte avec une ombre, permettant de gérer la couleur, la position, l'alignement et les effets de temporisation.
     /// </summary>
-    public class ShadowText : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<ShadowText>
+    public class ShadowText : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<ShadowText>, IDrawingElement
     {
         private DFText _text;
         private DFText _shadow;
@@ -159,6 +161,20 @@ namespace DinaFramework.Graphics
         /// Obtient les dimensions du texte sans prendre en compte l'ombre.
         /// </summary>
         public Vector2 TextDimensions => _text.TextDimensions;
+
+        /// <summary>
+        /// La police du texte avec une ombre.
+        /// </summary>
+        public SpriteFont Font
+        {
+            get => _text.Font;
+            set
+            {
+                _text.Font = value;
+                _shadow.Font = value;
+            }
+        }
+
         /// <summary>
         /// Crée une copie de l'objet ShadowText avec les mêmes valeurs.
         /// </summary>

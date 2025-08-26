@@ -16,6 +16,11 @@ namespace DinaFramework.Interfaces
     { }
 
     /// <summary>
+    /// Représente un élément ayant une position, des dimensions et un ordre Z et pouvant se dessiner.
+    /// </summary>
+    public interface IDrawingElement : IElement, IDraw
+    { }
+    /// <summary>
     /// Représente un élément ayant une position, des dimensions et un ordre Z.
     /// </summary>
     public interface IElement : IPosition, IDimensions, IZOrder

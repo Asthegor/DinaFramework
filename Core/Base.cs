@@ -11,9 +11,9 @@ namespace DinaFramework.Core
     /// </summary>
     public abstract class Base : IElement
     {
-        int _zorder;
-        Vector2 _position;
-        Vector2 _dimensions;
+        private int _zorder;
+        private Vector2 _position;
+        private Vector2 _dimensions;
 
         /// <summary>
         /// Ordre d'affichage (Z-order) de l'élément.
