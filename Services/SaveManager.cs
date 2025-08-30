@@ -15,7 +15,7 @@ namespace DinaFramework.Services
         /// <typeparam key="T">Le type de l'objet à charger.</typeparam>
         /// <param key="filePath">Le chemin du fichier crypté.</param>
         /// <returns>L'objet désérialisé, ou la valeur par défaut si le fichier n'existe pas ou est vide.</returns>
-        public static T LoadObjectFromEncryptFile<T>(string filePath)
+        public static T? LoadObjectFromEncryptFile<T>(string filePath)
         {
             if (File.Exists(filePath))
             {

@@ -1,4 +1,4 @@
-﻿using DinaFramework.Controls;
+﻿using DinaFramework.Inputs;
 using DinaFramework.Core;
 using DinaFramework.Enums;
 using DinaFramework.Graphics;
@@ -17,30 +17,35 @@ using System.Linq;
 namespace DinaFramework.Menus
 {
     /// <summary>
+    /// Actions possibles dans le menu.
+    /// </summary>
+#pragma warning disable CS1591
+    public enum MenuAction { Up, Down, Left, Right, Activate, Cancel }
+#pragma warning restore CS1591
+
+    /// <summary>
     /// Gère l'affichage et l'interaction avec le menu, incluant les éléments, les titres, les icônes et les interactions clavier/souris.
     /// </summary>
     public class MenuManager : IDraw, IUpdate, IVisible
     {
+        private readonly Dictionary<MenuAction, IKey> _actionKeys = [];
+
         private static Vector2 DEFAULT_SPACING = new Vector2(5, 5);
-        private static SceneManager SceneManager => ServiceLocator.Get<SceneManager>(ServiceKey.SceneManager);
+        private static SceneManager SceneManager => ServiceLocator.Get<SceneManager>(ServiceKeys.SceneManager) ?? throw new InvalidOperationException("SceneManager non enregistrée dans le ServiceLocator");
         private Vector2 _iconSpacing = DEFAULT_SPACING;
-        private List<IElement> _elements = [];
-        private List<IText> _titles = [];
-        private Group _itemsGroup = [];
-        private List<MenuItem> _items = [];
+        private readonly List<IElement> _elements = [];
+        private readonly List<IText> _titles = [];
+        private readonly Group _itemsGroup = [];
+        private readonly List<MenuItem> _items = [];
         private readonly Vector2 _itemspacing;
-        private MenuItemDirection _direction;
-        private ControllerKey _next_item_key;
-        private ControllerKey _previous_item_key;
-        private ControllerKey _active_item_key;
-        private ControllerKey _cancel_menu_key;
+        private readonly MenuItemDirection _direction;
         private int _currentitemindex = -1;
-        private Sprite _iconLeft;
-        private Sprite _iconRight;
+        private Sprite? _iconLeft;
+        private Sprite? _iconRight;
         private IconMenuAlignment _iconAlignment;
         private bool _visible;
-        private Action _cancellation;
-        private Panel _background;
+        private Action? _cancellation;
+        private Panel? _background;
         private Vector2 _borderSpacing = DEFAULT_SPACING;
         private MouseState _oldMouseState;
         private bool _centeredItems;
@@ -56,7 +61,7 @@ namespace DinaFramework.Menus
         /// <param name="cancellation">Action à exécuter lors de l'annulation du menu.</param>
         /// <param name="currentitemindex">Index de l'élément sélectionné au départ (par défaut : -1).</param>
         /// <param name="direction">Sens du menu : vertical (haut/bas), horizontal (droite/gauche). Par défaut, Vertical.</param>
-        public MenuManager(Vector2 itemspacing = new Vector2(), Action cancellation = null, int currentitemindex = -1, MenuItemDirection direction = MenuItemDirection.Vertical)
+        public MenuManager(Vector2 itemspacing = new Vector2(), Action? cancellation = null, int currentitemindex = -1, MenuItemDirection direction = MenuItemDirection.Vertical)
         {
             _itemspacing = itemspacing;
             _elements.Add(_itemsGroup);
@@ -92,13 +97,14 @@ namespace DinaFramework.Menus
         /// <summary>
         /// Obtient ou définit l'élément actuellement sélectionné.
         /// </summary>
-        public MenuItem CurrentItem
+        public MenuItem? CurrentItem
         {
             get => (_currentitemindex == -1 || _currentitemindex >= _items.Count) ? null : _items[_currentitemindex];
             set
             {
                 CurrentItem?.Deselection?.Invoke(CurrentItem);
-                _currentitemindex = _items.IndexOf(value);
+                if (value != null)
+                    _currentitemindex = _items.IndexOf(value);
                 CurrentItem?.Selection?.Invoke(CurrentItem);
             }
         }
@@ -125,7 +131,7 @@ namespace DinaFramework.Menus
         /// <summary>
         /// Obtient ou définit l'action d'annulation du menu (quitter le menu).
         /// </summary>
-        public Action Cancellation
+        public Action? Cancellation
         {
             get => _cancellation;
             set => _cancellation = value;
@@ -217,7 +223,7 @@ namespace DinaFramework.Menus
         /// <param name="iconAlignment">Alignement des icônes.</param>
         /// <param name="iconSpacing">Espacement entre les icônes.</param>
         /// <param name="resize">Indique si les icônes doivent être redimensionnées.</param>
-        public void SetIconItems(Texture2D iconLeft = null, Texture2D iconRight = null,
+        public void SetIconItems(Texture2D? iconLeft = null, Texture2D? iconRight = null,
                                  IconMenuAlignment iconAlignment = IconMenuAlignment.Left,
                                  Vector2 iconSpacing = new Vector2(),
                                  bool resize = false)
@@ -283,9 +289,9 @@ namespace DinaFramework.Menus
         /// <param name="halign">Alignement horizontal de l'élément.</param>
         /// <param name="valign">Alignement vertical de l'élément.</param>
         /// <returns>L'élément menu ajouté.</returns>
-        public MenuItem AddItem(SpriteFont font, string text, Color color, Func<MenuItem, MenuItem> selection = null, Func<MenuItem, MenuItem> deselection = null, Func<MenuItem, MenuItem> activation = null, HorizontalAlignment halign = HorizontalAlignment.Left, VerticalAlignment valign = VerticalAlignment.Top)
+        public MenuItem AddItem(SpriteFont font, string text, Color color, Func<MenuItem, MenuItem>? selection = null, Func<MenuItem, MenuItem>? deselection = null, Func<MenuItem, MenuItem>? activation = null, HorizontalAlignment halign = HorizontalAlignment.Left, VerticalAlignment valign = VerticalAlignment.Top)
         {
-            Vector2 pos = Vector2.Zero;
+            Vector2 pos;
             if (_direction == MenuItemDirection.Vertical)
                 pos = new Vector2(_itemsGroup.Position.X, GetNextItemYPosition());
             else
@@ -302,11 +308,10 @@ namespace DinaFramework.Menus
         /// <param name="deselection">Fonction appelée lors de la désélection de l'élément.</param>
         /// <param name="activation">Fonction appelée lors de l'activation de l'élément.</param>
         /// <returns>L'élément de menu ajouté.</returns>
-        public MenuItem AddItem(object item, Func<MenuItem, MenuItem> selection = null, Func<MenuItem, MenuItem> deselection = null, Func<MenuItem, MenuItem> activation = null)
+        public MenuItem AddItem(object item, Func<MenuItem, MenuItem>? selection = null, Func<MenuItem, MenuItem>? deselection = null, Func<MenuItem, MenuItem>? activation = null)
         {
             ArgumentNullException.ThrowIfNull(item, "Parameter 'item' must not be null.");
-
-            return AddItemToGroups(new MenuItem(item, selection, deselection, activation, (item as IPosition).Position));
+            return AddItemToGroups(new MenuItem(item, selection, deselection, activation, (item as IPosition)!.Position));
         }
         /// <summary>
         /// Centre les éléments de menu sur l'écran et 
@@ -359,33 +364,31 @@ namespace DinaFramework.Menus
         /// <param name="prevItemKey">Touche pour sélectionner l'élément précédent.</param>
         /// <param name="activateItemKey">Touche pour activer l'élément sélectionné.</param>
         /// <param name="cancelKey">Touche pour annuler le menu (facultatif).</param>
-        public void SetKeys(ControllerKey nextItemKey, ControllerKey prevItemKey, ControllerKey activateItemKey, ControllerKey cancelKey = null)
+        public void SetKeys(IKey nextItemKey, IKey prevItemKey, IKey activateItemKey, IKey? cancelKey = null)
         {
-            SetNextItemKey(nextItemKey);
-            SetPreviousItemKey(prevItemKey);
-            SetActivateItemKey(activateItemKey);
-            SetCancelMenuKey(cancelKey);
+            if (_direction == MenuItemDirection.Vertical)
+            {
+                SetActionKey(MenuAction.Up, prevItemKey);
+                SetActionKey(MenuAction.Down, nextItemKey);
+            }
+            else
+            {
+                SetActionKey(MenuAction.Left, prevItemKey);
+                SetActionKey(MenuAction.Right, nextItemKey);
+            }
+            SetActionKey(MenuAction.Activate, activateItemKey);
+            if (cancelKey != null)
+                SetActionKey(MenuAction.Cancel, cancelKey);
         }
         /// <summary>
-        /// Définit la touche pour sélectionner l'élément suivant.
+        /// Permet de définir une touche spécifique pour une action de menu donnée.
         /// </summary>
-        /// <param name="key">Touche à associer à la sélection de l'élément suivant.</param>
-        public void SetNextItemKey(ControllerKey key) { _next_item_key = key; }
-        /// <summary>
-        /// Définit la touche pour sélectionner l'élément précédent.
-        /// </summary>
-        /// <param name="key">Touche à associer à la sélection de l'élément précédent.</param>
-        public void SetPreviousItemKey(ControllerKey key) { _previous_item_key = key; }
-        /// <summary>
-        /// Définit la touche pour activer/valider l'élément sélectionné.
-        /// </summary>
-        /// <param name="key">Touche à associer à l'activation (validation) de l'élément sélectionné.</param>
-        public void SetActivateItemKey(ControllerKey key) { _active_item_key = key; }
-        /// <summary>
-        /// Définit la touche pour annuler le menu (facultatif).
-        /// </summary>
-        /// <param name="key">Touche à associer à l'annulation du menu.</param>
-        public void SetCancelMenuKey(ControllerKey key) { _cancel_menu_key = key; }
+        /// <param name="action"></param>
+        /// <param name="key"></param>
+        public void SetActionKey(MenuAction action, IKey key)
+        {
+            _actionKeys[action] = key;
+        }
 
 
         //------------------------------------------------------------------
@@ -449,6 +452,8 @@ namespace DinaFramework.Menus
         /// </remarks>
         public void Reset(int value = -1)
         {
+            if (value < 0 || value >= _items.Count)
+                value = -1;
             Reset(_items.ElementAtOrDefault(value));
         }
         /// <summary>
@@ -459,7 +464,7 @@ namespace DinaFramework.Menus
         /// <remarks>
         /// Cette méthode met à jour l'élément sélectionné actuel, en invoquant les actions de sélection et de désélection définies sur les éléments.
         /// </remarks>
-        public void Reset(MenuItem item)
+        public void Reset(MenuItem? item)
         {
             CurrentItem?.Deselection?.Invoke(CurrentItem);
             CurrentItem = item;
@@ -527,7 +532,7 @@ namespace DinaFramework.Menus
                 menuitem.Selection?.Invoke(menuitem);
             return menuitem;
         }
-        private Vector2 CalculateIconDimensions(Texture2D icon, bool resize)
+        private Vector2 CalculateIconDimensions(Texture2D? icon, bool resize)
         {
             if (icon == null)
                 return Vector2.Zero;
@@ -564,9 +569,11 @@ namespace DinaFramework.Menus
             // Sélection du nouvel item
             _items[_currentitemindex].Selection?.Invoke(_items[_currentitemindex]);
         }
-        private static Sprite CreateIconSprite(Texture2D texture, Vector2 dimensions)
+        private static Sprite? CreateIconSprite(Texture2D? texture, Vector2 dimensions)
         {
-            return texture != null ? new Sprite(texture, Color.White, Vector2.Zero, new Rectangle(Point.Zero, dimensions.ToPoint()), Vector2.Zero, Vector2.One, 0, Vector2.One, SpriteEffects.None, 0) : null;
+            if (texture == null)
+                return null;
+            return new Sprite(texture, Color.White, Vector2.Zero, new Rectangle(Point.Zero, dimensions.ToPoint()), Vector2.Zero, Vector2.One, 0, Vector2.One, SpriteEffects.None, 0);
         }
         private void DrawIcons(SpriteBatch spritebatch)
         {
@@ -611,7 +618,7 @@ namespace DinaFramework.Menus
             Rectangle mouseRect = new(mousePos, Point.Zero);
 
             Rectangle menuItemsGroupRect = new Rectangle(_itemsGroup.Position.ToPoint(), _itemsGroup.Dimensions.ToPoint());
-            MenuItem hoveredItem = null;
+            MenuItem? hoveredItem = null;
             if (menuItemsGroupRect.Contains(mousePos))
             {
                 foreach (MenuItem item in _items)
@@ -659,23 +666,34 @@ namespace DinaFramework.Menus
 
         private void HandleKeyInput()
         {
-            if (_cancel_menu_key?.IsPressed() > 0)
+            if (_actionKeys.TryGetValue(MenuAction.Cancel, out var cancelKey) && InputManager.IsPressedByAny(cancelKey) && Cancellation != null)
             {
-                if (Cancellation != null)
-                {
-                    Reset();
-                    Visible = false;
-                    Cancellation.Invoke();
-                    return;
-                }
+                Reset();
+                Visible = false;
+                Cancellation.Invoke();
+                return;
             }
-            if (_next_item_key?.IsPressed() > 0)
-                ChangeCurrentItem(1);
-            if (_previous_item_key?.IsPressed() > 0)
-                ChangeCurrentItem(-1);
 
-            if (_active_item_key?.IsPressed() > 0 && _currentitemindex >= 0 && _currentitemindex < _items.Count)
+            if (_direction == MenuItemDirection.Horizontal)
+            {
+                if (_actionKeys.TryGetValue(MenuAction.Right, out var rightKey) && InputManager.IsReleasedByAny(rightKey))
+                    ChangeCurrentItem(1);
+                if (_actionKeys.TryGetValue(MenuAction.Left, out var leftKey) && InputManager.IsReleasedByAny(leftKey))
+                    ChangeCurrentItem(-1);
+            }
+            else if (_direction == MenuItemDirection.Vertical)
+            {
+                if (_actionKeys.TryGetValue(MenuAction.Down, out var downKey) && InputManager.IsReleasedByAny(downKey))
+                    ChangeCurrentItem(1);
+                if (_actionKeys.TryGetValue(MenuAction.Up, out var upKey) && InputManager.IsReleasedByAny(upKey))
+                    ChangeCurrentItem(-1);
+            }
+            if (_actionKeys.TryGetValue(MenuAction.Activate, out var activateKey)
+                && InputManager.IsReleasedByAny(activateKey)
+                && _currentitemindex >= 0 && _currentitemindex < _items.Count)
+            {
                 _items[_currentitemindex].Activation?.Invoke(_items[_currentitemindex]);
+            }
         }
         private void SortElements()
         {

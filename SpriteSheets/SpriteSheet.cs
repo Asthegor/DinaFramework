@@ -14,18 +14,18 @@ namespace DinaFramework.SpriteSheets
         /// <summary>
         /// Obtient le nom de la spritesheet.
         /// </summary>
-        public string Name { get; private set; }
+        public string Name { get; private set; } = string.Empty;
 
         /// <summary>
         /// Obtient la texture associée à cette spritesheet.
         /// </summary>
-        public Texture2D Texture { get; private set; }
+        public required Texture2D Texture { get; set; }
 
         /// <summary>
         /// Obtient le dictionnaire des régions nommées de la spritesheet.
         /// La clé est le nom de la sous-texture et la valeur est son rectangle dans la texture.
         /// </summary>
-        public Dictionary<string, Rectangle> Regions { get; } = new();
+        public Dictionary<string, Rectangle> Regions { get; } = [];
 
         /// <summary>
         /// Obtient la région nommée correspondant à la clé fournie.
@@ -33,12 +33,6 @@ namespace DinaFramework.SpriteSheets
         /// <param name="name">Le nom de la sous-texture à récupérer.</param>
         /// <returns>Le rectangle correspondant à la sous-texture dans la texture.</returns>
         public Rectangle this[string name] => Regions[name];
-
-        /// <summary>
-        /// Définit la texture associée à cette spritesheet.
-        /// </summary>
-        /// <param name="texture">La texture à utiliser.</param>
-        internal void SetTexture(Texture2D texture) => Texture = texture;
 
         /// <summary>
         /// Définit le nom de cette spritesheet.

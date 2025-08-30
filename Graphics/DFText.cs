@@ -35,7 +35,7 @@ namespace DinaFramework.Graphics
         private bool _wait;
         private bool _displayed;
 
-        private string _wrappedContent;
+        private string _wrappedContent = string.Empty;
 
         /// <summary>
         /// Le contenu du texte.
@@ -122,7 +122,7 @@ namespace DinaFramework.Graphics
             ArgumentNullException.ThrowIfNull(font);
 
             _font = font;
-            Content = content;
+            _content = content;
             _color = color;
             _wait = false;
             _displayposition = position;
@@ -163,7 +163,7 @@ namespace DinaFramework.Graphics
         /// <summary>
         /// Déclenche les événements lorsque le panneau est survolé.
         /// </summary>
-        public event EventHandler<DFTextEventArgs> OnHovered;
+        public event EventHandler<DFTextEventArgs>? OnHovered;
 
         /// <summary>
         /// Définit les alignements horizontal et vertical du texte.
@@ -259,32 +259,22 @@ namespace DinaFramework.Graphics
         /// <returns>Une nouvelle instance de Text avec les mêmes propriétés.</returns>
         public DFText Copy()
         {
-            return new DFText()
+            return new DFText(Font, Content, Color, Position, _halign, _valign, ZOrder)
             {
-                _color = _color,
-                _content = _content,
                 _displayed = _displayed,
                 _displayposition = _displayposition,
                 _displayTime = _displayTime,
                 _font = _font,
-                _halign = _halign,
-                _valign = _valign,
                 _nbLoops = _nbLoops,
                 _timerDisplayTime = _timerDisplayTime,
                 _timerWaitTime = _timerWaitTime,
                 _visible = _visible,
                 _wait = _wait,
                 _waitTime = _waitTime,
-                Color = Color,
-                Content = Content,
                 Dimensions = Dimensions,
-                Position = Position,
                 Visible = Visible,
-                ZOrder = ZOrder
             };
         }
-        private DFText() { }
-
         private void WrapText()
         {
             if (_font == null || string.IsNullOrEmpty(_content))

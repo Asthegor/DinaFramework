@@ -18,34 +18,34 @@ namespace DinaFramework.Menus
     {
         private bool _visible;
         private readonly object _item;
-        private Func<MenuItem, MenuItem> _selection;
-        private Func<MenuItem, MenuItem> _deselection;
-        private Func<MenuItem, MenuItem> _activation;
+        private Func<MenuItem, MenuItem>? _selection;
+        private Func<MenuItem, MenuItem>? _deselection;
+        private Func<MenuItem, MenuItem>? _activation;
         private Color _disabledColor = Color.DarkGray;
 
         /// <summary>
         /// Fonction exécutée lors de la sélection de l'élément de menu.
         /// </summary>
-        public Func<MenuItem, MenuItem> Selection
+        public Func<MenuItem, MenuItem>? Selection
         {
             get { return _selection; }
-            set { _selection = value; }
+            set { _selection = value!; }
         }
         /// <summary>
         /// Fonction exécutée lors de la désélection de l'élément de menu.
         /// </summary>
-        public Func<MenuItem, MenuItem> Deselection
+        public Func<MenuItem, MenuItem>? Deselection
         {
             get { return _deselection; }
-            set { _deselection = value; }
+            set { _deselection = value!; }
         }
         /// <summary>
         /// Fonction exécutée lors de l'activation (validation) de l'élément de menu.
         /// </summary>
-        public Func<MenuItem, MenuItem> Activation
+        public Func<MenuItem, MenuItem>? Activation
         {
             get { return _activation; }
-            set { _activation = value; }
+            set { _activation = value!; }
         }
 
         /// <summary>
@@ -150,7 +150,7 @@ namespace DinaFramework.Menus
             {
                 if (_item is DFText textitem)
                     return textitem.Content;
-                return default;
+                return string.Empty;
             }
             set
             {
@@ -176,12 +176,14 @@ namespace DinaFramework.Menus
             {
                 if (_item is DFText textitem)
                     return textitem.Font;
-                return null;
+                throw new InvalidOperationException("L'item n'est pas un DFText");
             }
             set
             {
                 if (_item is DFText textitem)
                     textitem.Font = value;
+                else
+                    throw new InvalidOperationException("L'item n'est pas un DFText");
             }
         }
 
@@ -198,9 +200,9 @@ namespace DinaFramework.Menus
         /// <param name="halign">Alignement horizontal (optionnel).</param>
         /// <param name="valign">Alignement vertical (optionnel).</param>
         public MenuItem(SpriteFont font, string text, Color color,
-                        Func<MenuItem, MenuItem> selection = null,
-                        Func<MenuItem, MenuItem> deselection = null,
-                        Func<MenuItem, MenuItem> activation = null,
+                        Func<MenuItem, MenuItem>? selection = null,
+                        Func<MenuItem, MenuItem>? deselection = null,
+                        Func<MenuItem, MenuItem>? activation = null,
                         Vector2 position = default,
                         HorizontalAlignment halign = HorizontalAlignment.Left, VerticalAlignment valign = VerticalAlignment.Top) :
             this(new DFText(font, text, color, position, halign, valign, 0), selection, deselection, activation, position)
@@ -215,17 +217,17 @@ namespace DinaFramework.Menus
         /// <param name="activation">Fonction d'activation (optionnelle).</param>
         /// <param name="position">Position de l'élément (optionnelle).</param>
         public MenuItem(object item,
-                        Func<MenuItem, MenuItem> selection = null,
-                        Func<MenuItem, MenuItem> deselection = null,
-                        Func<MenuItem, MenuItem> activation = null,
+                        Func<MenuItem, MenuItem>? selection = null,
+                        Func<MenuItem, MenuItem>? deselection = null,
+                        Func<MenuItem, MenuItem>? activation = null,
                         Vector2 position = default)
         {
             _item = item;
             if (_item is IPosition positem)
                 positem.Position = position;
-            Selection = selection;
-            Deselection = deselection;
-            Activation = activation;
+            _selection = selection;
+            _deselection = deselection;
+            _activation = activation;
             Visible = true;
             State = MenuItemState.Enable;
         }
@@ -239,7 +241,7 @@ namespace DinaFramework.Menus
             if (!_visible || _item is not IDraw drawableItem)
                 return;
 
-            IColor coloredItem = _item as IColor;
+            IColor? coloredItem = _item as IColor;
             Color? originalColor = coloredItem?.Color;
 
             if (coloredItem != null && State == MenuItemState.Disable)

@@ -1,6 +1,7 @@
 ﻿using DinaFramework.Events;
 using DinaFramework.Exceptions;
 using DinaFramework.Interfaces;
+using DinaFramework.Services;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -58,7 +59,7 @@ namespace DinaFramework.Scenes
         /// <summary>
         /// Obtient le SpriteBatch utilisé pour dessiner les éléments graphiques de cette scène.
         /// </summary>
-        protected SpriteBatch SpriteBatch => SceneManager.SpriteBatch;
+        protected SpriteBatch? SpriteBatch => SceneManager.SpriteBatch;
         /// <summary>
         /// Obtient ou définit le progrès du chargement de la scène, compris entre 0 et 1.
         /// </summary>
@@ -132,7 +133,7 @@ namespace DinaFramework.Scenes
         /// </summary>
         /// <param name="name">Le nom de la scène à définir comme actuelle.</param>
         /// <param name="withLoadingScreen">Indique si un écran de chargement doit être affiché pendant la transition.</param>
-        protected void SetCurrentScene(SceneKey name, bool withLoadingScreen = false)
+        protected void SetCurrentScene(Key<SceneTag> name, bool withLoadingScreen = false)
         {
             SceneManager.SetCurrentScene(name, withLoadingScreen);
         }
@@ -199,7 +200,7 @@ namespace DinaFramework.Scenes
         /// Événement déclenché lorsque la résolution de la scène change.
         /// Les abonnés peuvent réagir à ce changement pour ajuster le rendu ou l'interface.
         /// </summary>
-        public event EventHandler<SceneEventArgs> OnResolutionChanged;
+        public event EventHandler<SceneEventArgs>? OnResolutionChanged;
         private void HandleSceneResolutionChanged(Scene scene)
         {
             OnResolutionChanged?.Invoke(scene, new SceneEventArgs(scene));

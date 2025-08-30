@@ -7,9 +7,9 @@ namespace DinaFramework.Internal
 {
     internal static class InternalAssets
     {
-        private static Texture2D _circle;
-        private static Texture2D _logo;
-        private static Texture2D _dropDownArrow;
+        private static Texture2D? _circle;
+        private static Texture2D? _logo;
+        private static Texture2D? _dropDownArrow;
         public static Texture2D Circle(GraphicsDevice device)
         {
             _circle ??= GetInternalResource(device, "CircleMask.png");
@@ -28,10 +28,10 @@ namespace DinaFramework.Internal
         private static Texture2D GetInternalResource(GraphicsDevice device, string filename)
         {
             Assembly assembly = typeof(InternalAssets).Assembly;
-            using Stream stream = assembly.GetManifestResourceStream($"DinaFramework.Resources.{filename}");
-            return stream == null
-                ? throw new FileNotFoundException($"{filename} introuvable dans les ressources embarquées.")
-                : Texture2D.FromStream(device, stream);
+            using Stream? stream = assembly.GetManifestResourceStream($"DinaFramework.Resources.{filename}");
+            if (stream == null)
+                throw new FileNotFoundException($"{filename} introuvable dans les ressources embarquées.");
+            return Texture2D.FromStream(device, stream);
         }
     }
 }

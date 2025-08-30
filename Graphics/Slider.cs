@@ -1,4 +1,6 @@
-﻿using DinaFramework.Core;
+﻿#nullable enable
+
+using DinaFramework.Core;
 using DinaFramework.Enums;
 using DinaFramework.Events;
 using DinaFramework.Interfaces;
@@ -19,7 +21,6 @@ namespace DinaFramework.Graphics
     public class Slider : Base, IGameObject
     {
         private static Slider? _capturedSlider;
-        private static bool _isDragging;
 
         /// <summary>
         /// Valeur minimale du slider.
@@ -49,7 +50,7 @@ namespace DinaFramework.Graphics
         /// <summary>
         /// Action appelée lorsque la valeur du slider change.
         /// </summary>
-        public event EventHandler<SliderValueEventArgs> OnValueChanged;
+        public event EventHandler<SliderValueEventArgs>? OnValueChanged;
         /// <summary>
         /// Position du slider.
         /// </summary>

@@ -29,8 +29,8 @@ namespace DinaFramework.Screen
         private ScreenManager(GraphicsDeviceManager graphics, GameWindow window)
         {
             _graphics = graphics ?? throw new ArgumentNullException(nameof(graphics));
-            _window = window;
-            _window.ClientSizeChanged += HandleResize;
+            _window = window ?? throw new ArgumentNullException(nameof(window));
+            _window.ClientSizeChanged += HandleResize!;
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace DinaFramework.Screen
         /// <summary>
         /// Actions lors du changement de résolution.
         /// </summary>
-        public event EventHandler<ScreenManagerEventArgs> OnResolutionChanged;
+        public event EventHandler<ScreenManagerEventArgs>? OnResolutionChanged;
 
         /// <summary>
         /// Définit la résolution d'affichage du jeu.
@@ -85,7 +85,7 @@ namespace DinaFramework.Screen
         /// <param name="window"></param>
         public static void Initialize(GraphicsDeviceManager graphics, GameWindow window)
         {
-            ServiceLocator.Register(ServiceKey.ScreenManager, new ScreenManager(graphics, window));
+            ServiceLocator.Register(ServiceKeys.ScreenManager, new ScreenManager(graphics, window));
         }
 
         private void HandleResize(object sender, EventArgs e)

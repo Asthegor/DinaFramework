@@ -3,6 +3,7 @@
     using Microsoft.Xna.Framework.Graphics;
 
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Globalization;
     using System.Resources;
@@ -27,11 +28,12 @@
         /// </exception>
         public static IReadOnlyList<(string Key, string Value, char InvalidChar)> CheckResourceValuesWithSpriteFont(SpriteFont font, Type resourceType, string cultureCode)
         {
+            ArgumentNullException.ThrowIfNull(font);
             if (string.IsNullOrWhiteSpace(cultureCode))
                 throw new ArgumentException("Code culture invalide", nameof(cultureCode));
 
             // Préparer les caractères supportés
-            HashSet<char> supportedChars = [.. font?.Characters];
+            HashSet<char> supportedChars = [.. font.Characters];
 
             // Obtenir le ResourceManager de la classe de ressources
             var property = resourceType?.GetProperty("ResourceManager",
@@ -42,9 +44,7 @@
             if (property == null)
                 throw new ArgumentException("La classe fournie ne contient pas de ResourceManager.");
 
-            var manager = property.GetValue(null) as ResourceManager;
-            if (manager == null)
-                throw new ArgumentException("Impossible d’obtenir le ResourceManager à partir de la classe fournie.");
+            var manager = property.GetValue(null) as ResourceManager ?? throw new ArgumentException("Impossible d’obtenir le ResourceManager à partir de la classe fournie.");
 
             // Charger la culture (langue)
             CultureInfo culture = new CultureInfo(cultureCode);
@@ -53,11 +53,11 @@
             List<(string Key, string Value, char InvalidChar)> errors = [];
 
             // Obtenir toutes les clés de la ressource
-            ResourceSet resourceSet = manager.GetResourceSet(culture, true, true);
-            foreach (System.Collections.DictionaryEntry entry in resourceSet)
+            ResourceSet resourceSet = manager.GetResourceSet(culture, true, true)!;
+            foreach (DictionaryEntry entry in resourceSet)
             {
-                string key = entry.Key as string;
-                string value = entry.Value as string;
+                string? key = entry.Key as string;
+                string? value = entry.Value as string;
 
                 if (key == null || value == null)
                     continue;

@@ -18,7 +18,7 @@ namespace DinaFramework.Localization
         private static readonly Dictionary<string, string> _cache = new();
         private static readonly List<ResourceManager> _resourceManagers = new();
         private static readonly List<Assembly> _assemblies = [];
-        private static string[] _availableLanguages;
+        private static string[] _availableLanguages = [];
         private static bool _loaded;
         private static bool _updated;
 
@@ -61,7 +61,8 @@ namespace DinaFramework.Localization
             var prop = resourceClass.GetProperty("ResourceManager", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
             if (prop == null)
                 throw new InvalidOperationException($"La classe {resourceClass.Name} ne contient pas de ResourceManager.");
-            var rm = prop.GetValue(null) as ResourceManager;
+            var rm = prop.GetValue(null) as ResourceManager
+                ?? throw new InvalidOperationException($"La classe {resourceClass.Name} ne fournit pas de ResourceManager valide.");
             _resourceManagers.Add(rm);
 
             _assemblies.Add(resourceClass.Assembly);
@@ -153,7 +154,7 @@ namespace DinaFramework.Localization
                 if (dir != null)
                     AddCulturesFromSubdirectories(dir, cultures, assembly);
             }
-            return new List<string>(cultures).ToArray();
+            return [.. cultures];
 
         }
 

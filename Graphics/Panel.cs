@@ -20,7 +20,7 @@ namespace DinaFramework.Graphics
     /// </summary>
     public class Panel : Base, IClickable, IColor, IDraw, IUpdate, IVisible, ICopyable<Panel>
     {
-        private Dictionary<string, object> _originalValues = new Dictionary<string, object>();
+        private Dictionary<string, object> _originalValues = [];
         private List<string> _modifiedValues = [];
         private bool hasBeenRestored;
         private bool saveOriginalValueCalled;
@@ -28,7 +28,7 @@ namespace DinaFramework.Graphics
 
         private List<Vector2> _positions = [];
         private List<Texture2D> _images = [];
-        private Texture2D _texture;
+        private Texture2D? _texture;
         private Rectangle _rectangleBackground;
         private Rectangle _rectangleBorder;
         private int _thickness;
@@ -41,7 +41,6 @@ namespace DinaFramework.Graphics
         private bool _withRoundCorner;
         private int _radiusCorner;
 
-        private Panel() { } // ne sert qu'à la copie d'une instance
         /// <summary>
         /// Initialise une nouvelle instance de la classe Panel avec des paramètres par défaut.
         /// </summary>
@@ -263,7 +262,8 @@ namespace DinaFramework.Graphics
                 switch (_images.Count)
                 {
                     case 0:
-                        Texture2D texture = ServiceLocator.Get<Texture2D>(ServiceKey.Texture1px);
+                        Texture2D? texture = ServiceLocator.Get<Texture2D>(ServiceKeys.Texture1px)
+                            ?? throw new InvalidOperationException("Texture1px non enregistrée dans le ServiceLocator");
 
                         if (_withRoundCorner)
                         {
@@ -413,7 +413,7 @@ namespace DinaFramework.Graphics
                 {
                     _modifiedValues.Clear();
                     // Compare les valeurs originales avec les valeurs modifiées
-                    _modifiedValues = _originalValues.GetModifiedKeys(SaveValues());
+                    _modifiedValues = _originalValues.GetModifiedKeys(SaveValues()!);
                 }
                 hasBeenRestored = false;
             }
@@ -462,15 +462,15 @@ namespace DinaFramework.Graphics
         /// <summary>
         /// Déclenche les événements lorsque le panneau est survolé.
         /// </summary>
-        public event EventHandler<PanelEventArgs> OnHovered;
+        public event EventHandler<PanelEventArgs>? OnHovered;
         /// <summary>
         /// Déclenche les événements lorsque le panneau est cliqué avec le bouton gauche.
         /// </summary>
-        public event EventHandler<PanelEventArgs> OnClicked;
+        public event EventHandler<PanelEventArgs>? OnClicked;
         /// <summary>
         /// Déclenche les événements lorsque le panneau est cliqué avec le bouton gauche.
         /// </summary>
-        public event EventHandler<PanelEventArgs> OnRightClicked;
+        public event EventHandler<PanelEventArgs>? OnRightClicked;
 
         internal void SetVisible(bool visible)
         {
@@ -485,7 +485,7 @@ namespace DinaFramework.Graphics
             List<Texture2D> copiedTextures = [];
             foreach (Texture2D texture in _images)
                 copiedTextures.Add(texture);
-            return new Panel()
+            return new Panel(Position, Dimensions, BackgroundColor, ZOrder)
             {
                 _borderColor = _borderColor,
                 _leftClicked = _leftClicked,
@@ -498,36 +498,34 @@ namespace DinaFramework.Graphics
                 _rectangleBorder = _rectangleBorder,
                 _thickness = _thickness,
                 _visible = _visible,
-                BackgroundColor = BackgroundColor,
                 BorderColor = BorderColor,
-                Dimensions = Dimensions,
-                Position = Position,
                 Thickness = Thickness,
-                ZOrder = ZOrder
             };
         }
 
         private Dictionary<string, object> SaveValues()
         {
-            Dictionary<string, object> values = new Dictionary<string, object>();
+            Dictionary<string, object> values = [];
             // Récupère toutes les propriétés publiques du Panel et les enregistre dans le dictionnaire.
             Type type = this.GetType();
             PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
             foreach (PropertyInfo property in properties)
             {
-                values[property.Name] = property.GetValue(this);
+                values[property.Name] = property.GetValue(this)!;
             }
             return values;
         }
-        private void RestoreOriginalValues(List<string> modifiedKeys = default)
+        private void RestoreOriginalValues(List<string>? modifiedKeys = null)
         {
+            if (modifiedKeys == null)
+                return;
             if (modifiedKeys.Count == 0)
             {
                 foreach (KeyValuePair<string, object> pair in _originalValues)
                 {
                     // Utilise la réflexion pour définir la valeur de la propriété correspondante.
-                    PropertyInfo property = this.GetType().GetProperty(pair.Key);
+                    PropertyInfo? property = GetType().GetProperty(pair.Key);
                     if (property != null)
                     {
                         property.SetValue(this, pair.Value);
@@ -540,7 +538,7 @@ namespace DinaFramework.Graphics
                 {
                     if (_originalValues.ContainsKey(key))
                     {
-                        PropertyInfo property = this.GetType().GetProperty(key);
+                        PropertyInfo? property = GetType().GetProperty(key);
                         if (property != null)
                         {
                             property.SetValue(this, _originalValues[key]);

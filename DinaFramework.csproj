@@ -9,6 +9,7 @@
     <NeutralLanguage>en-US</NeutralLanguage>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <DocumentationFile>$(OutputPath)\Documentation.xml</DocumentationFile>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'" />

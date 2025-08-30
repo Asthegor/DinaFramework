@@ -178,6 +178,7 @@ namespace DinaFramework.Extensions
             Justification = "Il s'agit d'une méthode d'extension. Ici, par défaut, sourceDictionary ne peut pas être null.")]
         public static List<string> GetModifiedKeys(this Dictionary<string, object> sourceDictionary, Dictionary<string, object> otherDictionary)
         {
+            ArgumentNullException.ThrowIfNull(sourceDictionary);
             ArgumentNullException.ThrowIfNull(otherDictionary);
             if (otherDictionary.Count == 0)
                 return new List<string>();

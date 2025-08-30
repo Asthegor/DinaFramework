@@ -1,5 +1,7 @@
-﻿using DinaFramework.Core;
+﻿#nullable enable
+using DinaFramework.Core;
 using DinaFramework.Interfaces;
+using DinaFramework.Services;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -16,7 +18,6 @@ namespace DinaFramework.Graphics
     public class DropDown : Base, IUpdate, IDraw, IVisible, IPosition
     {
         private const int OFFSET_OPTIONS = 2;
-        private readonly SpriteFont _font;
 
         private readonly List<string> _options;
         private int _selectedIndex;
@@ -29,8 +30,7 @@ namespace DinaFramework.Graphics
         private readonly Panel _panelArrow;
         private readonly List<DFText> _listOptions = [];
         private readonly Panel _panelOptions;
-
-
+        
         private readonly int _nbVisibleOptions;
 
         private MouseState _oldMouseState;
@@ -50,20 +50,19 @@ namespace DinaFramework.Graphics
         /// <param name="bordercolor">Couleur de la bordure du menu déroulant.</param>
         /// <param name="thickness">Épaisseur de la bordure.</param>
         /// <param name="nbvisibleoptions">Nombre d'options visibles à afficher par défaut.</param>
-        public DropDown(SpriteFont font, Texture2D arrowTexture, Vector2 position, Vector2 dimensions, IReadOnlyList<string> options, Color textcolor, Color selectedoptioncolor, Color backgroundcolor, Color bordercolor, int thickness = 1, int nbvisibleoptions = 5)
+        public DropDown(SpriteFont font, Vector2 position, Vector2 dimensions, IReadOnlyList<string> options, Color textcolor, Color selectedoptioncolor, Color backgroundcolor, Color bordercolor, Texture2D? arrowTexture = null, int thickness = 1, int nbvisibleoptions = 5)
             : base(position, dimensions)
         {
             ArgumentNullException.ThrowIfNull(arrowTexture);
             ArgumentNullException.ThrowIfNull(options);
 
-            _font = font;
+            _panel = new Panel(position, dimensions, backgroundcolor, bordercolor, thickness);
 
             _options = [.. options];
             _selectedOptionColor = selectedoptioncolor;
             _nbVisibleOptions = nbvisibleoptions;
 
             Vector2 panelDim = dimensions;
-            _panel = new Panel(position, panelDim, backgroundcolor, bordercolor, thickness);
             _text = new DFText(font, "", textcolor, position + new Vector2(thickness, thickness));
 
             Vector2 panelArrowPos = position + new Vector2(panelDim.X - arrowTexture.Width - thickness, 0);
@@ -71,14 +70,21 @@ namespace DinaFramework.Graphics
 
             foreach (string option in options)
             {
-                DFText t = new DFText(font, option, textcolor)
+                DFText item = new DFText(font, option, textcolor)
                 {
                     Visible = false,
                     Dimensions = dimensions - new Vector2(thickness * 2, 0)
                 };
-                _listOptions.Add(t);
+                _listOptions.Add(item);
             }
             _panelOptions = new Panel(position + new Vector2(0, _panel.Dimensions.Y), new Vector2(dimensions.X, (dimensions.Y + OFFSET_OPTIONS) * Math.Min(nbvisibleoptions, _listOptions.Count) + thickness), backgroundcolor, bordercolor, thickness);
+
+            // Gestion des clics de souris
+            _panel.OnClicked += (sender, eventArgs) =>
+            {
+                _isExpanded = !_isExpanded;
+                _panelOptions.Visible = _isExpanded;
+            };
 
             Reset();
         }
@@ -180,6 +186,11 @@ namespace DinaFramework.Graphics
         /// <param name="gametime">Temps de jeu actuel.</param>
         public void Update(GameTime gametime)
         {
+            _panel.Update(gametime);
+            _panelArrow.Update(gametime);
+
+
+
             bool clickedAway;
             MouseState mouseState = Mouse.GetState();
             if (_oldMouseState.LeftButton == ButtonState.Pressed && mouseState.LeftButton == ButtonState.Released)
@@ -192,8 +203,10 @@ namespace DinaFramework.Graphics
                     option.Visible = false;
 
                 // Si l'utilisateur clique sur la flèche, dépliez la liste déroulante
-                Rectangle arrowRect = new Rectangle(_panelArrow.Position.ToPoint(), _panelArrow.Dimensions.ToPoint());
-                if (arrowRect.Contains(mousePosition))
+                //Rectangle arrowRect = new Rectangle(_panelArrow.Position.ToPoint(), _panelArrow.Dimensions.ToPoint());
+                Rectangle rect = new Rectangle(_panel.Position.ToPoint(), _panel.Dimensions.ToPoint());
+                //if (arrowRect.Contains(mousePosition))
+                if (rect.Contains(mousePosition))
                 {
                     _isExpanded = !_isExpanded;
                     clickedAway = false;
@@ -215,8 +228,8 @@ namespace DinaFramework.Graphics
                         Vector2 newOptionPos = _panel.Position + new Vector2(_panelOptions.Thickness + OFFSET_OPTIONS * 2, _panel.Dimensions.Y * (j + 1) + _panelOptions.Thickness + OFFSET_OPTIONS * 2);
                         _listOptions[i + j].Position = newOptionPos;
 
-                        Rectangle rect = new Rectangle(newOptionPos.ToPoint(), _listOptions[i + j].Dimensions.ToPoint());
-                        if (rect.Contains(mousePosition))
+                        Rectangle rectOptions = new Rectangle(newOptionPos.ToPoint(), _listOptions[i + j].Dimensions.ToPoint());
+                        if (rectOptions.Contains(mousePosition))
                         {
                             if (_selectedIndex >= 0)
                                 _listOptions[_selectedIndex].Color = _text.Color;
@@ -234,7 +247,12 @@ namespace DinaFramework.Graphics
             }
             _oldMouseState = mouseState;
         }
+        /*
+        private void HandleMouseClick()
+        {
 
+        }
+        */
         /// <summary>
         /// Dessine le menu déroulant sur l'écran.
         /// </summary>

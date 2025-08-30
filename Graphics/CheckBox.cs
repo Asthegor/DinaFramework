@@ -20,8 +20,8 @@ namespace DinaFramework.Graphics
     {
         private Rectangle _checkBoxRect;
         private bool _useTextures;
-        private Texture2D _checkedTexture;
-        private Texture2D _uncheckedTexture;
+        private Texture2D? _checkedTexture;
+        private Texture2D? _uncheckedTexture;
         private MouseState _oldMouseState;
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace DinaFramework.Graphics
         /// <summary>
         /// Événement déclenché lorsqu'on clique sur la case à cocher. Utile pour réagir immédiatement au changement d'état par l'utilisateur.
         /// </summary>
-        public event EventHandler<CheckBoxEventArgs> OnClicked;
+        public event EventHandler<CheckBoxEventArgs>? OnClicked;
         /// <summary>
         /// Obtient ou définit l'état coché de la case. True si la case est cochée, false sinon.
         /// Cette propriété simplifie l'accès à l'état en évitant de manipuler l'énumération CheckBoxState directement.
@@ -173,7 +173,8 @@ namespace DinaFramework.Graphics
                 else
                 {
                     // Dessine un rectangle non plein
-                    Texture2D pixel = ServiceLocator.Get<Texture2D>(ServiceKey.Texture1px);
+                    Texture2D pixel = ServiceLocator.Get<Texture2D>(ServiceKeys.Texture1px) 
+                        ?? throw new InvalidOperationException("Texture1px n'est pas enregistré dans le ServiceLocator.");
                     if (State == CheckBoxState.Checked)
                         spritebatch.DrawRectangle(pixel, _checkBoxRect, CheckedColor, isFilled: true);
                     else

@@ -17,12 +17,17 @@ namespace DinaFramework.SpriteSheets
     {
         private sealed class ParsedSheet
         {
-            public string Name;
+            public string Name = string.Empty;
             public Texture2D FullTexture;
-            public Dictionary<string, Rectangle> Regions = new();
+            public Dictionary<string, Rectangle> Regions = [];
+            public ParsedSheet(Texture2D texture)
+            {
+                               FullTexture = texture ?? throw new ArgumentNullException(nameof(texture));
+            }
         }
 
-        private static readonly Dictionary<string, Texture2D> textureCache = new();
+        private static readonly Dictionary<string, Texture2D> textureCache = [];
+        private static readonly Dictionary<string, Texture2D> subTextureCache = [];
 
         private static ParsedSheet LoadSpriteSheet(ContentManager content, string xmlPath, string texturePath)
         {
@@ -34,8 +39,7 @@ namespace DinaFramework.SpriteSheets
                 textureCache[texturePath] = texture;
             }
 
-            var parsedSheet = new ParsedSheet { Name = texturePath };
-            parsedSheet.FullTexture = texture;
+            var parsedSheet = new ParsedSheet(texture) { Name = texturePath };
 
             // Charger le XML
             XDocument doc;
@@ -44,11 +48,17 @@ namespace DinaFramework.SpriteSheets
 
             foreach (var elem in doc.Descendants("SubTexture"))
             {
-                string name = elem.Attribute("name").Value;
-                int x = int.Parse(elem.Attribute("x").Value, CultureInfo.InvariantCulture);
-                int y = int.Parse(elem.Attribute("y").Value, CultureInfo.InvariantCulture);
-                int w = int.Parse(elem.Attribute("width").Value, CultureInfo.InvariantCulture);
-                int h = int.Parse(elem.Attribute("height").Value, CultureInfo.InvariantCulture);
+                if (elem.Attribute("name") == null ||
+                    elem.Attribute("x") == null ||
+                    elem.Attribute("y") == null ||
+                    elem.Attribute("width") == null ||
+                    elem.Attribute("height") == null)
+                    continue;
+                string name = elem.Attribute("name")!.Value;
+                int x = int.Parse(elem.Attribute("x")!.Value, CultureInfo.InvariantCulture);
+                int y = int.Parse(elem.Attribute("y")!.Value, CultureInfo.InvariantCulture);
+                int w = int.Parse(elem.Attribute("width")!.Value, CultureInfo.InvariantCulture);
+                int h = int.Parse(elem.Attribute("height")!.Value, CultureInfo.InvariantCulture);
 
                 parsedSheet.Regions[name] = new Rectangle(x, y, w, h);
             }
@@ -70,12 +80,16 @@ namespace DinaFramework.SpriteSheets
         {
             ArgumentNullException.ThrowIfNull(content, nameof(content));
             var parsedSheet = LoadSpriteSheet(content, xmlPath, texturePath);
-            var spriteSheet = new SpriteSheet();
-            spriteSheet.SetTexture(parsedSheet.FullTexture);
-            foreach(var kvp in parsedSheet.Regions)
+            if (parsedSheet.FullTexture == null)
+                throw new InvalidOperationException("La texture de la spritesheet n'a pas pu être chargée.");
+            var spriteSheet = new SpriteSheet()
+            {
+                Texture = parsedSheet.FullTexture!
+            };
+            foreach (var kvp in parsedSheet.Regions)
                 spriteSheet.Regions[kvp.Key] = kvp.Value;
             return spriteSheet;
-            
+
         }
         /// <summary>
         /// Vide le cache de textures (utile si on change de contenu en runtime)
@@ -86,7 +100,6 @@ namespace DinaFramework.SpriteSheets
             subTextureCache.Clear();
         }
 
-        private static Dictionary<string, Texture2D> subTextureCache = new Dictionary<string, Texture2D>();
         /// <summary>
         /// Extrait une sous-texture à partir d’une spritesheet et la met en cache.
         /// </summary>
@@ -118,7 +131,7 @@ namespace DinaFramework.SpriteSheets
 
             // Extraire les pixels
             Color[] pixels = new Color[rect.Width * rect.Height];
-            spriteSheet.Texture.GetData(0, rect, pixels, 0, pixels.Length);
+            spriteSheet.Texture?.GetData(0, rect, pixels, 0, pixels.Length);
 
             // Créer la texture
             Texture2D texture = new Texture2D(graphics, rect.Width, rect.Height);

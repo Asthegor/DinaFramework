@@ -9,7 +9,7 @@ namespace DinaFramework.Services
     public static class ServiceLocator
     {
         // Stockage interne des services enregistrés, associant une clé unique à chaque service.
-        private static readonly Dictionary<ServiceKey, object> _dictionary = [];
+        private static readonly Dictionary<IKey, object> _dictionary = [];
         /// <summary>
         /// Récupère un service enregistré à l'aide de sa clé.
         /// </summary>
@@ -17,9 +17,9 @@ namespace DinaFramework.Services
         /// <param name="key">Clé unique associée au service.</param>
         /// <returns>Le service correspondant à la clé spécifiée, casté en type T.</returns>
         /// <exception cref="KeyNotFoundException">Si la clé spécifiée n'existe pas dans le dictionnaire.</exception>
-        public static T Get<T>(ServiceKey key)
+        public static T? Get<T>(IKey key)
         {
-            if (_dictionary != null && _dictionary.TryGetValue(key, out object result))
+            if (_dictionary != null && _dictionary.TryGetValue(key, out object? result))
                 return (T)result;
             return default;
         }
@@ -28,21 +28,21 @@ namespace DinaFramework.Services
         /// </summary>
         /// <param name="key">Clé unique pour identifier le service.</param>
         /// <param name="value">Instance du service à enregistrer.</param>
-        public static void Register(ServiceKey key, object value)
+        public static void Register(IKey key, object value)
         {
-            _dictionary[key] = value;
+            _dictionary[key] = value ?? throw new ArgumentNullException(nameof(value));
         }
         /// <summary>
         /// Supprime un service enregistré à l'aide de sa clé.
         /// </summary>
         /// <param name="key">Clé unique associée au service à supprimer.</param>
         /// <returns>Retourne <c>true</c> si le service a été supprimé avec succès, sinon <c>false</c>.</returns>
-        public static void Unregister(ServiceKey key)
+        public static bool Unregister(IKey key)
         {
-            _dictionary.Remove(key);
+            return _dictionary.Remove(key);
         }
 
-        internal static bool Exists(ServiceKey v)
+        internal static bool Exists(IKey v)
         {
             return _dictionary.ContainsKey(v);
         }

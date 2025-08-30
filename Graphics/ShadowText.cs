@@ -7,8 +7,6 @@ using Microsoft.Xna.Framework.Graphics;
 
 using System;
 
-using static System.Net.Mime.MediaTypeNames;
-
 namespace DinaFramework.Graphics
 {
     /// <summary>
@@ -181,22 +179,11 @@ namespace DinaFramework.Graphics
         /// <returns>Une nouvelle instance de ShadowText.</returns>
         public ShadowText Copy()
         {
-            return new ShadowText()
+            return new ShadowText(_text.Font, Content, Color, Position, ShadowColor, Offset, zorder: ZOrder)
             {
-                _offset = _offset,
-                _shadow = _shadow?.Copy(),
-                _text = _text?.Copy(),
-                Color = Color,
-                Content = Content,
                 Dimensions = Dimensions,
-                Offset = Offset,
-                Position = Position,
-                ShadowColor = ShadowColor,
                 Visible = Visible,
-                ZOrder = ZOrder
             };
         }
-
-        private ShadowText() { }
     }
 }

@@ -20,7 +20,7 @@ namespace DinaFramework.Scenes
         private float _timer;
         private bool _fading;
 
-        private Texture2D logo;
+        private readonly Texture2D logo = InternalAssets.Logo(sceneManager.GraphicsDevice);
         private Rectangle rect;
 
         private Color color;
@@ -30,7 +30,8 @@ namespace DinaFramework.Scenes
         /// </summary>
         public override void Load()
         {
-            logo = InternalAssets.Logo(SceneManager.GraphicsDevice);
+            //logo = InternalAssets.Logo(SceneManager.GraphicsDevice) 
+            //    ?? throw new InvalidOperationException("Impossible de charger le logo du framework.");
 
             (float screenW, float screenH) = SceneManager.ScreenDimensions;
 

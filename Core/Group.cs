@@ -25,7 +25,7 @@ namespace DinaFramework.Core
         private bool _visible;
         private Color _color;
         private Texture2D _pixel;
-        private IDrawingElement _title;
+        private IDrawingElement? _title;
         private Rectangle? _titleRect;
 
         /// <summary>
@@ -38,7 +38,8 @@ namespace DinaFramework.Core
         {
             _color = Color.White;
             Visible = true;
-            _pixel = ServiceLocator.Get<Texture2D>(ServiceKey.Texture1px);
+            _pixel = ServiceLocator.Get<Texture2D>(ServiceKeys.Texture1px)
+                ?? throw new InvalidOperationException("Le service Texture1px n'est pas disponible.");
         }
         /// <summary>
         /// Initialise une nouvelle instance de la classe Group en copiant les éléments d'un autre groupe.
@@ -52,10 +53,18 @@ namespace DinaFramework.Core
         public Group(Group group, bool duplicate = true)
         {
             ArgumentNullException.ThrowIfNull(group);
+            _pixel = ServiceLocator.Get<Texture2D>(ServiceKeys.Texture1px)
+                ?? throw new InvalidOperationException("Le service Texture1px n'est pas disponible.");
+
+            _elements = [];
             foreach (var item in group._elements)
             {
                 if (duplicate)
-                    _elements.Add((IElement)Activator.CreateInstance(item.GetType(), item));
+                {
+                    IElement element = (IElement?)Activator.CreateInstance(item.GetType(), item)
+                        ?? throw new InvalidOperationException($"Impossible de dupliquer l'élément de type {item.GetType().Name}.");
+                    _elements.Add(element);
+                }
                 else
                     _elements.Add(item);
             }
@@ -87,7 +96,7 @@ namespace DinaFramework.Core
                 UpdateDimensions();
             SortElements();
         }
-        
+
         /// <summary>
         /// Obtient ou définit la position du groupe. La modification de la position déplace également ses éléments.
         /// </summary>
@@ -277,7 +286,8 @@ namespace DinaFramework.Core
         /// <returns>L'élément titre ajouté.</returns>
         public IDrawingElement AddTitle(IDrawingElement title, Color? framecolor = null, int? framepadding = null, int? framethickness = null)
         {
-            if (_title != null && title != null)
+            ArgumentNullException.ThrowIfNull(title, nameof(title));
+            if (_title != null)
                 _title = null;
             _title = title;
             // Ajout du cadre

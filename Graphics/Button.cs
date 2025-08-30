@@ -15,7 +15,7 @@ namespace DinaFramework.Graphics
     /// <summary>
     /// Classe représentant un bouton graphique interactif avec gestion d'état via flags et événements.
     /// </summary>
-    public class Button : Base, IUpdate, IDraw, ICopyable<Button>, ILocked
+    public class Button : Base, IUpdate, IDraw, ILocked
     {
         private Dictionary<string, object> _originalValues = new Dictionary<string, object>();
         private List<string> _modifiedValues = [];
@@ -23,10 +23,10 @@ namespace DinaFramework.Graphics
         private bool saveOriginalValueCalled;
         private bool saveCalled;
 
-        private DFText _text;
+        private DFText? _text;
         private Panel _background;
-        private Panel _hover;
-        private Sprite _lockedSprite;
+        private Panel? _hover;
+        private Sprite? _lockedSprite;
         private Vector2 _margin = new Vector2(10, 10);
         private Color _lockedColor = Color.Transparent;
 
@@ -39,8 +39,8 @@ namespace DinaFramework.Graphics
         /// <summary>
         /// Initialise un nouveau bouton avec texte et fond coloré.
         /// </summary>
-        public Button(Vector2 position, Vector2 dimensions, SpriteFont font, string content, Color textColor, Action<Button> onClick = null,
-                      Vector2 margin = default, Action<Button> onHover = null, bool withroundcorner = false, int cornerradius = 0)
+        public Button(Vector2 position, Vector2 dimensions, SpriteFont font, string content, Color textColor, Action<Button>? onClick = null,
+                      Vector2 margin = default, Action<Button>? onHover = null, bool withroundcorner = false, int cornerradius = 0)
         {
             ArgumentNullException.ThrowIfNull(font);
 
@@ -53,7 +53,7 @@ namespace DinaFramework.Graphics
             Dimensions = new Vector2(width, height);
             Position = position;
 
-            _background = new Panel(Position, Dimensions, Color.Transparent, Color.Transparent, 1, withroundcorner, cornerradius);
+            _background = _background ?? new Panel(Position, Dimensions, Color.Transparent, Color.Transparent, 1, withroundcorner, cornerradius);
 
             RegisterOnClick(onClick);
             RegisterOnHover(onHover);
@@ -66,7 +66,7 @@ namespace DinaFramework.Graphics
         /// Initialise un nouveau bouton avec texte et image de fond.
         /// </summary>
         public Button(Vector2 position, Vector2 dimensions, SpriteFont font, string content, Color textColor, Texture2D backgroundImage,
-                      Action<Button> onClick = null, Vector2 margin = default, Action<Button> onHover = null)
+                      Action<Button>? onClick = null, Vector2 margin = default, Action<Button>? onHover = null)
             : this(position, dimensions, font, content, textColor, onClick, margin, onHover)
         {
             _background = new Panel(Position, Dimensions, backgroundImage, 0);
@@ -75,7 +75,7 @@ namespace DinaFramework.Graphics
         /// <summary>
         /// Initialise un nouveau bouton avec uniquement une image de fond.
         /// </summary>
-        public Button(Vector2 position, Texture2D backgroundImage, Action<Button> onClick = null, Action<Button> onHover = null)
+        public Button(Vector2 position, Texture2D backgroundImage, Action<Button>? onClick = null, Action<Button>? onHover = null)
         {
             ArgumentNullException.ThrowIfNull(backgroundImage);
             ArgumentNullException.ThrowIfNull(onClick);
@@ -359,45 +359,26 @@ namespace DinaFramework.Graphics
             ArgumentNullException.ThrowIfNull(textures, nameof(textures));
             _hover = CreatePanel(textures);
         }
-
+        /// <summary>
+        /// Permet de définir la couleur de fond lors du survol de la souris.
+        /// </summary>
+        /// <param name="color">Couleur à appliquer lors du survol de la souris.</param>
+        public void SetHoverColor(Color color)
+        {
+            if (_hover != null)
+                _hover.BackgroundColor = color;
+        }
         /// <summary>
         /// Événement déclenché quand le bouton est cliqué.
         /// </summary>
-        public event EventHandler<ButtonEventArgs> OnClicked;
+        public event EventHandler<ButtonEventArgs>? OnClicked;
 
         /// <summary>
         /// Événement déclenché quand le bouton est survolé.
         /// </summary>
-        public event EventHandler<ButtonEventArgs> OnHovered;
+        public event EventHandler<ButtonEventArgs>? OnHovered;
 
-        /// <summary>
-        /// Crée une copie du bouton (sans les événements).
-        /// </summary>
-        public Button Copy()
-        {
-            var copy = new Button()
-            {
-                _background = _background?.Copy(),
-                _locked = _locked,
-                _lockedColor = _lockedColor,
-                _lockedSprite = _lockedSprite?.Copy(),
-                _margin = _margin,
-                _text = _text?.Copy(),
-                BackgroundColor = BackgroundColor,
-                Content = Content,
-                Dimensions = Dimensions,
-                Position = Position,
-                TextColor = TextColor,
-                ZOrder = ZOrder,
-            };
 
-            // Ne pas copier les events OnClicked / OnHovered
-
-            return copy;
-        }
-
-        // Constructeur privé pour Copy()
-        private Button() { }
 
         private void UpdateTextPosition()
         {
@@ -422,12 +403,12 @@ namespace DinaFramework.Graphics
                 textures[3], textures[4], textures[5],
                 textures[6], textures[7], textures[8]);
         }
-        private void RegisterOnClick(Action<Button> onClick)
+        private void RegisterOnClick(Action<Button>? onClick)
         {
             if (onClick != null)
                 OnClicked += (sender, e) => onClick(e.Button);
         }
-        private void RegisterOnHover(Action<Button> onHover)
+        private void RegisterOnHover(Action<Button>? onHover)
         {
             if (onHover != null)
                 OnHovered += (sender, e) => onHover(e.Button);
@@ -435,29 +416,30 @@ namespace DinaFramework.Graphics
 
         private Dictionary<string, object> SaveValues()
         {
-            Dictionary<string, object> values = new Dictionary<string, object>();
+            Dictionary<string, object> values = [];
             // Récupère toutes les propriétés publiques du Panel et les enregistre dans le dictionnaire.
             Type type = this.GetType();
             PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
             foreach (PropertyInfo property in properties)
             {
-                values[property.Name] = property.GetValue(this);
+                var value = property.GetValue(this);
+                if (value != null)
+                    values[property.Name] = value;
             }
             return values;
         }
-        private void RestoreOriginalValues(List<string> modifiedKeys = default)
+        private void RestoreOriginalValues(List<string> modifiedKeys)
         {
+            ArgumentNullException.ThrowIfNull(modifiedKeys, nameof(modifiedKeys));
             if (modifiedKeys.Count == 0)
             {
                 foreach (KeyValuePair<string, object> pair in _originalValues)
                 {
                     // Utilise la réflexion pour définir la valeur de la propriété correspondante.
-                    PropertyInfo property = this.GetType().GetProperty(pair.Key);
+                    PropertyInfo? property = this.GetType().GetProperty(pair.Key);
                     if (property != null)
-                    {
                         property.SetValue(this, pair.Value);
-                    }
                 }
             }
             else
@@ -466,11 +448,9 @@ namespace DinaFramework.Graphics
                 {
                     if (_originalValues.ContainsKey(key))
                     {
-                        PropertyInfo property = this.GetType().GetProperty(key);
+                        PropertyInfo? property = this.GetType().GetProperty(key);
                         if (property != null)
-                        {
                             property.SetValue(this, _originalValues[key]);
-                        }
                     }
                 }
             }

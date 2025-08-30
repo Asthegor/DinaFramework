@@ -70,7 +70,7 @@ namespace DinaFramework.Graphics
         public void Draw(SpriteBatch spritebatch)
         {
             ArgumentNullException.ThrowIfNull(spritebatch, nameof(spritebatch));
-            Texture2D texture = ServiceLocator.Get<Texture2D>(ServiceKey.Texture1px);
+            Texture2D? texture = ServiceLocator.Get<Texture2D>(ServiceKeys.Texture1px);
             if (texture != null)
                 spritebatch.Draw(texture, _position, null, Color, _angle, _origin, _scale, SpriteEffects.None, 0);
         }

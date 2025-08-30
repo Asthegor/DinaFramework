@@ -1,4 +1,4 @@
-﻿using DinaFramework.Controls;
+﻿using DinaFramework.Inputs;
 using DinaFramework.Events;
 using DinaFramework.Exceptions;
 using DinaFramework.Interfaces;
@@ -24,7 +24,7 @@ namespace DinaFramework.Scenes
     /// Elle garantit qu'une seule instance de la classe existe pendant l'exécution du jeu (Singleton).
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class SceneManager : IResource
+    public sealed class SceneManager : IResource, IDisposable
     {
 
         #region === Initialisation & Singleton ===
@@ -39,7 +39,7 @@ namespace DinaFramework.Scenes
             lock (_mutex)
             {
                 _singleton ??= new SceneManager(game);
-                ServiceLocator.Register(ServiceKey.SceneManager, _singleton);
+                ServiceLocator.Register(ServiceKeys.SceneManager, _singleton);
             }
         }
         /// <summary>
@@ -70,36 +70,39 @@ namespace DinaFramework.Scenes
 
             _game = source._game;
             GraphicsDevice = source.GraphicsDevice;
-            Content = new ContentManager(_game.Services, contentRootDirectory);
+            _content = new ContentManager(_game.Services, contentRootDirectory);
 
-            _screenManager = ServiceLocator.Get<ScreenManager>(ServiceKey.ScreenManager);
+            _screenManager = ServiceLocator.Get<ScreenManager>(ServiceKeys.ScreenManager);
+            if (_screenManager == null)
+                throw new InvalidOperationException("ScreenManager non enregistré dans le ServiceLocator.");
             _screenManager.OnResolutionChanged += (sender, e) => HandleSceneManagerResolutionChanged();
 
             _frameworkLogoShown = true;
+            _updateInputManager = false;
 
             _currentScene = null;
             _loadingScreen = null;
-            Controller = DefaultControls.DefaultKeyboard;
         }
         private SceneManager(Game game)
         {
             _game = game;
-            Content = game.Content;
+            _content = game.Content;
             GraphicsDevice = game.GraphicsDevice;
             _currentScene = null;
             _loadingScreen = null;
-            _screenManager = ServiceLocator.Get<ScreenManager>(ServiceKey.ScreenManager);
+            _screenManager = ServiceLocator.Get<ScreenManager>(ServiceKeys.ScreenManager);
+            if (_screenManager == null)
+                throw new InvalidOperationException("ScreenManager non enregistré dans le ServiceLocator.");
             _screenManager.OnResolutionChanged += (sender, e) => HandleSceneManagerResolutionChanged();
-
-            // Par défaut, on utilise le clavier
-            Controller = DefaultControls.DefaultKeyboard;
 
             var pixel = new Texture2D(GraphicsDevice, 1, 1);
             pixel.SetData([Color.White]);
 
+            _updateInputManager = true;
+
             // Enregistrement des textures dans le ServiceLocator
-            ServiceLocator.Register(ServiceKey.Texture1px, pixel);
-            ServiceLocator.Register(ServiceKey.DropDownArrow, InternalAssets.DropDownArrow(GraphicsDevice));
+            ServiceLocator.Register(ServiceKeys.Texture1px, pixel);
+            ServiceLocator.Register(ServiceKeys.DropDownArrow, InternalAssets.DropDownArrow(GraphicsDevice));
         }
         #endregion
 
@@ -112,9 +115,9 @@ namespace DinaFramework.Scenes
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="DuplicateDictionaryKeyException"></exception>
         /// <exception cref="ArgumentNullException"></exception>
-        public void AddScene(SceneKey key, Func<Scene> sceneFactory)
+        public void AddScene(Key<SceneTag> key, Func<Scene> sceneFactory)
         {
-            if (key.Equals(default(SceneKey)) || string.IsNullOrEmpty(key.ToString()))
+            if (key.Equals(default) || string.IsNullOrEmpty(key.ToString()))
                 throw new ArgumentException("SceneKey cannot be null or empty.", nameof(key));
 
             if (_scenes.ContainsKey(key))
@@ -131,9 +134,9 @@ namespace DinaFramework.Scenes
         /// </summary>
         /// <param key="name">Le nom de la scène à supprimer.</param>
         /// <exception cref="ArgumentException">Lancé lorsque le nom est vide.</exception>
-        public void RemoveScene(SceneKey name)
+        public void RemoveScene(Key<SceneTag> name)
         {
-            if (!_scenes.TryGetValue(name, out Scene value))
+            if (!_scenes.TryGetValue(name, out Scene? value))
                 throw new KeyNotFoundException($"The scene '{name}' does not exist and cannot be removed.");
 
             if (_currentScene == value)
@@ -146,7 +149,7 @@ namespace DinaFramework.Scenes
         /// </summary>
         /// <param key="name">Le nom de la scène à définir comme actuelle.</param>
         /// <param key="withLoadingScreen">Indique si un écran de chargement doit être affiché pendant la transition.</param>
-        public async void SetCurrentScene(SceneKey name, bool withLoadingScreen = false)
+        public async void SetCurrentScene(Key<SceneTag> name, bool withLoadingScreen = false)
         {
             // Interception du premier appel utilisateur
             if (!_frameworkLogoShown)
@@ -170,16 +173,14 @@ namespace DinaFramework.Scenes
             await BaseSetCurrentScene(name, withLoadingScreen);
 #pragma warning restore CA2007
         }
-        private async Task BaseSetCurrentScene(SceneKey name, bool withLoadingScreen = false)
+        private async Task BaseSetCurrentScene(Key<SceneTag> name, bool withLoadingScreen = false)
         {
-            if (!_scenes.TryGetValue(name, out Scene value))
+            if (!_scenes.TryGetValue(name, out Scene? value))
             {
                 Trace.WriteLine("The scene '" + name + "' does not exists.");
                 _currentScene = null;
                 return;
             }
-
-            ControllerKey.ResetAllKeys();
 
             _currentScene = _scenes[name];
             _currentSceneName = name;
@@ -228,6 +229,8 @@ namespace DinaFramework.Scenes
         /// <param key="gameTime">Le temps de jeu utilisé pour mettre à jour la scène.</param>
         public void Update(GameTime gameTime)
         {
+            if (_updateInputManager)
+                InputManager.Update();
             if (!_currentSceneLoaded)
                 _loadingScreen?.Update(gameTime);
             else if (_currentScene != null && _currentScene.Loaded)
@@ -272,7 +275,7 @@ namespace DinaFramework.Scenes
             Type type = typeof(T);
             if (!Scene.IsAssignableFrom(type))
                 throw new InvalidSceneTypeException(type);
-            _loadingScreen = (Scene)Activator.CreateInstance(type, this);
+            _loadingScreen = (Scene)Activator.CreateInstance(type, this)!;
         }
         /// <summary>
         /// Réinitialise l'écran de chargement (progression) et modifie le message affiché.
@@ -280,7 +283,7 @@ namespace DinaFramework.Scenes
         /// <param name="message">Message affiché dans l'écran de chargement.</param>
         public void ResetLoadingScreen(string message)
         {
-            _loadingScreen.Reset();
+            _loadingScreen?.Reset();
             if (_loadingScreen is ILoadingScreen ls)
                 ls.Text = message;
         }
@@ -296,6 +299,8 @@ namespace DinaFramework.Scenes
         /// <returns>Vrai si la ressource a été ajoutée ou mise à jour, sinon faux.</returns>
         public bool AddResource<T>(string resourceName, T resource)
         {
+            if (resource == null)
+                throw new ArgumentNullException(nameof(resource), "Resource cannot be null.");
             if (!_values.TryAdd(resourceName, resource))
             {
                 _values[resourceName] = resource;
@@ -312,7 +317,7 @@ namespace DinaFramework.Scenes
         /// <exception cref="KeyNotFoundException">Lancé lorsque la ressource n'est pas trouvée.</exception>
         public T GetResource<T>(string resourceName)
         {
-            if (_values.TryGetValue(resourceName, out object value))
+            if (_values.TryGetValue(resourceName, out var value))
                 return (T)value;
             throw new KeyNotFoundException($"Resource '{resourceName}' not found in the resource manager.");
         }
@@ -350,11 +355,11 @@ namespace DinaFramework.Scenes
 
         public void SetSpriteBatchParameters(
             SpriteSortMode? sortMode = null,
-            BlendState blendState = null,
-            SamplerState samplerState = null,
-            DepthStencilState depthStencilState = null,
-            RasterizerState rasterizerState = null,
-            Effect effect = null,
+            BlendState? blendState = null,
+            SamplerState? samplerState = null,
+            DepthStencilState? depthStencilState = null,
+            RasterizerState? rasterizerState = null,
+            Effect? effect = null,
             Matrix? matrix = null)
         {
             _currentSpriteSortMode = sortMode ?? _currentSpriteSortMode;
@@ -443,13 +448,15 @@ namespace DinaFramework.Scenes
         /// Quitte le jeu.
         /// </summary>
         public void Exit() { _game.Exit(); }
+
         /// <summary>
         /// Événement déclenché lorsque la résolution de la scène change.
         /// Les abonnés peuvent réagir à ce changement pour ajuster le rendu ou l'interface.
         /// </summary>
 #pragma warning disable CS0067
-        public event EventHandler<SceneEventArgs> OnResolutionChanged;
+        public event EventHandler<SceneEventArgs>? OnResolutionChanged;
 #pragma warning restore CS0067
+
         private void HandleSceneManagerResolutionChanged()
         {
             if (_currentScene != null)
@@ -465,47 +472,48 @@ namespace DinaFramework.Scenes
 
         #region === Attributs & membres internes ===
         // Singleton interne
-        private static SceneManager _singleton;
+        private static SceneManager? _singleton;
         private static readonly object _mutex = new object();
 
         // Game et Content
         private readonly Game _game;
-        private ContentManager _content;
+        private readonly ContentManager _content;
 
         // Scènes
-        private readonly Dictionary<SceneKey, Scene> _scenes = [];
-        private Scene _currentScene;
-        private SceneKey _currentSceneName;
-        private Scene _loadingScreen;
+        private readonly Dictionary<Key<SceneTag>, Scene> _scenes = [];
+        private Scene? _currentScene;
+        private Key<SceneTag> _currentSceneName;
+        private Scene? _loadingScreen;
         private bool _currentSceneLoaded;
         private float _loadingProgress;
         private bool _frameworkLogoShown;
-        private SceneKey _nextSceneName;
+        private bool _updateInputManager;
+        private Key<SceneTag> _nextSceneName;
         private bool _nextSceneWithLoading;
 
         // Ressources
         private readonly Dictionary<string, object> _values = [];
 
         // Screen & RenderTarget
-        private ScreenManager _screenManager;
+        private readonly ScreenManager? _screenManager;
         private Color _backgroundcolor;
 
         // SpriteBatch parameters
-#pragma warning disable CS0649
-        private BlendState _currentBlendState = BlendState.AlphaBlend;
+        private BlendState? _currentBlendState = BlendState.AlphaBlend;
         private SpriteSortMode _currentSpriteSortMode = SpriteSortMode.Deferred;
-        private SamplerState _currentSamplerState;
-        private DepthStencilState _currentDepthStencilState;
-        private RasterizerState _currentRasterizerState;
-        private Effect _currentEffect;
+        private SamplerState? _currentSamplerState;
+        private DepthStencilState? _currentDepthStencilState;
+        private RasterizerState? _currentRasterizerState;
+        private Effect? _currentEffect;
         private Matrix? _currentMatrix;
-        private BlendState _defaultBlendState = BlendState.AlphaBlend;
-        private SpriteSortMode _defaultSpriteSortMode = SpriteSortMode.Deferred;
-        private SamplerState _defaultSamplerState;
-        private DepthStencilState _defaultDepthStencilState;
-        private RasterizerState _defaultRasterizerState;
-        private Effect _defaultEffect;
-        private Matrix? _defaultMatrix;
+#pragma warning disable CS0649
+        private readonly BlendState? _defaultBlendState = BlendState.AlphaBlend;
+        private readonly SpriteSortMode _defaultSpriteSortMode = SpriteSortMode.Deferred;
+        private readonly SamplerState? _defaultSamplerState;
+        private readonly DepthStencilState? _defaultDepthStencilState;
+        private readonly RasterizerState? _defaultRasterizerState;
+        private readonly Effect? _defaultEffect;
+        private readonly Matrix? _defaultMatrix;
 #pragma warning restore CS0649
         #endregion
 
@@ -525,19 +533,28 @@ namespace DinaFramework.Scenes
         /// <summary>
         /// Obtient les dimensions de l'écran du jeu sous forme de Vector2 (largeur et hauteur).
         /// </summary>
-        public Vector2 ScreenDimensions => _screenManager.CurrentResolution.ToVector2();
+        public Vector2 ScreenDimensions
+        {
+            get
+            {
+                if (_screenManager == null)
+                    throw new InvalidOperationException("ScreenManager non enregistré dans le ServiceLocator.");
+                return _screenManager.CurrentResolution.ToVector2();
+            }
+        }
+
         /// <summary>
         /// Obtient le nom de la scène courante.
         /// </summary>
-        public SceneKey CurrentSceneName => _currentSceneName;
+        public Key<SceneTag> CurrentSceneName => _currentSceneName;
         /// <summary>
         /// Obtient la scène courante.
         /// </summary>
-        public Scene CurrentScene => _currentScene;
+        public Scene? CurrentScene => _currentScene;
         /// <summary>
         /// Obtient le ContentManager utilisé pour charger et gérer les ressources du jeu.
         /// </summary>
-        public ContentManager Content { get => _content; private set => _content = value; }
+        public ContentManager Content => _content;
         /// <summary>
         /// Obtient ou définit la couleur de fond utilisée pour le rendu des scènes.
         /// </summary>
@@ -549,12 +566,19 @@ namespace DinaFramework.Scenes
         /// <summary>
         /// Obtient ou définit le SpriteBatch utilisé pour dessiner les sprites 2D.
         /// </summary>
-        public SpriteBatch SpriteBatch { get; set; }
-        /// <summary>
-        /// Obtient le contrôleur du joueur pour gérer les entrées du joueur.
-        /// </summary>
-        public PlayerController Controller { get; set; }
+        public SpriteBatch? SpriteBatch { get; set; }
         #endregion
+
+        /// <summary>
+        /// Libère les ressources utilisées par le SceneManager.
+        /// </summary>
+        public void Dispose()
+        {
+            _content.Dispose();
+            _currentBlendState?.Dispose();
+            _defaultBlendState?.Dispose();
+            _defaultSamplerState?.Dispose();
+        }
     }
 }
 

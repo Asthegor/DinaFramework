@@ -27,8 +27,8 @@ namespace DinaFramework.Graphics
         private readonly List<Panel> _listPanels = [];
         private readonly List<IElement> _listVisibleItems = [];
 
-        private IElement _leftSelectedItem;
-        private IElement _rightSelectedItem;
+        private IElement? _leftSelectedItem;
+        private IElement? _rightSelectedItem;
 
         private Vector2 _maxElementDimensions;
 
@@ -112,12 +112,12 @@ namespace DinaFramework.Graphics
         /// </summary>
         public int Value
         {
-            get => _elements.IndexOf(_leftSelectedItem);
+            get => _leftSelectedItem is null ? -1 : _elements.IndexOf(_leftSelectedItem);
             set
             {
                 _leftSelectedItem = (value < 0 || value >= _listVisibleItems.Count) ? null : _leftSelectedItem = _elements.FirstOrDefault(e => e == _listVisibleItems[value]);
 
-                int selectedIndex = _listVisibleItems.IndexOf(_leftSelectedItem);
+                int? selectedIndex = _leftSelectedItem is null ? -1 : _listVisibleItems.IndexOf(_leftSelectedItem);
                 for (int index = 0; index < _listPanels.Count; index++)
                     _listPanels[index].BackgroundColor = (index == selectedIndex) ? _defaultSelectionColor : Color.Transparent;
             }
@@ -127,7 +127,7 @@ namespace DinaFramework.Graphics
         /// </summary>
         public int ContextMenuItemIndex
         {
-            get => _elements.IndexOf(_rightSelectedItem);
+            get => _rightSelectedItem is null ? -1 : _elements.IndexOf(_rightSelectedItem);
             set
             {
                 if (value < 0 || value >= _listVisibleItems.Count)
@@ -145,11 +145,11 @@ namespace DinaFramework.Graphics
         /// <summary>
         /// Événements lorsqu'on clique droit sur un élément de la liste (en plus de le sélectionner).
         /// </summary>
-        public event EventHandler<ListBoxClickEventArgs> OnRightClick;
+        public event EventHandler<ListBoxClickEventArgs>? OnRightClick;
         /// <summary>
         /// Événements lorsque l'on clique gauche sur un élément de la liste.
         /// </summary>
-        public event EventHandler<ListBoxClickEventArgs> OnLeftClick;
+        public event EventHandler<ListBoxClickEventArgs>? OnLeftClick;
 
 
         /// <summary>
@@ -168,14 +168,14 @@ namespace DinaFramework.Graphics
                     UpdateLeftSelectedItem(p, index);
                     _rightSelectedItem = null;
                     ContextMenuItemIndex = -1;
-                    OnLeftClick?.Invoke(this, new ListBoxClickEventArgs(_elements.IndexOf(_leftSelectedItem)));
+                    OnLeftClick?.Invoke(this, new ListBoxClickEventArgs(_leftSelectedItem is null ? -1 : _elements.IndexOf(_leftSelectedItem)));
                 }
                 else if (p.IsRightClicked())
                 {
                     UpdateLeftSelectedItem(p, index, true);
                     _rightSelectedItem = _listVisibleItems[index];
                     ContextMenuItemIndex = index;
-                    OnRightClick?.Invoke(this, new ListBoxClickEventArgs(_elements.IndexOf(_rightSelectedItem)));
+                    OnRightClick?.Invoke(this, new ListBoxClickEventArgs(_rightSelectedItem is null ? -1 : _elements.IndexOf(_rightSelectedItem)));
                 }
             }
         }
