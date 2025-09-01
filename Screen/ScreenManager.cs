@@ -1,4 +1,5 @@
-﻿using DinaFramework.Events;
+﻿using DinaFramework.Enums;
+using DinaFramework.Events;
 using DinaFramework.Services;
 
 using Microsoft.Xna.Framework;
@@ -6,6 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DinaFramework.Screen
 {
@@ -20,6 +22,8 @@ namespace DinaFramework.Screen
     {
         private readonly GraphicsDeviceManager _graphics;
         private readonly GameWindow _window;
+        private Point _currentResolution;
+        private ResolutionFontSize _currentFontSize;
 
         /// <summary>
         /// Initialise une nouvelle instance de la classe ScreenManager et l'enregistre éventuellement dans le ServiceLocator.
@@ -31,13 +35,40 @@ namespace DinaFramework.Screen
             _graphics = graphics ?? throw new ArgumentNullException(nameof(graphics));
             _window = window ?? throw new ArgumentNullException(nameof(window));
             _window.ClientSizeChanged += HandleResize!;
+            _currentResolution = new Point(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
+            _currentFontSize = ResolutionFontManager.GetFontSizeForResolution(_currentResolution);
         }
 
+        private static List<Point>? _allowedResolutions;
+        private static List<DisplayMode>? _cachedResolutions;
+        /// <summary>
+        /// Définit la liste des résolutions autorisées pour le jeu.
+        /// </summary>
+        public static void SetAllowedResolutions(IEnumerable<Point>? resolutions)
+        {
+            _allowedResolutions = resolutions?.ToList();
+
+            var all = GraphicsAdapter.DefaultAdapter.SupportedDisplayModes;
+
+            if (_allowedResolutions == null || _allowedResolutions.Count == 0)
+                _cachedResolutions = null;
+            else
+                _cachedResolutions = all.Where(r => _allowedResolutions.Any(a => a.X == r.Width && a.Y == r.Height)).ToList();
+        }
         /// <summary>
         /// Permet de récupérer la liste des résolutions de la carte graphique.
         /// </summary>
         /// <returns></returns>
-        public static IEnumerable<DisplayMode> AvailableResolutions => GraphicsAdapter.DefaultAdapter.SupportedDisplayModes;
+        public static IEnumerable<DisplayMode> AvailableResolutions
+        {
+            get
+            {
+                if (_cachedResolutions != null)
+                    return _cachedResolutions;
+                return GraphicsAdapter.DefaultAdapter.SupportedDisplayModes;
+            }
+        }
+
 
         /// <summary>
         /// Permet de savoir si l'affiche est en mode plein écran (true) ou fenêtré (false).
@@ -47,8 +78,11 @@ namespace DinaFramework.Screen
         /// <summary>
         /// Retourne la résolution actuelle.
         /// </summary>
-        public Point CurrentResolution => new Point(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
-
+        public Point CurrentResolution => _currentResolution;
+        /// <summary>
+        /// Retourne la taille de police adaptée à la résolution actuelle.
+        /// </summary>
+        public ResolutionFontSize CurrentFontSize => _currentFontSize;
 
         /// <summary>
         /// Actions lors du changement de résolution.
@@ -65,6 +99,8 @@ namespace DinaFramework.Screen
             _graphics.PreferredBackBufferWidth = width;
             _graphics.PreferredBackBufferHeight = height;
             _graphics.ApplyChanges();
+            _currentResolution = new Point(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
+            _currentFontSize = ResolutionFontManager.GetFontSizeForResolution(_currentResolution);
             OnResolutionChanged?.Invoke(this, new ScreenManagerEventArgs(this));
         }
 

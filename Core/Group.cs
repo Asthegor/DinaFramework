@@ -267,7 +267,7 @@ namespace DinaFramework.Core
             if (shadowcolor.HasValue && shadowoffset.HasValue)
                 _title = new ShadowText(font, text, textcolor, Vector2.Zero, shadowcolor.Value, shadowoffset.Value, zorder: zorder);
             else
-                _title = new DFText(font, text, textcolor, Vector2.Zero, zorder: zorder);
+                _title = new Text(font, text, textcolor, Vector2.Zero, zorder: zorder);
 
             Rectangle bounds = CalculateBounds();
             bounds.Inflate(FramePadding, FramePadding);

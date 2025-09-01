@@ -157,13 +157,13 @@ namespace DinaFramework.Menus
         {
             get
             {
-                if (_item is DFText textitem)
+                if (_item is Text textitem)
                     return textitem.Content;
                 return string.Empty;
             }
             set
             {
-                if (_item is DFText textitem)
+                if (_item is Text textitem)
                     textitem.Content = value;
             }
         }
@@ -183,16 +183,16 @@ namespace DinaFramework.Menus
         {
             get
             {
-                if (_item is DFText textitem)
+                if (_item is Text textitem)
                     return textitem.Font;
-                throw new InvalidOperationException("L'item n'est pas un DFText");
+                throw new InvalidOperationException("L'item n'est pas un Text");
             }
             set
             {
-                if (_item is DFText textitem)
+                if (_item is Text textitem)
                     textitem.Font = value;
                 else
-                    throw new InvalidOperationException("L'item n'est pas un DFText");
+                    throw new InvalidOperationException("L'item n'est pas un Text");
             }
         }
 
@@ -214,7 +214,7 @@ namespace DinaFramework.Menus
                         Func<MenuItem, MenuItem>? activation = null,
                         Vector2 position = default,
                         HorizontalAlignment halign = HorizontalAlignment.Left, VerticalAlignment valign = VerticalAlignment.Top) :
-            this(new DFText(font, text, color, position, halign, valign, 0), selection, deselection, activation, position)
+            this(new Text(font, text, color, position, halign, valign, 0), selection, deselection, activation, position)
         {
         }
         /// <summary>

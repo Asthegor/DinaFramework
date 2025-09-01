@@ -23,7 +23,7 @@ namespace DinaFramework.Graphics
         private bool saveOriginalValueCalled;
         private bool saveCalled;
 
-        private DFText? _text;
+        private Text? _text;
         private Panel _background;
         private Panel? _hover;
         private Sprite? _lockedSprite;
@@ -44,7 +44,7 @@ namespace DinaFramework.Graphics
         {
             ArgumentNullException.ThrowIfNull(font);
 
-            _text = new DFText(font, content, textColor, horizontalalignment: Enums.HorizontalAlignment.Center, verticalalignment: Enums.VerticalAlignment.Center);
+            _text = new Text(font, content, textColor, horizontalalignment: Enums.HorizontalAlignment.Center, verticalalignment: Enums.VerticalAlignment.Center);
             _margin = margin != default ? margin : _margin;
 
             Vector2 backgroundDim = _text.TextDimensions + _margin * 2;

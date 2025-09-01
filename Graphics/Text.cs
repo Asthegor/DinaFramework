@@ -15,7 +15,9 @@ namespace DinaFramework.Graphics
     /// <summary>
     /// Représente un texte à afficher avec des options de temporisation et d'alignement.
     /// </summary>
-    public class DFText : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<DFText>, IDrawingElement
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1724: Type names should not match namespaces",
+        Justification = "Text est clair dans le contexte du framework. Pas d'utilisation de System.Drawing dans le framework.")]
+    public class Text : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<Text>, IDrawingElement
     {
         private SpriteFont _font;
         private string _content;
@@ -117,7 +119,7 @@ namespace DinaFramework.Graphics
         /// <param name="horizontalalignment">L'alignement horizontal du texte (optionnel).</param>
         /// <param name="verticalalignment">L'alignement vertical du texte (optionnel).</param>
         /// <param name="zorder">L'ordre de superposition du texte (optionnel).</param>
-        public DFText(SpriteFont font, string content, Color color, Vector2 position = default, HorizontalAlignment horizontalalignment = HorizontalAlignment.Left, VerticalAlignment verticalalignment = VerticalAlignment.Top, int zorder = 0)
+        public Text(SpriteFont font, string content, Color color, Vector2 position = default, HorizontalAlignment horizontalalignment = HorizontalAlignment.Left, VerticalAlignment verticalalignment = VerticalAlignment.Top, int zorder = 0)
         {
             ArgumentNullException.ThrowIfNull(font);
 
@@ -182,7 +184,7 @@ namespace DinaFramework.Graphics
         /// <summary>
         /// Déclenche les événements lorsque le panneau est survolé.
         /// </summary>
-        public event EventHandler<DFTextEventArgs>? OnHovered;
+        public event EventHandler<TextEventArgs>? OnHovered;
 
         /// <summary>
         /// Définit les alignements horizontal et vertical du texte.
@@ -260,7 +262,7 @@ namespace DinaFramework.Graphics
 
                 if (_displayed && new Rectangle(Position.ToPoint(), Dimensions.ToPoint()).Contains(Mouse.GetState().Position))
                 {
-                    OnHovered?.Invoke(this, new DFTextEventArgs(this));
+                    OnHovered?.Invoke(this, new TextEventArgs(this));
                 }
             }
         }
@@ -285,9 +287,9 @@ namespace DinaFramework.Graphics
         /// Crée une copie de l'objet actuel.
         /// </summary>
         /// <returns>Une nouvelle instance de Text avec les mêmes propriétés.</returns>
-        public DFText Copy()
+        public Text Copy()
         {
-            return new DFText(Font, Content, Color, Position, _halign, _valign, ZOrder)
+            return new Text(Font, Content, Color, Position, _halign, _valign, ZOrder)
             {
                 _displayed = _displayed,
                 _displayposition = _displayposition,

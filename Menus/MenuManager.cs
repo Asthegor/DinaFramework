@@ -163,7 +163,7 @@ namespace DinaFramework.Menus
             if (shadowcolor.HasValue && shadowoffset.HasValue)
                 title = new ShadowText(font, text, color, position, shadowcolor.Value, shadowoffset.Value, zorder: zorder);
             else
-                title = new DFText(font, text, color, position, zorder: zorder);
+                title = new Text(font, text, color, position, zorder: zorder);
             AddTitleToGroups(title);
             return title;
         }
@@ -204,7 +204,7 @@ namespace DinaFramework.Menus
         {
             foreach (var title in _titles)
             {
-                if (title is DFText titletext)
+                if (title is Text titletext)
                     titletext.Font = font;
                 if (title is ShadowText titleshadowtext)
                     titleshadowtext.Font = font;

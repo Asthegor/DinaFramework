@@ -9,7 +9,7 @@ namespace DinaFramework.Screen
     /// Gestionnaire de taille de police adaptée à la résolution d'écran.
     /// Détermine la taille de police à utiliser selon la résolution 16:9 la plus grande qui tient dans l'écran.
     /// </summary>
-    public static class ResolutionFontManager
+    internal static class ResolutionFontManager
     {
         private const int W720 = 1280, H720 = 720;
         private const int W1080 = 1920, H1080 = 1080;
@@ -31,9 +31,9 @@ namespace DinaFramework.Screen
         /// </summary>
         /// <param name="screenResolution">Résolution de l'écran.</param>
         /// <returns></returns>
-        public static ResolutionFontSize GetFontSizeForResolution(Vector2 screenResolution)
+        public static ResolutionFontSize GetFontSizeForResolution(Point screenResolution)
         {
-            return GetFontSizeForResolution((int)screenResolution.X, (int)screenResolution.Y);
+            return GetFontSizeForResolution(screenResolution.X, screenResolution.Y);
         }
         /// <summary>
         /// Permet de récupérer le type de taille de police selon la résolution d'écran fournie.

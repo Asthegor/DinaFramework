@@ -34,20 +34,6 @@ namespace DinaFramework.Audio
         private bool _dispose;
 
         /// <summary>
-        /// Volume global de la musique (0.0 à 1.0).
-        /// </summary>
-        public static float MusicVolume
-        {
-            get => MediaPlayer.Volume;
-            set => MediaPlayer.Volume = MathHelper.Clamp(value, 0f, 1f);
-        }
-
-        /// <summary>
-        /// Volume global des effets sonores (0.0 à 1.0).
-        /// </summary>
-        public float SoundVolume { get; set; } = 1f;
-
-        /// <summary>
         /// La chanson actuellement en cours de lecture.
         /// </summary>
         public Song? CurrentSong => _currentSong;
@@ -98,7 +84,7 @@ namespace DinaFramework.Audio
                 var sound = _content.Load<SoundEffect>(assetName);
                 _sounds[key] = sound;
                 var instance = sound.CreateInstance();
-                instance.Volume = SoundVolume;
+                instance.Volume = SoundVolume * MasterVolume;
                 _soundInstances[key] = instance;
             }
         }
@@ -120,9 +106,9 @@ namespace DinaFramework.Audio
                 {
                     StopSong();
                     _currentSong = song;
+                    MediaPlayer.IsRepeating = loop;
+                    MediaPlayer.Play(song);
                 }
-                MediaPlayer.IsRepeating = loop;
-                MediaPlayer.Play(song);
             }
         }
 
@@ -160,6 +146,64 @@ namespace DinaFramework.Audio
         {
             if (_soundInstances.TryGetValue(key, out var instance))
                 instance.Stop();
+        }
+
+        #endregion
+
+        #region Volumes
+        private float _masterVolume = 1f;
+        private float _musicVolume = 1f;
+        private float _soundVolume = 1f;
+
+        /// <summary>
+        /// Volume global de la musique (0.0 à 1.0).
+        /// </summary>
+        public float MusicVolume
+        {
+            get => _musicVolume;
+            set
+            {
+                _musicVolume = MathHelper.Clamp(value, 0f, 1f);
+                UpdateMusicVolume();
+            }
+        }
+        /// <summary>
+        /// Volume global des effets sonores (0.0 à 1.0).
+        /// </summary>
+        public float SoundVolume
+        {
+            get => _soundVolume;
+            set
+            {
+                _soundVolume = MathHelper.Clamp(value, 0f, 1f);
+                UpdateSoundVolume();
+            }
+        }
+        /// <summary>
+        /// Volume maître (0.0 à 1.0) appliqué à la musique et aux effets sonores.
+        /// </summary>
+        public float MasterVolume
+        {
+            get => _masterVolume;
+            set
+            {
+                _masterVolume = MathHelper.Clamp(value, 0f, 1f);
+                UpdateAllVolumes();
+            }
+        }
+        private void UpdateAllVolumes()
+        {
+            UpdateMusicVolume();
+            UpdateSoundVolume();
+        }
+        private void UpdateMusicVolume()
+        {
+            MediaPlayer.Volume = _masterVolume * _musicVolume;
+        }
+        private void UpdateSoundVolume()
+        {
+            foreach(var sound in _soundInstances.Values)
+                sound.Volume = _masterVolume * _soundVolume;
         }
 
         #endregion

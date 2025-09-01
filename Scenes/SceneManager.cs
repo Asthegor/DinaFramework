@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using DinaFramework.Enums;
 
 namespace DinaFramework.Scenes
 {
@@ -540,6 +541,18 @@ namespace DinaFramework.Scenes
                 if (_screenManager == null)
                     throw new InvalidOperationException("ScreenManager non enregistré dans le ServiceLocator.");
                 return _screenManager.CurrentResolution.ToVector2();
+            }
+        }
+        /// <summary>
+        /// Obtient le type de taille de police adapté à la résolution d'écran actuelle.
+        /// </summary>
+        public ResolutionFontSize CurrentFontSize
+        {
+            get
+            {
+                if (_screenManager == null)
+                    throw new InvalidOperationException("ScreenManager non enregistré dans le ServiceLocator.");
+                return _screenManager.CurrentFontSize;
             }
         }
 

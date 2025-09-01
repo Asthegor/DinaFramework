@@ -20,9 +20,9 @@ namespace DinaFramework.Graphics
 
         private readonly Group _inputTextGroup = [];
         private readonly Panel _panel;
-        private readonly DFText _placeHolder;
-        private readonly DFText _text;
-        private readonly DFText _cursor;
+        private readonly Text _placeHolder;
+        private readonly Text _text;
+        private readonly Text _cursor;
         private bool _visible;
         private bool _isActive;
 
@@ -66,9 +66,9 @@ namespace DinaFramework.Graphics
 
             Vector2 pos = Vector2.Zero;
 
-            _placeHolder = new DFText(font, placeholder, placeholdercolor, pos + offset / 2);
+            _placeHolder = new Text(font, placeholder, placeholdercolor, pos + offset / 2);
             _panel = new Panel(pos, dimensions, backgroundcolor, bordercolor, thickness);
-            _text = new DFText(font, content, color, pos + offset / 2);
+            _text = new Text(font, content, color, pos + offset / 2);
 
             if (dimensions == default)
             {
@@ -81,7 +81,7 @@ namespace DinaFramework.Graphics
                 _placeHolder.Visible = false;
 
 
-            _cursor = new DFText(font, "|", color);
+            _cursor = new Text(font, "|", color);
             _cursor.SetTimers(0.5f, 1f, -1); //0.5s d'attente, 1s d'affichage, -1: boucle infinie
             _cursor.Visible = false;
 
