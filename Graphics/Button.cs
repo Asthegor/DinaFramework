@@ -15,7 +15,7 @@ namespace DinaFramework.Graphics
     /// <summary>
     /// Classe représentant un bouton graphique interactif avec gestion d'état via flags et événements.
     /// </summary>
-    public class Button : Base, IUpdate, IDraw, ILocked
+    public class Button : Base, IUpdate, IDraw, ILocked, IClickable<ButtonEventArgs>//, IHovered<ButtonEventArgs>
     {
         private Dictionary<string, object> _originalValues = new Dictionary<string, object>();
         private List<string> _modifiedValues = [];
@@ -373,6 +373,7 @@ namespace DinaFramework.Graphics
         /// </summary>
         public event EventHandler<ButtonEventArgs>? OnClicked;
 
+
         /// <summary>
         /// Événement déclenché quand le bouton est survolé.
         /// </summary>
@@ -414,7 +415,7 @@ namespace DinaFramework.Graphics
                 OnHovered += (sender, e) => onHover(e.Button);
         }
 
-        private Dictionary<string, object> SaveValues()
+        Dictionary<string, object> SaveValues()
         {
             Dictionary<string, object> values = [];
             // Récupère toutes les propriétés publiques du Panel et les enregistre dans le dictionnaire.
@@ -429,7 +430,7 @@ namespace DinaFramework.Graphics
             }
             return values;
         }
-        private void RestoreOriginalValues(List<string> modifiedKeys)
+        void RestoreOriginalValues(List<string> modifiedKeys)
         {
             ArgumentNullException.ThrowIfNull(modifiedKeys, nameof(modifiedKeys));
             if (modifiedKeys.Count == 0)
@@ -455,5 +456,22 @@ namespace DinaFramework.Graphics
                 }
             }
         }
+        /// <summary>
+        /// Indique si le bouton a été cliqué.
+        /// </summary>
+        /// <returns></returns>
+        public bool IsClicked()
+        {
+            return _background.IsClicked();
+        }
+        /// <summary>
+        /// Indique si le bouton est survolé.
+        /// </summary>
+        /// <returns></returns>
+        public bool IsHovered()
+        {
+            return _background.IsHovered();
+        }
+
     }
 }

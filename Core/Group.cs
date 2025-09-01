@@ -5,6 +5,7 @@ using DinaFramework.Services;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 
 using System;
 using System.Collections;
@@ -17,7 +18,7 @@ namespace DinaFramework.Core
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1710:Identifiers should have correct suffix",
         Justification = "Group est clair dans le contexte du framework.")]
-    public class Group : Base, IDraw, IVisible, IEnumerable<IElement>, ICollide, IUpdate, IClickable, IColor
+    public class Group : Base, IDraw, IVisible, IEnumerable<IElement>, ICollide, IUpdate, IColor, IClickable, IHovered
     {
         private List<IElement> _elements = [];
         private int index;
@@ -27,6 +28,7 @@ namespace DinaFramework.Core
         private Texture2D _pixel;
         private IDrawingElement? _title;
         private Rectangle? _titleRect;
+        private bool _hovered;
 
         /// <summary>
         /// Initialise une nouvelle instance de la classe Group avec les propriétés spécifiées.
@@ -173,12 +175,15 @@ namespace DinaFramework.Core
             foreach (var item in _elements)
             {
                 if (item is IClickable itemclickable)
-                    if (itemclickable.IsClicked() == true)
-                        return true;
+                    return itemclickable.IsClicked();
             }
             return false;
         }
-
+        /// <summary>
+        /// Vérifie si un élément du groupe est cliqué.
+        /// </summary>
+        /// <returns>True si un élément est cliqué, sinon false.</returns>
+        public bool IsHovered() => _hovered;
         /// <summary>
         /// Obtient le nombre d'éléments dans le groupe.
         /// </summary>
@@ -452,6 +457,13 @@ namespace DinaFramework.Core
         /// <param name="gametime">Temps de jeu actuel.</param>
         public void Update(GameTime gametime)
         {
+            MouseState ms = Mouse.GetState();
+            Rectangle groupRect = new Rectangle((int)Position.X, (int)Position.Y, (int)Dimensions.X, (int)Dimensions.Y);
+            if (groupRect.Contains(ms.Position))
+                _hovered = true;
+            else
+                _hovered = false;
+
             foreach (var elem in _elements)
             {
                 if (elem is IUpdate uelem)

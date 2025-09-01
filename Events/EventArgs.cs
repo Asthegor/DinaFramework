@@ -1,4 +1,6 @@
 ﻿using DinaFramework.Graphics;
+using DinaFramework.Interfaces;
+using DinaFramework.Menus;
 using DinaFramework.Scenes;
 using DinaFramework.Screen;
 
@@ -9,7 +11,7 @@ namespace DinaFramework.Events
     /// <summary>
     /// Contient les informations d'un événement lié à un <see cref="Button"/>.
     /// </summary>
-    public class ButtonEventArgs : EventArgs
+    public class ButtonEventArgs : EventArgs, IEventArgs
     {
         /// <summary>
         /// Le bouton qui a déclenché l'événement.
@@ -26,7 +28,7 @@ namespace DinaFramework.Events
     /// <summary>
     /// Contient les informations d'un événement lié à une <see cref="CheckBox"/>.
     /// </summary>
-    public class CheckBoxEventArgs : EventArgs
+    public class CheckBoxEventArgs : EventArgs, IEventArgs
     {
         /// <summary>
         /// La case à cocher qui a déclenché l'événement.
@@ -42,7 +44,7 @@ namespace DinaFramework.Events
     /// <summary>
     /// Contient les informations d'un événement lié à un <see cref="DFText"/>.
     /// </summary>
-    public class DFTextEventArgs : EventArgs
+    public class DFTextEventArgs : EventArgs, IEventArgs
     {
         /// <summary>
         /// Le DFText qui a déclenché l'événement.
@@ -58,7 +60,7 @@ namespace DinaFramework.Events
     /// <summary>
     /// Contient les informations d'un événement lié à une <see cref="ListBox"/>.
     /// </summary>
-    public class ListBoxEventArgs : EventArgs
+    public class ListBoxEventArgs : EventArgs, IEventArgs
     {
         /// <summary>
         /// La liste qui a déclenché l'événement.
@@ -75,7 +77,7 @@ namespace DinaFramework.Events
     /// <summary>
     /// Contient les informations d'un clic sur un élément d'une <see cref="ListBox"/>.
     /// </summary>
-    public class ListBoxClickEventArgs : EventArgs
+    public class ListBoxClickEventArgs : EventArgs, IEventArgs
     {
         /// <summary>
         /// L'index de l'élément cliqué dans la liste.
@@ -90,9 +92,26 @@ namespace DinaFramework.Events
     }
 
     /// <summary>
+    /// Contient les informations d'un événement lié à un <see cref="MenuItem"/>.
+    /// </summary>
+    public class MenuItemEventArgs : EventArgs, IEventArgs
+    {
+        /// <summary>
+        /// Le MenuItem qui a déclenché l'événement.
+        /// </summary>
+        public MenuItem MenuItem { get; }
+
+        /// <summary>
+        /// Initialise une nouvelle instance de <see cref="MenuItemEventArgs"/> pour le MenuItem spécifié.
+        /// </summary>
+        /// <param name="menuitem">Le MenuItem associé à l'événement.</param>
+        public MenuItemEventArgs(MenuItem menuitem) => MenuItem = menuitem;
+    }
+
+    /// <summary>
     /// Contient les informations d'un événement lié à un <see cref="Panel"/>.
     /// </summary>
-    public class PanelEventArgs : EventArgs
+    public class PanelEventArgs : EventArgs, IEventArgs
     {
         /// <summary>
         /// Le panneau qui a déclenché l'événement.
@@ -109,7 +128,7 @@ namespace DinaFramework.Events
     /// <summary>
     /// Contient les informations d'un événement lié à un <see cref="Slider"/>.
     /// </summary>
-    public class SliderEventArgs : EventArgs
+    public class SliderEventArgs : EventArgs, IEventArgs
     {
         /// <summary>
         /// Le slider qui a déclenché l'événement.
@@ -126,7 +145,7 @@ namespace DinaFramework.Events
     /// <summary>
     /// Contient les informations d'un changement de valeur d'un <see cref="Slider"/>.
     /// </summary>
-    public class SliderValueEventArgs : EventArgs
+    public class SliderValueEventArgs : EventArgs, IEventArgs
     {
         /// <summary>
         /// La nouvelle valeur du slider.
@@ -143,7 +162,7 @@ namespace DinaFramework.Events
     /// <summary>
     /// Contient les informations d'un événement lié à une <see cref="Scene"/>.
     /// </summary>
-    public class SceneEventArgs : EventArgs
+    public class SceneEventArgs : EventArgs, IEventArgs
     {
         /// <summary>
         /// La scène qui a déclenché l'événement.
@@ -160,7 +179,7 @@ namespace DinaFramework.Events
     /// <summary>
     /// Contient les informations d'un événement lié au <see cref="SceneManager"/>.
     /// </summary>
-    public class SceneManagerEventArgs : EventArgs
+    public class SceneManagerEventArgs : EventArgs, IEventArgs
     {
         /// <summary>
         /// Le SceneManager qui a déclenché l'événement.
@@ -177,7 +196,7 @@ namespace DinaFramework.Events
     /// <summary>
     /// Contient les informations d'un événement lié au <see cref="ScreenManager"/>.
     /// </summary>
-    public class ScreenManagerEventArgs : EventArgs
+    public class ScreenManagerEventArgs : EventArgs, IEventArgs
     {
         /// <summary>
         /// Le ScreenManager qui a déclenché l'événement.

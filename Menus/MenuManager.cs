@@ -311,7 +311,9 @@ namespace DinaFramework.Menus
         public MenuItem AddItem(object item, Func<MenuItem, MenuItem>? selection = null, Func<MenuItem, MenuItem>? deselection = null, Func<MenuItem, MenuItem>? activation = null)
         {
             ArgumentNullException.ThrowIfNull(item, "Parameter 'item' must not be null.");
-            return AddItemToGroups(new MenuItem(item, selection, deselection, activation, (item as IPosition)!.Position));
+            if (item is not IPosition itemIPos)
+                throw new InvalidOperationException("Parameter 'item' must implement IPosition interface.");
+            return AddItemToGroups(new MenuItem(item, selection, deselection, activation, itemIPos.Position));
         }
         /// <summary>
         /// Centre les éléments de menu sur l'écran et 
@@ -357,37 +359,33 @@ namespace DinaFramework.Menus
 
         //------------------------------------------------------------------
         // Touches
+
+        ///// <summary>
+        ///// Permet de définir une touche spécifique pour une action de menu donnée.
+        ///// </summary>
+        ///// <param name="action"></param>
+        ///// <param name="key"></param>
+        //public void SetActionKey(MenuAction action, IKey key)
+        //{
+        //    _actionKeys[action] = key;
+        //}
         /// <summary>
-        /// Définit les touches permettant de naviguer dans le menu.
+        /// Permet de définir les touches spécifiques pour une action de menu donnée.
         /// </summary>
-        /// <param name="nextItemKey">Touche pour sélectionner l'élément suivant.</param>
-        /// <param name="prevItemKey">Touche pour sélectionner l'élément précédent.</param>
-        /// <param name="activateItemKey">Touche pour activer l'élément sélectionné.</param>
-        /// <param name="cancelKey">Touche pour annuler le menu (facultatif).</param>
-        public void SetKeys(IKey nextItemKey, IKey prevItemKey, IKey activateItemKey, IKey? cancelKey = null)
+        /// <param name="keys"></param>
+        public void SetActionKeys(params (MenuAction action, IKey key)[] keys)
         {
-            if (_direction == MenuItemDirection.Vertical)
+            ArgumentNullException.ThrowIfNull(keys, "Parameter 'keys' must not be null.");
+
+            if (_direction == MenuItemDirection.Vertical && (!keys.Any(k => k.action == MenuAction.Up) || !keys.Any(k => k.action == MenuAction.Down)))
+                throw new InvalidOperationException("For a vertical menu, the actions 'Up' and 'Down' are mandatory.");
+            if (_direction == MenuItemDirection.Horizontal && (!keys.Any(k => k.action == MenuAction.Left) || !keys.Any(k => k.action == MenuAction.Right)))
+                throw new InvalidOperationException("For a horizontal menu, the actions 'Left' and 'Right' are mandatory.");
+
+            foreach (var (action, key) in keys)
             {
-                SetActionKey(MenuAction.Up, prevItemKey);
-                SetActionKey(MenuAction.Down, nextItemKey);
+                _actionKeys[action] = key;
             }
-            else
-            {
-                SetActionKey(MenuAction.Left, prevItemKey);
-                SetActionKey(MenuAction.Right, nextItemKey);
-            }
-            SetActionKey(MenuAction.Activate, activateItemKey);
-            if (cancelKey != null)
-                SetActionKey(MenuAction.Cancel, cancelKey);
-        }
-        /// <summary>
-        /// Permet de définir une touche spécifique pour une action de menu donnée.
-        /// </summary>
-        /// <param name="action"></param>
-        /// <param name="key"></param>
-        public void SetActionKey(MenuAction action, IKey key)
-        {
-            _actionKeys[action] = key;
         }
 
 
@@ -472,29 +470,6 @@ namespace DinaFramework.Menus
             _oldMouseState = Mouse.GetState();
         }
         /// <summary>
-        /// Met à jour l'état du menu en fonction des entrées utilisateur et des éléments d'interface.
-        /// Elle gère les entrées de souris et de clavier, et met à jour chaque élément nécessitant une mise à jour.
-        /// </summary>
-        /// <param name="gametime">Les informations sur le temps écoulé depuis la dernière mise à jour (GameTime).</param>
-        /// <remarks>
-        /// Cette méthode vérifie si le menu est visible, puis gère les interactions via la souris et le clavier.
-        /// Elle met également à jour tous les éléments qui implémentent l'interface IUpdate.
-        /// </remarks>
-        public void Update(GameTime gametime)
-        {
-            if (!Visible)
-                return;
-
-            HandleMouseInput();
-            HandleKeyInput();
-
-            foreach (var element in _elements)
-            {
-                if (element is IUpdate update)
-                    update.Update(gametime);
-            }
-        }
-        /// <summary>
         /// Affiche le menu à l'écran.
         /// </summary>
         /// <param name="spritebatch">Objet utilisé pour dessiner le menu.</param>
@@ -525,6 +500,7 @@ namespace DinaFramework.Menus
         }
         private MenuItem AddItemToGroups(MenuItem menuitem)
         {
+            _elements.Add(menuitem);
             _itemsGroup.Add(menuitem);
             _items.Add(menuitem);
             SortElements();
@@ -602,7 +578,32 @@ namespace DinaFramework.Menus
         {
             return _itemsGroup.Dimensions.X + (_itemsGroup.Count() > 0 ? _itemspacing.X : 0.0f);
         }
-        private void HandleMouseInput()
+
+        /// <summary>
+        /// Met à jour l'état du menu en fonction des entrées utilisateur et des éléments d'interface.
+        /// Elle gère les entrées de souris et de clavier, et met à jour chaque élément nécessitant une mise à jour.
+        /// </summary>
+        /// <param name="gametime">Les informations sur le temps écoulé depuis la dernière mise à jour (GameTime).</param>
+        /// <remarks>
+        /// Cette méthode vérifie si le menu est visible, puis gère les interactions via la souris et le clavier.
+        /// Elle met également à jour tous les éléments qui implémentent l'interface IUpdate.
+        /// </remarks>
+        public void Update(GameTime gametime)
+        {
+            if (!Visible)
+                return;
+
+            foreach (var element in _elements)
+            {
+                if (element is IUpdate update)
+                    update.Update(gametime);
+            }
+
+            HandleMouseInput(gametime);
+            HandleKeyInput();
+        }
+
+        private void HandleMouseInput(GameTime gametime)
         {
             MouseState ms = Mouse.GetState();
 
@@ -614,6 +615,8 @@ namespace DinaFramework.Menus
                 return;
             }
 
+            bool hovered = false;
+            
             Point mousePos = ms.Position;
             Rectangle mouseRect = new(mousePos, Point.Zero);
 
@@ -623,10 +626,12 @@ namespace DinaFramework.Menus
             {
                 foreach (MenuItem item in _items)
                 {
+                    item.Update(gametime);
                     Rectangle itemRect = new(item.Position.ToPoint(), item.Dimensions.ToPoint());
                     if (item.State != MenuItemState.Disable && itemRect.Intersects(mouseRect))
                     {
                         hoveredItem = item;
+                        hovered = true;
                         break;
                     }
                 }
@@ -641,7 +646,7 @@ namespace DinaFramework.Menus
             }
 
             bool clicked = _oldMouseState.LeftButton == ButtonState.Pressed && ms.LeftButton == ButtonState.Released;
-            if (clicked)
+            if (hovered && clicked)
             {
                 CurrentItem?.Activation?.Invoke(CurrentItem);
                 _oldMouseState = ms;
@@ -649,7 +654,7 @@ namespace DinaFramework.Menus
             }
 
             bool rightClick = _oldMouseState.RightButton == ButtonState.Pressed && ms.RightButton == ButtonState.Released;
-            if (rightClick)
+            if (hovered && rightClick)
             {
                 if (Cancellation != null)
                 {
@@ -676,20 +681,20 @@ namespace DinaFramework.Menus
 
             if (_direction == MenuItemDirection.Horizontal)
             {
-                if (_actionKeys.TryGetValue(MenuAction.Right, out var rightKey) && InputManager.IsReleasedByAny(rightKey))
+                if (_actionKeys.TryGetValue(MenuAction.Right, out var rightKey) && InputManager.IsPressedByAny(rightKey))
                     ChangeCurrentItem(1);
-                if (_actionKeys.TryGetValue(MenuAction.Left, out var leftKey) && InputManager.IsReleasedByAny(leftKey))
+                if (_actionKeys.TryGetValue(MenuAction.Left, out var leftKey) && InputManager.IsPressedByAny(leftKey))
                     ChangeCurrentItem(-1);
             }
             else if (_direction == MenuItemDirection.Vertical)
             {
-                if (_actionKeys.TryGetValue(MenuAction.Down, out var downKey) && InputManager.IsReleasedByAny(downKey))
+                if (_actionKeys.TryGetValue(MenuAction.Down, out var downKey) && InputManager.IsPressedByAny(downKey))
                     ChangeCurrentItem(1);
-                if (_actionKeys.TryGetValue(MenuAction.Up, out var upKey) && InputManager.IsReleasedByAny(upKey))
+                if (_actionKeys.TryGetValue(MenuAction.Up, out var upKey) && InputManager.IsPressedByAny(upKey))
                     ChangeCurrentItem(-1);
             }
             if (_actionKeys.TryGetValue(MenuAction.Activate, out var activateKey)
-                && InputManager.IsReleasedByAny(activateKey)
+                && InputManager.IsPressedByAny(activateKey)
                 && _currentitemindex >= 0 && _currentitemindex < _items.Count)
             {
                 _items[_currentitemindex].Activation?.Invoke(_items[_currentitemindex]);

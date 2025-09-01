@@ -14,7 +14,7 @@ namespace DinaFramework.Menus
     /// Représente un élément de menu interactif qui peut être sélectionné, désélectionné et activé.
     /// Implémente les interfaces IDraw, IPosition, IDimensions, IElement, IVisible et IColor.
     /// </summary>
-    public class MenuItem : IDraw, IPosition, IDimensions, IElement, IVisible, IColor
+    public class MenuItem : IDraw, IPosition, IDimensions, IElement, IVisible, IColor, IUpdate
     {
         private bool _visible;
         private readonly object _item;
@@ -22,6 +22,15 @@ namespace DinaFramework.Menus
         private Func<MenuItem, MenuItem>? _deselection;
         private Func<MenuItem, MenuItem>? _activation;
         private Color _disabledColor = Color.DarkGray;
+        //private Dictionary<string, object> _originalValues = new Dictionary<string, object>();
+        //private List<string> _modifiedValues = [];
+        //private bool hasBeenRestored;
+        //private bool saveOriginalValueCalled;
+        //private bool saveCalled;
+        private bool _isHovered;
+        private bool _wasHovered;
+        private bool _isClicked;
+        private bool _wasClicked;
 
         /// <summary>
         /// Fonction exécutée lors de la sélection de l'élément de menu.
@@ -252,5 +261,91 @@ namespace DinaFramework.Menus
             if (coloredItem != null && originalColor.HasValue)
                 coloredItem.Color = originalColor.Value;
         }
+
+        /// <summary>
+        /// Met à jour l'état de l'élément de menu en fonction du temps de jeu.
+        /// </summary>
+        /// <param name="gametime"></param>
+        public void Update(GameTime gametime)
+        {
+            if (State == MenuItemState.Disable || _item is not IUpdate updateItem)
+                return;
+
+            updateItem.Update(gametime);
+            UpdateHover();
+            UpdateClick();
+        }
+        private void UpdateHover()
+        {
+            if (_item is not IHovered hoveredItem)
+                return;
+
+            _isHovered = hoveredItem.IsHovered();
+
+            if (_isHovered && !_wasHovered)
+                Selection?.Invoke(this);
+            else if (!_isHovered && _wasHovered)
+                Deselection?.Invoke(this);
+
+            _wasHovered = _isHovered;
+        }
+
+        private void UpdateClick()
+        {
+            if (_item is not IClickable clickableItem)
+                return;
+
+            _isClicked = clickableItem.IsClicked();
+
+            if (_isClicked && !_wasClicked)
+                Activation?.Invoke(this);
+
+            _wasClicked = _isClicked;
+        }
+
+
+
+        //private Dictionary<string, object> SaveValues()
+        //{
+        //    Dictionary<string, object> values = [];
+        //    // Récupère toutes les propriétés publiques du Panel et les enregistre dans le dictionnaire.
+        //    Type type = _item.GetType();
+        //    PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+        //    foreach (PropertyInfo property in properties)
+        //    {
+        //        var value = property.GetValue(this);
+        //        if (value != null)
+        //            values[property.Name] = value;
+        //    }
+        //    return values;
+        //}
+        //private void RestoreOriginalValues(List<string> modifiedKeys)
+        //{
+        //    ArgumentNullException.ThrowIfNull(modifiedKeys, nameof(modifiedKeys));
+        //    if (modifiedKeys.Count == 0)
+        //    {
+        //        foreach (KeyValuePair<string, object> pair in _originalValues)
+        //        {
+        //            // Utilise la réflexion pour définir la valeur de la propriété correspondante.
+        //            PropertyInfo? property = this.GetType().GetProperty(pair.Key);
+        //            if (property != null)
+        //                property.SetValue(this, pair.Value);
+        //        }
+        //    }
+        //    else
+        //    {
+        //        foreach (string key in modifiedKeys)
+        //        {
+        //            if (_originalValues.ContainsKey(key))
+        //            {
+        //                PropertyInfo? property = this.GetType().GetProperty(key);
+        //                if (property != null)
+        //                    property.SetValue(this, _originalValues[key]);
+        //            }
+        //        }
+        //    }
+        //}
+
     }
 }

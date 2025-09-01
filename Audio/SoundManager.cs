@@ -23,13 +23,15 @@ namespace DinaFramework.Audio
     /// <summary>
     /// Gestionnaire de sons et musiques du jeu.
     /// </summary>
-    public class SoundManager
+    public sealed class SoundManager : IDisposable
     {
         private readonly ContentManager _content;
-        private readonly Dictionary<IKey, Song> _songs = new();
-        private readonly Dictionary<IKey, SoundEffect> _sounds = new();
-        private readonly Dictionary<IKey, SoundEffectInstance> _soundInstances = new();
+        private readonly Dictionary<IKey, Song> _songs = [];
+        private readonly Dictionary<IKey, SoundEffect> _sounds = [];
+        private readonly Dictionary<IKey, SoundEffectInstance> _soundInstances = [];
         private Song? _currentSong;
+        private readonly bool _ownsContent;
+        private bool _dispose;
 
         /// <summary>
         /// Volume global de la musique (0.0 à 1.0).
@@ -58,7 +60,16 @@ namespace DinaFramework.Audio
         public SoundManager(Game game, string? contentDirectory = null)
         {
             ArgumentNullException.ThrowIfNull(game, nameof(game));
-            _content = string.IsNullOrEmpty(contentDirectory) ? game.Content : new ContentManager(game.Services, contentDirectory);
+            if (string.IsNullOrEmpty(contentDirectory))
+            {
+                _content = game.Content;
+                _ownsContent = false;
+            }
+            else
+            {
+                _content = new ContentManager(game.Services, contentDirectory);
+                _ownsContent = true;
+            }
             MediaPlayer.IsRepeating = false;
         }
 
@@ -118,7 +129,14 @@ namespace DinaFramework.Audio
         /// <summary>
         /// Arrête la musique en cours.
         /// </summary>
-        public static void StopSong() => MediaPlayer.Stop();
+        public void StopSong()
+        {
+            if (_currentSong != null)
+            {
+                MediaPlayer.Stop();
+                _currentSong = null;
+            }
+        }
 
         /// <summary>
         /// Joue un effet sonore.
@@ -159,6 +177,32 @@ namespace DinaFramework.Audio
             _sounds.Clear();
             _soundInstances.Clear();
             _content.Unload();
+        }
+        /// <summary>
+        /// Libère toutes les ressources utilisées par le SoundManager.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (_dispose)
+                return;
+
+            if (disposing)
+            {
+                // Dispose les ressources managées
+                Unload();
+                if (_ownsContent)
+                    _content.Dispose();
+            }
+
+            // Ici tu pourrais libérer des ressources non managées si nécessaire
+
+            _dispose = true;
         }
     }
 }
