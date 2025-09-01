@@ -128,6 +128,7 @@ namespace DinaFramework.Graphics
             _displayposition = position;
             Position = position;
             Dimensions = _font.MeasureString(LocalizationManager.GetTranslation(Content));
+            WrapText();
             SetAlignments(horizontalalignment, verticalalignment);
             ZOrder = zorder;
             _displayed = true;
@@ -145,12 +146,30 @@ namespace DinaFramework.Graphics
             _displayTime = displayTime;
             _nbLoops = nbLoops;
 
-            _displayed = false;
-            _wait = false;
-            if (waitTime == 0.0f)
-                _displayed = true;
-            else if (waitTime > 0.0f)
+            _timerWaitTime = 0.0f;
+            _timerDisplayTime = 0.0f;
+
+            if (displayTime == 0f)
+            {
+                _displayed = false;
+                _wait = false;
+            }
+            else if (waitTime > 0f)
+            {
+                _displayed = false;
                 _wait = true;
+            }
+            else
+            {
+                _displayed = true;
+                _wait = false;
+            }
+            //_displayed = false;
+            //_wait = false;
+            //if (waitTime == 0.0f)
+            //    _displayed = true;
+            //else if (waitTime > 0.0f)
+            //    _wait = true;
         }
         /// <summary>
         /// Obtient les dimensions du texte à partir de la police et du contenu.
@@ -199,41 +218,50 @@ namespace DinaFramework.Graphics
         {
             ArgumentNullException.ThrowIfNull(gametime);
 
-            if (_visible)
+            if (!Visible)
+                return;
+
+            float dt = (float)gametime.ElapsedGameTime.TotalSeconds;
+
+            if (_wait)
             {
-                float dt = (float)gametime.ElapsedGameTime.TotalSeconds;
-                if (_wait)
+                _timerWaitTime += dt;
+                if (_timerWaitTime > _waitTime)
                 {
-                    _timerWaitTime += dt;
-                    if (_timerWaitTime > _waitTime)
-                    {
-                        _timerWaitTime = 0.0f;
-                        _wait = false;
-                        _displayed = true;
-                    }
-                }
-                else if (_displayed)
-                {
-                    if (_nbLoops != 0)
-                    {
-                        _timerDisplayTime += dt;
-                        if (_timerDisplayTime > _displayTime)
-                        {
-                            _timerDisplayTime = 0.0f;
-                            _displayed = false;
-                            _wait = true;
-                            if (_nbLoops > 0)
-                                _nbLoops--;
-                            if (_nbLoops == 0)
-                                _wait = false;
-                        }
-                    }
+                    _timerWaitTime = 0.0f;
+                    _wait = false;
+                    //_displayed = true;
+                    _displayed = _displayTime != 0f;
                 }
             }
-            bool hovered = (new Rectangle(Position.ToPoint(), Dimensions.ToPoint())).Contains(Mouse.GetState().Position);
-            if (Visible && hovered)
+            else if (_displayed)
             {
-                OnHovered?.Invoke(this, new DFTextEventArgs(this));
+                if (_displayTime > 0)
+                {
+                    _timerDisplayTime += dt;
+                    if (_timerDisplayTime >= _displayTime)
+                    {
+                        _timerDisplayTime = 0.0f;
+                        _displayed = false;
+
+                        if (_nbLoops > 0)
+                        {
+                            _nbLoops--;
+                            if (_nbLoops == 0)
+                                return;
+                        }
+
+                        if (_nbLoops != 0 && _waitTime > 0f)
+                            _wait = true;
+                        else if (_nbLoops != 0 && _waitTime <= 0f)
+                            _displayed = true;
+                    }
+                }
+
+                if (_displayed && new Rectangle(Position.ToPoint(), Dimensions.ToPoint()).Contains(Mouse.GetState().Position))
+                {
+                    OnHovered?.Invoke(this, new DFTextEventArgs(this));
+                }
             }
         }
         private void UpdateDisplayPosition()
