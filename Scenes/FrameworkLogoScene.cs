@@ -4,14 +4,12 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using System;
-using System.ComponentModel;
 
 namespace DinaFramework.Scenes
 {
     /// <summary>
     /// Scène d’introduction affichant le logo du framework avec un fondu enchaîné.
     /// </summary>
-    [EditorBrowsable(EditorBrowsableState.Never)]
     internal sealed class FrameworkLogoScene(SceneManager sceneManager) : Scene(sceneManager)
     {
         private const float WAIT_FADE_DELAY = 2f;

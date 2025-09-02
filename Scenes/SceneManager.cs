@@ -1,6 +1,7 @@
-﻿using DinaFramework.Inputs;
+﻿using DinaFramework.Enums;
 using DinaFramework.Events;
 using DinaFramework.Exceptions;
+using DinaFramework.Inputs;
 using DinaFramework.Interfaces;
 using DinaFramework.Internal;
 using DinaFramework.Screen;
@@ -12,10 +13,8 @@ using Microsoft.Xna.Framework.Graphics;
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using DinaFramework.Enums;
 
 namespace DinaFramework.Scenes
 {
@@ -24,10 +23,8 @@ namespace DinaFramework.Scenes
     /// Cette classe est un gestionnaire central pour les scènes, les ressources et la gestion des écrans de chargement.
     /// Elle garantit qu'une seule instance de la classe existe pendant l'exécution du jeu (Singleton).
     /// </summary>
-    [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class SceneManager : IResource, IDisposable
     {
-
         #region === Initialisation & Singleton ===
         /// <summary>
         /// Obtient l'instance unique du SceneManager. Si l'instance n'existe pas, elle est créée.

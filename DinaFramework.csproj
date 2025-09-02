@@ -19,9 +19,6 @@
     <None Remove="Documentation\**" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="GlobalSuppressions.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <None Remove="Resources\DropDownArrow.png" />
     <None Remove="Resources\Logo.png" />
   </ItemGroup>
@@ -29,9 +26,6 @@
     <EmbeddedResource Include="Resources\CircleMask.png" />
     <EmbeddedResource Include="Resources\DropDownArrow.png" />
     <EmbeddedResource Include="Resources\Logo.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="GlobalSuppressions.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.2.1105">
