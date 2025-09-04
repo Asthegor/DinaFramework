@@ -14,8 +14,8 @@ namespace DinaFramework.Graphics
     /// </summary>
     public class ShadowText : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<ShadowText>, IDrawingElement
     {
-        private Text _text;
-        private Text _shadow;
+        private readonly Text _text;
+        private readonly Text _shadow;
         Vector2 _offset;
         /// <summary>
         /// Initialise une nouvelle instance de la classe ShadowText avec les paramètres spécifiés.

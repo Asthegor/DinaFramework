@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace DinaFramework.Extensions
 {
@@ -100,13 +101,13 @@ namespace DinaFramework.Extensions
             Rectangle src = new Rectangle(0, 0, srcSize, srcSize);
             Rectangle dst = new Rectangle((int)pos.X, (int)pos.Y, radius, radius);
 
-            (int srcX, int srcY, int dstX, int dstY)[] corners = new[]
-            {
+            (int srcX, int srcY, int dstX, int dstY)[] corners =
+            [
                 (0, 0, (int)pos.X, (int)pos.Y),                                                     // Top-Left
                 (srcSize, 0, (int)(pos.X + dim.X - radius), (int)pos.Y),                            // Top-Right
                 (0, srcSize, (int)pos.X, (int)(pos.Y + dim.Y - radius)),                            // Bottom-Left
                 (srcSize, srcSize, (int)(pos.X + dim.X - radius), (int)(pos.Y + dim.Y - radius)),   // Bottom-Right
-            };
+            ];
 
             foreach (var (sx, sy, dx, dy) in corners)
             {
@@ -172,18 +173,14 @@ namespace DinaFramework.Extensions
         /// <param name="otherDictionary">The dictionary to compare against the source dictionary.</param>
         /// <returns>A list of keys from the source dictionary whose values differ from the corresponding values in the other
         /// dictionary.  If no values differ, the list will be empty.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1002:Ne pas exposer de listes génériques",
-            Justification = "Il s'agit de la liste retournée. Ce n'est pas nécessaire de la mettre en lecture seule.")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Valider les arguments de méthodes publiques",
-            Justification = "Il s'agit d'une méthode d'extension. Ici, par défaut, sourceDictionary ne peut pas être null.")]
-        public static List<string> GetModifiedKeys(this Dictionary<string, object> sourceDictionary, Dictionary<string, object> otherDictionary)
+        public static Collection<string> GetModifiedKeys(this Dictionary<string, object> sourceDictionary, Dictionary<string, object> otherDictionary)
         {
             ArgumentNullException.ThrowIfNull(sourceDictionary);
             ArgumentNullException.ThrowIfNull(otherDictionary);
             if (otherDictionary.Count == 0)
-                return new List<string>();
+                return [];
 
-            List<string> modifiedKeys = new List<string>();
+            List<string> modifiedKeys = [];
 
             foreach (KeyValuePair<string, object> kvp in sourceDictionary)
             {
@@ -195,7 +192,7 @@ namespace DinaFramework.Extensions
                     }
                 }
             }
-            return modifiedKeys;
+            return [..  modifiedKeys];
         }
     }
 }

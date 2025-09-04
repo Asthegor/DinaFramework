@@ -13,21 +13,17 @@ namespace DinaFramework.Inputs
     /// (par exemple "Validate", "Cancel").
     /// </para>
     /// </summary>
-    public class GamepadControllerKey : ControllerKey
+    /// <remarks>
+    /// Crée une instance de GamepadControllerKey pour une touche spécifique d'une manette de jeu.
+    /// </remarks>
+    /// <param name="button"></param>
+    /// <param name="player"></param>
+    public class GamepadControllerKey(Buttons button, PlayerIndex player = PlayerIndex.One) : ControllerKey
     {
-        private readonly GamepadButton _button;
-        private readonly PlayerIndex _player;
+        private readonly GamepadButton _button = new GamepadButton(button);
+        private readonly PlayerIndex _player = player;
         private GamePadState _state;
-        /// <summary>
-        /// Crée une instance de GamepadControllerKey pour une touche spécifique d'une manette de jeu.
-        /// </summary>
-        /// <param name="button"></param>
-        /// <param name="player"></param>
-        public GamepadControllerKey(Buttons button, PlayerIndex player = PlayerIndex.One)
-        {
-            _button = new GamepadButton(button);
-            _player = player;
-        }
+
         /// <summary>
         /// Met à jour l'état de la touche de la manette.
         /// </summary>

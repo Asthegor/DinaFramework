@@ -53,7 +53,7 @@ namespace DinaFramework.Screen
             if (_allowedResolutions == null || _allowedResolutions.Count == 0)
                 _cachedResolutions = null;
             else
-                _cachedResolutions = all.Where(r => _allowedResolutions.Any(a => a.X == r.Width && a.Y == r.Height)).ToList();
+                _cachedResolutions = [.. all.Where(r => _allowedResolutions.Any(a => a.X == r.Width && a.Y == r.Height))];
         }
         /// <summary>
         /// Permet de récupérer la liste des résolutions de la carte graphique.

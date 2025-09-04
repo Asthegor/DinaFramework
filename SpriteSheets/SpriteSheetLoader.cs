@@ -15,15 +15,11 @@ namespace DinaFramework.SpriteSheets
     /// </summary>
     public static class SpriteSheetLoader
     {
-        private sealed class ParsedSheet
+        private sealed class ParsedSheet(Texture2D texture)
         {
             public string Name = string.Empty;
-            public Texture2D FullTexture;
+            public Texture2D FullTexture = texture ?? throw new ArgumentNullException(nameof(texture));
             public Dictionary<string, Rectangle> Regions = [];
-            public ParsedSheet(Texture2D texture)
-            {
-                               FullTexture = texture ?? throw new ArgumentNullException(nameof(texture));
-            }
         }
 
         private static readonly Dictionary<string, Texture2D> textureCache = [];

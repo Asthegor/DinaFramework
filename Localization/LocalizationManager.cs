@@ -15,8 +15,8 @@ namespace DinaFramework.Localization
     /// </summary>
     public static class LocalizationManager
     {
-        private static readonly Dictionary<string, string> _cache = new();
-        private static readonly List<ResourceManager> _resourceManagers = new();
+        private static readonly Dictionary<string, string> _cache = [];
+        private static readonly List<ResourceManager> _resourceManagers = [];
         private static readonly List<Assembly> _assemblies = [];
         private static string[] _availableLanguages = [];
         private static bool _loaded;
@@ -58,9 +58,7 @@ namespace DinaFramework.Localization
         {
             ArgumentNullException.ThrowIfNull(resourceClass);
 
-            var prop = resourceClass.GetProperty("ResourceManager", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
-            if (prop == null)
-                throw new InvalidOperationException($"La classe {resourceClass.Name} ne contient pas de ResourceManager.");
+            var prop = resourceClass.GetProperty("ResourceManager", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public) ?? throw new InvalidOperationException($"La classe {resourceClass.Name} ne contient pas de ResourceManager.");
             var rm = prop.GetValue(null) as ResourceManager
                 ?? throw new InvalidOperationException($"La classe {resourceClass.Name} ne fournit pas de ResourceManager valide.");
             _resourceManagers.Add(rm);
@@ -143,7 +141,7 @@ namespace DinaFramework.Localization
         /// Récupère la liste des cultures disponibles via les assemblies satellites.
         /// </summary>
         /// <returns>Un tableau des langues disponibles.</returns>
-        public static string[] GetAvailableLanguages() => _availableLanguages ?? Array.Empty<string>();
+        public static string[] GetAvailableLanguages() => _availableLanguages ?? [];
 
         private static string[] SearchAvailableLanguages()
         {

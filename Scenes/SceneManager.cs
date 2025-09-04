@@ -485,7 +485,7 @@ namespace DinaFramework.Scenes
         private bool _currentSceneLoaded;
         private float _loadingProgress;
         private bool _frameworkLogoShown;
-        private bool _updateInputManager;
+        private readonly bool _updateInputManager;
         private Key<SceneTag> _nextSceneName;
         private bool _nextSceneWithLoading;
 

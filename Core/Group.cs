@@ -16,16 +16,14 @@ namespace DinaFramework.Core
     /// <summary>
     /// Représente un groupe d'éléments, gérant leur affichage, visibilité, couleur et interactions.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1710:Identifiers should have correct suffix",
-        Justification = "Group est clair dans le contexte du framework.")]
     public class Group : Base, IDraw, IVisible, IEnumerable<IElement>, ICollide, IUpdate, IColor, IClickable, IHovered
     {
-        private List<IElement> _elements = [];
+        private readonly List<IElement> _elements = [];
         private int index;
         private Rectangle _rect;
         private bool _visible;
         private Color _color;
-        private Texture2D _pixel;
+        private readonly Texture2D _pixel;
         private IDrawingElement? _title;
         private Rectangle? _titleRect;
         private bool _hovered;
@@ -299,6 +297,7 @@ namespace DinaFramework.Core
             HasFrame = true;
             FrameColor = framecolor ?? new Color(50, 50, 50, 200);
             FramePadding = framepadding ?? 8;
+            FrameThickness = framethickness ?? 2;
 
             Rectangle bounds = CalculateBounds();
             bounds.Inflate(FramePadding, FramePadding);
@@ -324,6 +323,7 @@ namespace DinaFramework.Core
             HasFrame = true;
             FrameColor = framecolor;
             FramePadding = framepadding;
+            FrameThickness = framethickness;
         }
 
         /// <summary>

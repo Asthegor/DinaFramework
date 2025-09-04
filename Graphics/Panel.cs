@@ -38,8 +38,8 @@ namespace DinaFramework.Graphics
         private bool _leftClicked;
         private bool _rightClicked;
         private bool _hover;
-        private bool _withRoundCorner;
-        private int _radiusCorner;
+        private readonly bool _withRoundCorner;
+        private readonly int _radiusCorner;
 
         /// <summary>
         /// Initialise une nouvelle instance de la classe Panel avec des paramètres par défaut.
@@ -413,7 +413,7 @@ namespace DinaFramework.Graphics
                 {
                     _modifiedValues.Clear();
                     // Compare les valeurs originales avec les valeurs modifiées
-                    _modifiedValues = _originalValues.GetModifiedKeys(SaveValues()!);
+                    _modifiedValues = [.. _originalValues.GetModifiedKeys(SaveValues()!)];
                 }
                 hasBeenRestored = false;
             }

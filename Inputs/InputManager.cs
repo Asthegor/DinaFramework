@@ -13,7 +13,7 @@ namespace DinaFramework.Inputs
     /// </summary>
     public static class InputManager
     {
-        private static readonly Dictionary<PlayerIndex, PlayerController> _players = new();
+        private static readonly Dictionary<PlayerIndex, PlayerController> _players = [];
         /// <summary>
         /// Retourne l'ensemble des contrôleurs enregistrés.
         /// </summary>

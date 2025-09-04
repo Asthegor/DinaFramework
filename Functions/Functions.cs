@@ -66,24 +66,5 @@ namespace DinaFramework.Functions
 
             return false;
         }
-
-        /// <summary>
-        /// Mélange pseudo-aléatoire pour usage non sécurisé (logique de jeu). 
-        /// Utilise <see cref="System.Random"/> ; l'avertissement CA5394 est supprimé car non pertinent ici.
-        /// </summary>
-        /// <param name="list">La liste à mélanger.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA5394:Do not use insecure randomness", 
-            Justification = "Utilisation sans impact sécurité")]
-        private static void Shuffle(List<int> list)
-        {
-            Random rng = new();
-            for (int i = list.Count - 1; i > 0; i--)
-            {
-                int swapIndex = rng.Next(i + 1);
-                (list[i], list[swapIndex]) = (list[swapIndex], list[i]);
-            }
-        }
-
-
     }
 }

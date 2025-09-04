@@ -36,13 +36,11 @@
             HashSet<char> supportedChars = [.. font.Characters];
 
             // Obtenir le ResourceManager de la classe de ressources
-            var property = resourceType?.GetProperty("ResourceManager",
-                System.Reflection.BindingFlags.Static |
-                System.Reflection.BindingFlags.NonPublic |
-                System.Reflection.BindingFlags.Public);
-
-            if (property == null)
-                throw new ArgumentException("La classe fournie ne contient pas de ResourceManager.");
+            var property = (resourceType?.GetProperty("ResourceManager",
+                                                      System.Reflection.BindingFlags.Static |
+                                                      System.Reflection.BindingFlags.NonPublic |
+                                                      System.Reflection.BindingFlags.Public))
+                           ?? throw new ArgumentException("La classe fournie ne contient pas de ResourceManager.");
 
             var manager = property.GetValue(null) as ResourceManager ?? throw new ArgumentException("Impossible d’obtenir le ResourceManager à partir de la classe fournie.");
 

@@ -39,7 +39,7 @@ namespace DinaFramework.Inputs
         public void Bind(IKey action, ControllerKey key)
         {
             if (!_bindings.ContainsKey(action))
-                _bindings[action] = new List<ControllerKey>();
+                _bindings[action] = [];
             _bindings[action].Add(key);
         }
 

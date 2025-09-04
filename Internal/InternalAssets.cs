@@ -29,9 +29,9 @@ namespace DinaFramework.Internal
         {
             Assembly assembly = typeof(InternalAssets).Assembly;
             using Stream? stream = assembly.GetManifestResourceStream($"DinaFramework.Resources.{filename}");
-            if (stream == null)
-                throw new FileNotFoundException($"{filename} introuvable dans les ressources embarquées.");
-            return Texture2D.FromStream(device, stream);
+            return stream == null
+                ? throw new FileNotFoundException($"{filename} introuvable dans les ressources embarquées.")
+                : Texture2D.FromStream(device, stream);
         }
     }
 }

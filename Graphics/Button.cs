@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace DinaFramework.Graphics
@@ -17,13 +18,13 @@ namespace DinaFramework.Graphics
     /// </summary>
     public class Button : Base, IUpdate, IDraw, ILocked, IClickable<ButtonEventArgs>//, IHovered<ButtonEventArgs>
     {
-        private Dictionary<string, object> _originalValues = new Dictionary<string, object>();
+        private Dictionary<string, object> _originalValues = [];
         private List<string> _modifiedValues = [];
         private bool hasBeenRestored;
         private bool saveOriginalValueCalled;
         private bool saveCalled;
 
-        private Text? _text;
+        private readonly Text? _text;
         private Panel _background;
         private Panel? _hover;
         private Sprite? _lockedSprite;
@@ -53,7 +54,7 @@ namespace DinaFramework.Graphics
             Dimensions = new Vector2(width, height);
             Position = position;
 
-            _background = _background ?? new Panel(Position, Dimensions, Color.Transparent, Color.Transparent, 1, withroundcorner, cornerradius);
+            _background ??= new Panel(Position, Dimensions, Color.Transparent, Color.Transparent, 1, withroundcorner, cornerradius);
 
             RegisterOnClick(onClick);
             RegisterOnHover(onHover);
@@ -207,8 +208,7 @@ namespace DinaFramework.Graphics
         {
             if (lockedTexture != null)
             {
-                if (_lockedSprite == null)
-                    _lockedSprite = new Sprite(lockedTexture, Color.White, Position);
+                _lockedSprite ??= new Sprite(lockedTexture, Color.White, Position);
 
                 _lockedSprite.Texture = lockedTexture;
                 _lockedSprite.Dimensions = Dimensions;
@@ -260,7 +260,7 @@ namespace DinaFramework.Graphics
                 {
                     _modifiedValues.Clear();
                     // Compare les valeurs originales avec les valeurs modifiées
-                    _modifiedValues = _originalValues.GetModifiedKeys(SaveValues());
+                    _modifiedValues = [.. _originalValues.GetModifiedKeys(SaveValues())];
                 }
                 hasBeenRestored = false;
 

@@ -5,22 +5,18 @@ namespace DinaFramework.Inputs
     /// <summary>
     /// Classe représentant un bouton de manette de jeu.
     /// </summary>
-    public class GamepadButton
+    /// <remarks>
+    /// Crée une nouvelle instance de la classe GamepadButton pour le bouton spécifié.
+    /// </remarks>
+    /// <param name="button"></param>
+    public class GamepadButton(Buttons button)
     {
         /// <summary>
         /// Bouton de la manette.
         /// </summary>
-        public Buttons Button { get; }
+        public Buttons Button { get; } = button;
         private bool _isDown;
         private bool _wasDown;
-        /// <summary>
-        /// Crée une nouvelle instance de la classe GamepadButton pour le bouton spécifié.
-        /// </summary>
-        /// <param name="button"></param>
-        public GamepadButton(Buttons button)
-        {
-            Button = button;
-        }
 
         /// <summary>
         /// Effectue la mise à jour de l'état du bouton en fonction de l'état actuel de la manette.

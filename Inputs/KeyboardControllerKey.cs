@@ -5,19 +5,15 @@ namespace DinaFramework.Inputs
     /// <summary>
     /// Représente une touche de contrôleur basée sur une touche de clavier.
     /// </summary>
-    public class KeyboardControllerKey : ControllerKey
+    /// <remarks>
+    /// Initialise une nouvelle instance de la classe KeyboardControllerKey avec la touche spécifiée.
+    /// </remarks>
+    /// <param name="key"></param>
+    public class KeyboardControllerKey(Keys key) : ControllerKey
     {
-        private readonly KeyboardKey _key;
+        private readonly KeyboardKey _key = new KeyboardKey(key);
         private KeyboardState _state;
 
-        /// <summary>
-        /// Initialise une nouvelle instance de la classe KeyboardControllerKey avec la touche spécifiée.
-        /// </summary>
-        /// <param name="key"></param>
-        public KeyboardControllerKey(Keys key)
-        {
-            _key = new KeyboardKey(key);
-        }
         /// <summary>
         /// Met à jour l'état de la touche en récupérant l'état actuel du clavier.
         /// </summary>
