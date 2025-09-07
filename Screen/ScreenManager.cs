@@ -18,12 +18,11 @@ namespace DinaFramework.Screen
     /// Cette classe centralise la gestion de l'affichage pour éviter de disperser la logique dans plusieurs composants.
     /// Elle est enregistrée dans le ServiceLocator pour être facilement accessible dans tout le projet.
     /// </remarks>
-    public class ScreenManager
+    public sealed class ScreenManager
     {
         private readonly GraphicsDeviceManager _graphics;
         private readonly GameWindow _window;
         private Point _currentResolution;
-        private ResolutionFontSize _currentFontSize;
 
         /// <summary>
         /// Initialise une nouvelle instance de la classe ScreenManager et l'enregistre éventuellement dans le ServiceLocator.
@@ -36,7 +35,6 @@ namespace DinaFramework.Screen
             _window = window ?? throw new ArgumentNullException(nameof(window));
             _window.ClientSizeChanged += HandleResize!;
             _currentResolution = new Point(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
-            _currentFontSize = ResolutionFontManager.GetFontSizeForResolution(_currentResolution);
         }
 
         private static List<Point>? _allowedResolutions;
@@ -79,40 +77,11 @@ namespace DinaFramework.Screen
         /// Retourne la résolution actuelle.
         /// </summary>
         public Point CurrentResolution => _currentResolution;
-        /// <summary>
-        /// Retourne la taille de police adaptée à la résolution actuelle.
-        /// </summary>
-        public ResolutionFontSize CurrentFontSize => _currentFontSize;
 
         /// <summary>
         /// Actions lors du changement de résolution.
         /// </summary>
         public event EventHandler<ScreenManagerEventArgs>? OnResolutionChanged;
-
-        /// <summary>
-        /// Définit la résolution d'affichage du jeu.
-        /// </summary>
-        /// <param name="width">Largeur de l'écran en pixels.</param>
-        /// <param name="height">Hauteur de l'écran en pixels.</param>
-        public void SetResolution(int width, int height)
-        {
-            _graphics.PreferredBackBufferWidth = width;
-            _graphics.PreferredBackBufferHeight = height;
-            _graphics.ApplyChanges();
-            _currentResolution = new Point(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
-            _currentFontSize = ResolutionFontManager.GetFontSizeForResolution(_currentResolution);
-            OnResolutionChanged?.Invoke(this, new ScreenManagerEventArgs(this));
-        }
-
-        /// <summary>
-        /// Définit le mode plein écran (true) ou non (false).
-        /// </summary>
-        /// <param name="isChecked"></param>
-        public void SetFullScreen(bool isChecked)
-        {
-            _graphics.IsFullScreen = isChecked;
-            _graphics.ApplyChanges();
-        }
 
         /// <summary>
         /// Crée une instance de ScreenManager et l'enregistre dans le ServiceLocator.
@@ -135,6 +104,41 @@ namespace DinaFramework.Screen
                 SetResolution(newWidth, newHeight);
             }
         }
+
+        /// <summary>
+        /// Définit la résolution d'affichage du jeu.
+        /// </summary>
+        /// <param name="width">Largeur de l'écran en pixels.</param>
+        /// <param name="height">Hauteur de l'écran en pixels.</param>
+        public void SetResolution(int width, int height)
+        {
+            _graphics.PreferredBackBufferWidth = width;
+            _graphics.PreferredBackBufferHeight = height;
+            _graphics.ApplyChanges();
+            _currentResolution = new Point(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
+            OnResolutionChanged?.Invoke(this, new ScreenManagerEventArgs(this));
+        }
+
+        /// <summary>
+        /// Définit le mode plein écran (true) ou non (false).
+        /// </summary>
+        /// <param name="isChecked"></param>
+        public void SetFullScreen(bool isChecked)
+        {
+            if (_graphics.IsFullScreen == isChecked)
+                return;
+
+            _graphics.IsFullScreen = isChecked;
+            _window.IsBorderless = isChecked;
+            _graphics.ApplyChanges();
+            if (!isChecked)
+            {
+                _graphics.IsFullScreen = isChecked;
+                _window.IsBorderless = isChecked;
+                _graphics.ApplyChanges();
+            }
+        }
+
     }
 
 }

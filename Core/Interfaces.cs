@@ -1,5 +1,5 @@
-﻿#pragma warning disable CS1591 // Pour ne pas devoir avoir un commentaire sur les membre des interfaces
-#pragma warning disable CA1040 // Éviter les interfaces vides
+﻿#pragma warning disable CS1591 // Les interfaces sont documentées via le summary de l'interface, pas chaque membre abstrait
+#pragma warning disable CA1040 // Interfaces vides intentionnelles pour le typage ou la composition d'autres interfaces
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -120,9 +120,9 @@ namespace DinaFramework.Interfaces
     /// <summary>
     /// Définit une interface de base pour les arguments d'événements personnalisés.
     /// </summary>
-#pragma warning disable CA1711 // Renommer "EventArgs" pour éviter la confusion avec System.EventArgs
+#pragma warning disable CA1711 // Interface utilisée par des classes qui héritent de System.EventArgs; le nom "IEventArgs" est donc approprié.
     public interface IEventArgs { }
-#pragma warning disable CA1711 // Renommer "EventArgs" pour éviter la confusion avec System.EventArgs
+#pragma warning disable CA1711
     /// <summary>
     /// Définit une interface pour un objet cliquable avec des arguments d'événement personnalisés.
     /// </summary>
@@ -178,5 +178,5 @@ namespace DinaFramework.Interfaces
         public abstract bool Locked { get; set; }
     }
 }
-#pragma warning restore CA1040 // Éviter les interfaces vides
-#pragma warning restore CS1591 // Pour ne pas devoir avoir un commentaire sur les membre des interfaces
+#pragma warning restore CA1040
+#pragma warning restore CS1591

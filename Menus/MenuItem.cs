@@ -14,7 +14,7 @@ namespace DinaFramework.Menus
     /// Représente un élément de menu interactif qui peut être sélectionné, désélectionné et activé.
     /// Implémente les interfaces IDraw, IPosition, IDimensions, IElement, IVisible et IColor.
     /// </summary>
-    public class MenuItem : IDraw, IPosition, IDimensions, IElement, IVisible, IColor, IUpdate
+    public sealed class MenuItem : IDraw, IPosition, IDimensions, IElement, IVisible, IColor, IUpdate
     {
         private bool _visible;
         private readonly object _item;

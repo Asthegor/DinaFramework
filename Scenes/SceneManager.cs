@@ -1,6 +1,6 @@
-﻿using DinaFramework.Enums;
-using DinaFramework.Events;
+﻿using DinaFramework.Events;
 using DinaFramework.Exceptions;
+using DinaFramework.Functions;
 using DinaFramework.Inputs;
 using DinaFramework.Interfaces;
 using DinaFramework.Internal;
@@ -115,11 +115,11 @@ namespace DinaFramework.Scenes
         /// <exception cref="ArgumentNullException"></exception>
         public void AddScene(Key<SceneTag> key, Func<Scene> sceneFactory)
         {
-            if (key.Equals(default) || string.IsNullOrEmpty(key.ToString()))
+            if (key.Equals(default) || string.IsNullOrEmpty(key.Value))
                 throw new ArgumentException("SceneKey cannot be null or empty.", nameof(key));
 
             if (_scenes.ContainsKey(key))
-                throw new DuplicateDictionaryKeyException(key.ToString());
+                throw new DuplicateDictionaryKeyException(key.Value);
 
             if (sceneFactory == null)
                 throw new ArgumentNullException(nameof(sceneFactory), "SceneFactory cannot be null.");
@@ -158,18 +158,13 @@ namespace DinaFramework.Scenes
 
                 // Ajoute la scène interne du framework (non visible par l’utilisateur)
                 if (!_scenes.ContainsKey(SceneKeys.FrameworkLogo))
-                    _scenes[SceneKeys.FrameworkLogo] = new FrameworkLogoScene(this); // Pas besoin de type public
+                    AddScene(SceneKeys.FrameworkLogo, () => new FrameworkLogoScene(this));
 
-#pragma warning disable CS4014
-                BaseSetCurrentScene(SceneKeys.FrameworkLogo, false); // Pas d'écran de chargement
-#pragma warning restore CS4014
-
+                DinaFunctions.FireAndForget(BaseSetCurrentScene(SceneKeys.FrameworkLogo, false));
                 return;
             }
 
-#pragma warning disable CA2007
-            await BaseSetCurrentScene(name, withLoadingScreen);
-#pragma warning restore CA2007
+            await BaseSetCurrentScene(name, withLoadingScreen).ConfigureAwait(false);
         }
         private async Task BaseSetCurrentScene(Key<SceneTag> name, bool withLoadingScreen = false)
         {
@@ -397,7 +392,7 @@ namespace DinaFramework.Scenes
         /// </summary>
         /// <param name="dimensions">Les dimensions du RenderTarget2D à créer.</param>
         /// <returns>Le RenderTarget2D créé.</returns>
-        private RenderTarget2D CreateRenderTarget2D(Point dimensions)
+        public RenderTarget2D CreateRenderTarget2D(Point dimensions)
         {
             return new RenderTarget2D(GraphicsDevice, dimensions.X, dimensions.Y);
         }
@@ -538,18 +533,6 @@ namespace DinaFramework.Scenes
                 if (_screenManager == null)
                     throw new InvalidOperationException("ScreenManager non enregistré dans le ServiceLocator.");
                 return _screenManager.CurrentResolution.ToVector2();
-            }
-        }
-        /// <summary>
-        /// Obtient le type de taille de police adapté à la résolution d'écran actuelle.
-        /// </summary>
-        public ResolutionFontSize CurrentFontSize
-        {
-            get
-            {
-                if (_screenManager == null)
-                    throw new InvalidOperationException("ScreenManager non enregistré dans le ServiceLocator.");
-                return _screenManager.CurrentFontSize;
             }
         }
 

@@ -12,7 +12,7 @@ namespace DinaFramework.Inputs
     /// Représente le contrôleur d'un joueur, permettant de gérer les liaisons 
     /// entre des actions logiques (<see cref="IKey"/>) et des touches ou boutons physiques (<see cref="ControllerKey"/>).
     /// </summary>
-    public class PlayerController
+    public sealed class PlayerController
     {
         private readonly Dictionary<IKey, List<ControllerKey>> _bindings = [];
 

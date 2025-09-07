@@ -30,6 +30,15 @@ namespace DinaFramework.Services
         /// <summary>
         /// Clé représentant la texture de la flèche d'une liste déroulante.
         /// </summary>
-        public static readonly Key<ServiceTag> DropDownArrow = Key<ServiceTag>.FromString("DropDownArrow"); 
+        public static readonly Key<ServiceTag> DropDownArrow = Key<ServiceTag>.FromString("DropDownArrow");
+
+        /// <summary>
+        /// Clé représentant le profil de polices.
+        /// </summary>
+        public static readonly Key<ServiceTag> FontProfile = Key<ServiceTag>.FromString("FontProfile");
+        /// <summary>
+        /// Clé représentant le gestionnaire de polices.
+        /// </summary>
+        public static readonly Key<ServiceTag> FontManager = Key<ServiceTag>.FromString("FontManager");
     }
 }

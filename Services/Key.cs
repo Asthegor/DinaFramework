@@ -49,11 +49,6 @@ namespace DinaFramework.Services
         /// <returns>Un entier représentant le code de hachage.</returns>
         public override int GetHashCode() => _value.GetHashCode(StringComparison.CurrentCulture);
         /// <summary>
-        /// Retourne la représentation texte de la clé.
-        /// </summary>
-        /// <returns>La chaîne correspondant à la clé.</returns>
-        public override string ToString() => _value;
-        /// <summary>
         /// Compare deux clés du même type pour vérifier l'égalité.
         /// </summary>
         public static bool operator ==(Key<T> left, Key<T> right) => left.Equals(right);

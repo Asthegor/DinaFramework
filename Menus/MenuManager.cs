@@ -26,7 +26,7 @@ namespace DinaFramework.Menus
     /// <summary>
     /// Gère l'affichage et l'interaction avec le menu, incluant les éléments, les titres, les icônes et les interactions clavier/souris.
     /// </summary>
-    public class MenuManager : IDraw, IUpdate, IVisible
+    public sealed class MenuManager : IDraw, IUpdate, IVisible
     {
         private readonly Dictionary<MenuAction, IKey> _actionKeys = [];
 

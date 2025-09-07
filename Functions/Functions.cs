@@ -1,5 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace DinaFramework.Functions
 {
@@ -65,6 +66,15 @@ namespace DinaFramework.Functions
             }
 
             return false;
+        }
+        internal static void FireAndForget(Task task)
+        {
+            ArgumentNullException.ThrowIfNull(task);
+            task.ContinueWith(t =>
+            {
+                if (t.Exception != null)
+                    Trace.WriteLine("Exception in fire-and-forget task: " + t.Exception);
+            }, TaskScheduler.Default);
         }
     }
 }
