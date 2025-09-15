@@ -16,14 +16,8 @@ namespace DinaFramework.Graphics
     /// <summary>
     /// Classe représentant un bouton graphique interactif avec gestion d'état via flags et événements.
     /// </summary>
-    public class Button : Base, IUpdate, IDraw, ILocked, IClickable<ButtonEventArgs>//, IHovered<ButtonEventArgs>
+    public class Button : Base, IUpdate, IDraw, ILocked, IVisible, IClickable<ButtonEventArgs>//, IHovered<ButtonEventArgs>
     {
-        private Dictionary<string, object> _originalValues = [];
-        private List<string> _modifiedValues = [];
-        private bool hasBeenRestored;
-        private bool saveOriginalValueCalled;
-        private bool saveCalled;
-
         private readonly Text? _text;
         private Panel _background;
         private Panel? _hover;
@@ -34,8 +28,7 @@ namespace DinaFramework.Graphics
         private bool _locked;
 
         private bool _isHovered;
-        private bool _isPressed;
-
+        private bool _visible;
 
         /// <summary>
         /// Initialise un nouveau bouton avec texte et fond coloré.
@@ -56,6 +49,8 @@ namespace DinaFramework.Graphics
 
             _background ??= new Panel(Position, Dimensions, Color.Transparent, Color.Transparent, 1, withroundcorner, cornerradius);
 
+            LinkPanelEvents();
+
             RegisterOnClick(onClick);
             RegisterOnHover(onHover);
 
@@ -71,6 +66,7 @@ namespace DinaFramework.Graphics
             : this(position, dimensions, font, content, textColor, onClick, margin, onHover)
         {
             _background = new Panel(Position, Dimensions, backgroundImage, 0);
+            LinkPanelEvents();
         }
 
         /// <summary>
@@ -84,7 +80,7 @@ namespace DinaFramework.Graphics
             Position = position;
             Dimensions = new Vector2(backgroundImage.Width, backgroundImage.Height);
             _background = new Panel(Position, Dimensions, backgroundImage, 0);
-
+            LinkPanelEvents();
             RegisterOnClick(onClick);
             RegisterOnHover(onHover);
         }
@@ -200,6 +196,10 @@ namespace DinaFramework.Graphics
                     _background.Thickness = value;
             }
         }
+        /// <summary>
+        /// Visibilité du bouton.
+        /// </summary>
+        public bool Visible { get => _visible; set => _visible = value; }
 
         /// <summary>
         /// Définit la texture et la couleur affichées quand le bouton est verrouillé.
@@ -230,69 +230,22 @@ namespace DinaFramework.Graphics
             if (_background == null)
                 return;
 
-            _background.Update(gametime);
-
             if (Locked)
             {
                 _isHovered = false;
-                _isPressed = false;
                 return;
             }
 
-            bool hoveredNow = _background.IsHovered();
-
-            if (hoveredNow != _isHovered)
-            {
-                _isHovered = hoveredNow;
-            }
-
-            if (_isHovered)
-            {
-                saveCalled = false;
-                if (!saveOriginalValueCalled)
-                {
-                    _originalValues = SaveValues();
-                    saveOriginalValueCalled = true;
-                    saveCalled = true;
-                }
-                OnHovered?.Invoke(this, new ButtonEventArgs(this));
-                if (saveCalled)
-                {
-                    _modifiedValues.Clear();
-                    // Compare les valeurs originales avec les valeurs modifiées
-                    _modifiedValues = [.. _originalValues.GetModifiedKeys(SaveValues())];
-                }
-                hasBeenRestored = false;
-
-                bool clickedNow = _background.IsClicked();
-
-                if (clickedNow && !_isPressed)
-                {
-                    _isPressed = true;
-                    OnClicked?.Invoke(this, new ButtonEventArgs(this));
-                }
-                else if (!clickedNow)
-                {
-                    _isPressed = false;
-                }
-            }
-            else
-            {
-                _isPressed = false;
-                if (!hasBeenRestored)
-                {
-                    RestoreOriginalValues(_modifiedValues);
-                    hasBeenRestored = true;
-                    saveOriginalValueCalled = false;
-                }
-            }
+            _background.Update(gametime);
         }
-
         /// <summary>
         /// Dessine le bouton.
         /// </summary>
         public void Draw(SpriteBatch spritebatch)
         {
+            if (!_visible)
+                return;
+
             if (_background == null)
                 return;
 
@@ -336,15 +289,19 @@ namespace DinaFramework.Graphics
         /// Permet de définir une image lors du survol de la souris.
         /// Si null, on enlève l'image lors du survol.
         /// </summary>
-        /// <param name="hoverImage"></param>
-        public void SetHoverImage(Texture2D hoverImage)
+        /// <param name="hoverImage">Image à afficher lors du survol</param>
+        /// <param name="dimensions">Dimensions à appliquer pour l'image</param>
+        public void SetHoverImage(Texture2D hoverImage, Vector2? dimensions = null)
         {
             if (hoverImage == null)
             {
                 _hover = null;
                 return;
             }
-            _hover = new Panel(default, default, hoverImage, 0);
+            if (_hover == null)
+                _hover = new Panel(default, dimensions ?? Dimensions, hoverImage, 0);
+            else
+                _hover.SetImage(hoverImage);
             UpdateHoverImagePosition();
         }
         /// <summary>
@@ -379,8 +336,6 @@ namespace DinaFramework.Graphics
         /// </summary>
         public event EventHandler<ButtonEventArgs>? OnHovered;
 
-
-
         private void UpdateTextPosition()
         {
             if (_text == null || _background == null)
@@ -414,48 +369,14 @@ namespace DinaFramework.Graphics
             if (onHover != null)
                 OnHovered += (sender, e) => onHover(e.Button);
         }
-
-        Dictionary<string, object> SaveValues()
+        private void LinkPanelEvents()
         {
-            Dictionary<string, object> values = [];
-            // Récupère toutes les propriétés publiques du Panel et les enregistre dans le dictionnaire.
-            Type type = this.GetType();
-            PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            if (_background == null)
+                return;
+            _background.OnHovered += (s, e) => OnHovered?.Invoke(this, new ButtonEventArgs(this));
+            _background.OnClicked += (s, e) => OnClicked?.Invoke(this, new ButtonEventArgs(this));
+        }
 
-            foreach (PropertyInfo property in properties)
-            {
-                var value = property.GetValue(this);
-                if (value != null)
-                    values[property.Name] = value;
-            }
-            return values;
-        }
-        void RestoreOriginalValues(List<string> modifiedKeys)
-        {
-            ArgumentNullException.ThrowIfNull(modifiedKeys, nameof(modifiedKeys));
-            if (modifiedKeys.Count == 0)
-            {
-                foreach (KeyValuePair<string, object> pair in _originalValues)
-                {
-                    // Utilise la réflexion pour définir la valeur de la propriété correspondante.
-                    PropertyInfo? property = this.GetType().GetProperty(pair.Key);
-                    if (property != null)
-                        property.SetValue(this, pair.Value);
-                }
-            }
-            else
-            {
-                foreach (string key in modifiedKeys)
-                {
-                    if (_originalValues.ContainsKey(key))
-                    {
-                        PropertyInfo? property = this.GetType().GetProperty(key);
-                        if (property != null)
-                            property.SetValue(this, _originalValues[key]);
-                    }
-                }
-            }
-        }
         /// <summary>
         /// Indique si le bouton a été cliqué.
         /// </summary>
