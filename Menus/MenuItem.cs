@@ -25,7 +25,7 @@ namespace DinaFramework.Menus
         //private Dictionary<string, object> _originalValues = new Dictionary<string, object>();
         //private List<string> _modifiedValues = [];
         //private bool hasBeenRestored;
-        //private bool saveOriginalValueCalled;
+        //private bool _hoverOriginalSaved;
         //private bool saveCalled;
         private bool _isHovered;
         private bool _wasHovered;

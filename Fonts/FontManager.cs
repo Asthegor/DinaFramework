@@ -21,7 +21,6 @@ namespace DinaFramework.Fonts
     public sealed class FontManager : IDisposable
     {
         private readonly ContentManager _contentManager;
-        private readonly Dictionary<Key<FontTag>, SpriteFont> _loadedFonts = [];
 
         private static FontManager? _instance;
 
@@ -56,9 +55,6 @@ namespace DinaFramework.Fonts
         /// <param name="key">Clé associée à la font.</param>
         public SpriteFont Load(Key<FontTag> key)
         {
-            if (_loadedFonts.TryGetValue(key, out var cachedFont))
-                return cachedFont;
-
             var profile = ServiceLocator.Get<FontProfile>(ServiceKeys.FontProfile)
                 ?? throw new InvalidOperationException("FontProfile doit être initialisé avant de charger des fonts.");
             ScreenManager? screenManager = ServiceLocator.Get<ScreenManager>(ServiceKeys.ScreenManager)
@@ -70,7 +66,6 @@ namespace DinaFramework.Fonts
             try
             {
                 var font = _contentManager.Load<SpriteFont>(assetPath);
-                _loadedFonts[key] = font;
                 return font;
             }
             catch (ContentLoadException ex)
@@ -84,7 +79,6 @@ namespace DinaFramework.Fonts
         public void Unload()
         {
             _contentManager.Unload();
-            _loadedFonts.Clear();
         }
         /// <summary>
         /// Permet de libérer les ressources utilisées par le FontManager.

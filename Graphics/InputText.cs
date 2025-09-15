@@ -203,6 +203,9 @@ namespace DinaFramework.Graphics
         /// <param name="spritebatch">L'instance de SpriteBatch utilisée pour dessiner le texte.</param>
         public void Draw(SpriteBatch spritebatch)
         {
+            if (!_visible)
+                return;
+
             _inputTextGroup.Draw(spritebatch);
         }
 

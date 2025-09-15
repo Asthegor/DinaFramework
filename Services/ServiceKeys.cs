@@ -40,5 +40,9 @@ namespace DinaFramework.Services
         /// Clé représentant le gestionnaire de polices.
         /// </summary>
         public static readonly Key<ServiceTag> FontManager = Key<ServiceTag>.FromString("FontManager");
+        /// <summary>
+        /// Clé représentant le gestionnaire de sons.
+        /// </summary>
+        public static readonly Key<ServiceTag> SoundManager = Key<ServiceTag>.FromString("SoundManager");
     }
 }

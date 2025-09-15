@@ -30,7 +30,6 @@ namespace DinaFramework.Scenes
         /// Obtient l'instance unique du SceneManager. Si l'instance n'existe pas, elle est créée.
         /// </summary>
         /// <param key="game">L'instance du jeu utilisée pour initialiser le gestionnaire de scènes.</param>
-        /// <returns>L'instance unique du SceneManager.</returns>
         public static void Initialize(Game game)
         {
             ArgumentNullException.ThrowIfNull(game);
