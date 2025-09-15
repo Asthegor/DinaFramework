@@ -21,10 +21,9 @@ namespace DinaFramework.Graphics
     public class Panel : Base, IClickable, IColor, IDraw, IUpdate, IVisible, ICopyable<Panel>
     {
         private Dictionary<string, object> _originalValues = [];
-        private List<string> _modifiedValues = [];
-        private bool hasBeenRestored;
-        private bool saveOriginalValueCalled;
-        private bool saveCalled;
+        private List<string> _modifiedHoverValues = [];
+        private List<string> _modifiedClickValues = [];
+        private bool _hoverOriginalSaved;
 
         private List<Vector2> _positions = [];
         private List<Texture2D> _images = [];
@@ -38,6 +37,7 @@ namespace DinaFramework.Graphics
         private bool _leftClicked;
         private bool _rightClicked;
         private bool _hover;
+        private bool _hoverInvoked;
         private readonly bool _withRoundCorner;
         private readonly int _radiusCorner;
 
@@ -250,6 +250,51 @@ namespace DinaFramework.Graphics
             set { BackgroundColor = value; }
         }
         /// <summary>
+        /// Redéfinit l'image du panneau
+        /// </summary>
+        /// <param name="image">Nouvelle image à afficher</param>
+        public void SetImage(Texture2D image)
+        {
+            ArgumentNullException.ThrowIfNull(image, nameof(image));
+            _images[0] = image;
+        }
+        /// <summary>
+        /// Redéfinit les images du panneau.
+        /// </summary>
+        /// <param name="topLeft"></param>
+        /// <param name="topCenter"></param>
+        /// <param name="topRight"></param>
+        /// <param name="middleLeft"></param>
+        /// <param name="middleCenter"></param>
+        /// <param name="middleRight"></param>
+        /// <param name="bottomLeft"></param>
+        /// <param name="bottomCenter"></param>
+        /// <param name="bottomRight"></param>
+        public void SetImages(Texture2D topLeft, Texture2D topCenter, Texture2D topRight,
+                              Texture2D middleLeft, Texture2D middleCenter, Texture2D middleRight,
+                              Texture2D bottomLeft, Texture2D bottomCenter, Texture2D bottomRight)
+        {
+            ArgumentNullException.ThrowIfNull(topLeft, nameof(topLeft));
+            ArgumentNullException.ThrowIfNull(topCenter, nameof(topCenter));
+            ArgumentNullException.ThrowIfNull(topRight, nameof(topRight));
+            ArgumentNullException.ThrowIfNull(middleLeft, nameof(middleLeft));
+            ArgumentNullException.ThrowIfNull(middleCenter, nameof(middleCenter));
+            ArgumentNullException.ThrowIfNull(middleRight, nameof(middleRight));
+            ArgumentNullException.ThrowIfNull(bottomLeft, nameof(bottomLeft));
+            ArgumentNullException.ThrowIfNull(bottomCenter, nameof(bottomCenter));
+            ArgumentNullException.ThrowIfNull(bottomRight, nameof(bottomRight));
+
+            _images[0] = topLeft;
+            _images[1] = topCenter;
+            _images[2] = topRight;
+            _images[3] = middleLeft;
+            _images[4] = middleCenter;
+            _images[5] = middleRight;
+            _images[6] = bottomLeft;
+            _images[7] = bottomCenter;
+            _images[8] = bottomRight;
+        }
+        /// <summary>
         /// Dessine le panneau à l'aide d'un SpriteBatch.
         /// </summary>
         /// <param name="spritebatch">Instance de SpriteBatch utilisée pour le rendu.</param>
@@ -398,45 +443,65 @@ namespace DinaFramework.Graphics
         {
             MouseState currentMouseState = Mouse.GetState();
 
-            _hover = _rectangleBackground.Contains(currentMouseState.Position);
-            if (_hover)
+            bool hoveredNow = _rectangleBackground.Contains(currentMouseState.Position);
+            if (hoveredNow)
             {
-                saveCalled = false;
-                if (!saveOriginalValueCalled)
+                _hover = true;
+                if (!_hoverOriginalSaved)
                 {
                     _originalValues = SaveValues();
-                    saveOriginalValueCalled = true;
-                    saveCalled = true;
+                    _hoverOriginalSaved = true;
                 }
-                OnHovered?.Invoke(this, new PanelEventArgs(this));
-                if (saveCalled)
+                if (!_hoverInvoked)
                 {
-                    _modifiedValues.Clear();
-                    // Compare les valeurs originales avec les valeurs modifiées
-                    _modifiedValues = [.. _originalValues.GetModifiedKeys(SaveValues()!)];
+                    OnHovered?.Invoke(this, new PanelEventArgs(this));
+                    _hoverInvoked = true;
+                    _modifiedHoverValues = [.. _originalValues.GetModifiedKeys(SaveValues())];
                 }
-                hasBeenRestored = false;
+
+                // Vérifie si le clic a eu lieu
+                _leftClicked = _hover && currentMouseState.LeftButton == ButtonState.Released && _oldMouseState.LeftButton == ButtonState.Pressed;
+                if (_leftClicked)
+                {
+                    var beforeClickValues = SaveValues();
+                    OnClicked?.Invoke(this, new PanelEventArgs(this));
+                    _modifiedClickValues = [.. beforeClickValues.GetModifiedKeys(SaveValues())];
+
+                    _modifiedHoverValues.RemoveAll(k => _modifiedClickValues.Contains(k));
+                }
+
+                _rightClicked = _hover && currentMouseState.RightButton == ButtonState.Released && _oldMouseState.RightButton == ButtonState.Pressed;
+                if (_rightClicked)
+                    OnRightClicked?.Invoke(this, new PanelEventArgs(this));
             }
             else
             {
-                if (!hasBeenRestored)
+                _leftClicked = false;
+                _hover = false;
+                if (_hoverOriginalSaved)
                 {
-                    RestoreOriginalValues(_modifiedValues);
-                    hasBeenRestored = true;
-                    saveOriginalValueCalled = false;
+                    var permanentState = SaveValues();
+                    RestoreOriginalValues(_modifiedHoverValues);
+                    ApplyValues(permanentState, _modifiedClickValues);
+
+                    _hoverOriginalSaved = false;
+                    _hoverInvoked = false;
+                    _modifiedHoverValues.Clear();
                 }
             }
-
-            // Vérifie si le clic a eu lieu
-            _leftClicked = _hover && currentMouseState.LeftButton == ButtonState.Released && _oldMouseState.LeftButton == ButtonState.Pressed;
-            if (_leftClicked)
-                OnClicked?.Invoke(this, new PanelEventArgs(this));
-
-            _rightClicked = _hover && currentMouseState.RightButton == ButtonState.Released && _oldMouseState.RightButton == ButtonState.Pressed;
-            if (_rightClicked)
-                OnRightClicked?.Invoke(this, new PanelEventArgs(this));
-
             _oldMouseState = currentMouseState;
+        }
+        private void ApplyValues(Dictionary<string, object> reference, List<string> keys)
+        {
+            foreach (var key in keys)
+            {
+                if (reference.TryGetValue(key, out var value))
+                {
+                    PropertyInfo? prop = GetType().GetProperty(key);
+                    if (prop != null)
+                        prop.SetValue(this, value);
+                }
+            }
         }
         /// <summary>
         /// Détermine si le panneau a été cliqué (clic droit ou gauche).
@@ -518,31 +583,16 @@ namespace DinaFramework.Graphics
         }
         private void RestoreOriginalValues(List<string>? modifiedKeys = null)
         {
-            if (modifiedKeys == null)
+            if (modifiedKeys == null || modifiedKeys.Count == 0)
                 return;
-            if (modifiedKeys.Count == 0)
+            foreach (string key in modifiedKeys)
             {
-                foreach (KeyValuePair<string, object> pair in _originalValues)
+                if (_originalValues.ContainsKey(key))
                 {
-                    // Utilise la réflexion pour définir la valeur de la propriété correspondante.
-                    PropertyInfo? property = GetType().GetProperty(pair.Key);
+                    PropertyInfo? property = GetType().GetProperty(key);
                     if (property != null)
                     {
-                        property.SetValue(this, pair.Value);
-                    }
-                }
-            }
-            else
-            {
-                foreach (string key in modifiedKeys)
-                {
-                    if (_originalValues.ContainsKey(key))
-                    {
-                        PropertyInfo? property = GetType().GetProperty(key);
-                        if (property != null)
-                        {
-                            property.SetValue(this, _originalValues[key]);
-                        }
+                        property.SetValue(this, _originalValues[key]);
                     }
                 }
             }
