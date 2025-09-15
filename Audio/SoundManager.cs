@@ -3,6 +3,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
+using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 
 using System;
@@ -29,6 +30,8 @@ namespace DinaFramework.Audio
         private readonly Dictionary<IKey, Song> _songs = [];
         private readonly Dictionary<IKey, SoundEffect> _sounds = [];
         private readonly Dictionary<IKey, SoundEffectInstance> _soundInstances = [];
+        private readonly Dictionary<IKey, float> _soundVolumes = [];
+
         private Song? _currentSong;
         private readonly bool _ownsContent;
         private bool _dispose;
@@ -57,6 +60,7 @@ namespace DinaFramework.Audio
                 _ownsContent = true;
             }
             MediaPlayer.IsRepeating = false;
+            ServiceLocator.Register(ServiceKeys.SoundManager, this);
         }
 
         #region Chargement
@@ -65,34 +69,31 @@ namespace DinaFramework.Audio
         /// Charge une chanson depuis le ContentManager.
         /// </summary>
         /// <param name="key">Clé unique pour identifier la chanson.</param>
-        /// <param name="assetName">Nom de l'asset dans le ContentManager.</param>
-        public void LoadSong(Key<SongTag> key, string assetName)
+        public void LoadSong(Key<SongTag> key)
         {
             if (!_songs.ContainsKey(key))
-                _songs[key] = _content.Load<Song>(assetName);
+                _songs[key] = _content.Load<Song>(key.Value);
         }
 
         /// <summary>
         /// Charge un effet sonore depuis le ContentManager.
         /// </summary>
         /// <param name="key">Clé unique pour identifier l'effet sonore.</param>
-        /// <param name="assetName">Nom de l'asset dans le ContentManager.</param>
-        public void LoadSound(Key<SoundTag> key, string assetName)
+        public void LoadSound(Key<SoundTag> key)
         {
             if (!_sounds.ContainsKey(key))
             {
-                var sound = _content.Load<SoundEffect>(assetName);
+                var sound = _content.Load<SoundEffect>(key.Value);
                 _sounds[key] = sound;
                 var instance = sound.CreateInstance();
-                instance.Volume = SoundVolume * MasterVolume;
                 _soundInstances[key] = instance;
+                _soundVolumes[key] = 1f;
+                instance.Volume = _soundVolumes[key] * GlobalSoundVolume * MasterVolume;
             }
         }
-
         #endregion
 
         #region Play/Stop
-
         /// <summary>
         /// Joue une chanson. Arrête la chanson précédente si différente.
         /// </summary>
@@ -156,6 +157,18 @@ namespace DinaFramework.Audio
         private float _soundVolume = 1f;
 
         /// <summary>
+        /// Volume maître (0.0 à 1.0) appliqué à la musique et aux effets sonores.
+        /// </summary>
+        public float MasterVolume
+        {
+            get => _masterVolume;
+            set
+            {
+                _masterVolume = MathHelper.Clamp(value, 0f, 1f);
+                UpdateAllVolumes();
+            }
+        }
+        /// <summary>
         /// Volume global de la musique (0.0 à 1.0).
         /// </summary>
         public float MusicVolume
@@ -170,7 +183,7 @@ namespace DinaFramework.Audio
         /// <summary>
         /// Volume global des effets sonores (0.0 à 1.0).
         /// </summary>
-        public float SoundVolume
+        public float GlobalSoundVolume
         {
             get => _soundVolume;
             set
@@ -179,18 +192,24 @@ namespace DinaFramework.Audio
                 UpdateSoundVolume();
             }
         }
+
         /// <summary>
-        /// Volume maître (0.0 à 1.0) appliqué à la musique et aux effets sonores.
+        /// Permet de récupérer le volume d'un son donné.
         /// </summary>
-        public float MasterVolume
+        public float GetSoundVolume(Key<SoundTag> key) => _soundVolumes.ContainsKey(key) ? _soundVolumes[key] : 0;
+
+        /// <summary>
+        /// Définit le volume individuel d’un son (0 à 1)
+        /// </summary>
+        public void SetSoundVolume(Key<SoundTag> key, float volume)
         {
-            get => _masterVolume;
-            set
+            if (_soundInstances.ContainsKey(key))
             {
-                _masterVolume = MathHelper.Clamp(value, 0f, 1f);
-                UpdateAllVolumes();
+                _soundVolumes[key] = MathHelper.Clamp(volume, 0f, 1f);
+                _soundInstances[key].Volume = _soundVolumes[key] * _soundVolume * _masterVolume;
             }
         }
+
         private void UpdateAllVolumes()
         {
             UpdateMusicVolume();
@@ -202,8 +221,8 @@ namespace DinaFramework.Audio
         }
         private void UpdateSoundVolume()
         {
-            foreach(var sound in _soundInstances.Values)
-                sound.Volume = _masterVolume * _soundVolume;
+            foreach (var key in _soundInstances.Keys)
+                _soundInstances[key].Volume = _soundVolumes[key] * _soundVolume * _masterVolume;
         }
 
         #endregion
@@ -220,6 +239,8 @@ namespace DinaFramework.Audio
             _songs.Clear();
             _sounds.Clear();
             _soundInstances.Clear();
+            _soundVolumes.Clear();
+
             _content.Unload();
         }
         /// <summary>
@@ -238,13 +259,10 @@ namespace DinaFramework.Audio
 
             if (disposing)
             {
-                // Dispose les ressources managées
                 Unload();
                 if (_ownsContent)
                     _content.Dispose();
             }
-
-            // Ici tu pourrais libérer des ressources non managées si nécessaire
 
             _dispose = true;
         }
