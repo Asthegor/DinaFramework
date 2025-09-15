@@ -19,7 +19,6 @@ namespace DinaFramework.Graphics
     public class CheckBox : Base, IUpdate, IDraw, IVisible, ICopyable<CheckBox>, ILocked
     {
         private Rectangle _checkBoxRect;
-        private bool _useTextures;
         private Texture2D? _checkedTexture;
         private Texture2D? _uncheckedTexture;
         private MouseState _oldMouseState;
@@ -48,12 +47,11 @@ namespace DinaFramework.Graphics
         /// <param name="position">Position de la case à cocher.</param>
         /// <param name="dimensions">Dimensions de la case à cocher.</param>
         /// <param name="zorder">Ordre de dessin de la case.</param>
-        public CheckBox(Texture2D uncheckedTexture, Texture2D checkedTexture, Vector2 position, Vector2 dimensions, int zorder = 0) :
+        public CheckBox(Vector2 position, Vector2 dimensions, Texture2D uncheckedTexture, Texture2D checkedTexture, int zorder = 0) :
             base(position, dimensions, zorder)
         {
             _uncheckedTexture = uncheckedTexture;
             _checkedTexture = checkedTexture;
-            _useTextures = true;
             Position = position;
             Initialize();
         }
@@ -128,6 +126,15 @@ namespace DinaFramework.Graphics
         public Color UncheckedColor { get; set; } = Color.White;
 
         /// <summary>
+        /// Texture quand la case est cochée.
+        /// </summary>
+        public Texture2D? CheckedTexture { get => _checkedTexture; set => _checkedTexture = value; }
+        /// <summary>
+        /// Texture quand la case est décochée.
+        /// </summary>
+        public Texture2D? UncheckedTexture { get => _uncheckedTexture; set => _uncheckedTexture = value; }
+
+        /// <summary>
         /// Met à jour l'état de la case à cocher (gestion des clics et des interactions).
         /// </summary>
         /// <param name="gametime">Temps de jeu écoulé depuis la dernière mise à jour.</param>
@@ -155,34 +162,24 @@ namespace DinaFramework.Graphics
         {
             ArgumentNullException.ThrowIfNull(spritebatch);
 
-            if (Visible)
+            if (!Visible)
+                return;
+
+            Texture2D? texture = State == CheckBoxState.Checked ? _checkedTexture : _uncheckedTexture;
+            Color color = Locked ? LockedColor
+                                 : (State == CheckBoxState.Checked ? CheckedColor : UncheckedColor);
+
+            if (texture != null)
             {
-                if (_useTextures)
-                {
-                    if (State == CheckBoxState.Checked)
-                    {
-                        if (_checkedTexture != null)
-                            spritebatch.Draw(_checkedTexture, _checkBoxRect, Locked ? LockedColor : CheckedColor);
-                    }
-                    else
-                    {
-                        if (_uncheckedTexture != null)
-                            spritebatch.Draw(_uncheckedTexture, _checkBoxRect, Locked ? LockedColor : UncheckedColor);
-                    }
-                }
-                else
-                {
-                    // Dessine un rectangle non plein
-                    Texture2D pixel = ServiceLocator.Get<Texture2D>(ServiceKeys.Texture1px) 
-                        ?? throw new InvalidOperationException("Texture1px n'est pas enregistré dans le ServiceLocator.");
-                    if (State == CheckBoxState.Checked)
-                        spritebatch.DrawRectangle(pixel, _checkBoxRect, CheckedColor, isFilled: true);
-                    else
-                        spritebatch.DrawRectangle(pixel, _checkBoxRect, UncheckedColor, isFilled: false);
-                }
+                spritebatch.Draw(texture, _checkBoxRect, color);
+            }
+            else
+            {
+                Texture2D pixel = ServiceLocator.Get<Texture2D>(ServiceKeys.Texture1px)
+                    ?? throw new InvalidOperationException("Texture1px n'est pas enregistré dans le ServiceLocator.");
+                spritebatch.DrawRectangle(pixel, _checkBoxRect, color, isFilled: State == CheckBoxState.Checked);
             }
         }
-
 
         /// <summary>
         /// Crée une copie de la case à cocher actuelle.
@@ -197,7 +194,6 @@ namespace DinaFramework.Graphics
                 _checkedTexture = _checkedTexture,
                 UncheckedColor = UncheckedColor,
                 _uncheckedTexture = _uncheckedTexture,
-                _useTextures = _useTextures,
                 Dimensions = Dimensions,
                 Position = Position,
                 State = State,
