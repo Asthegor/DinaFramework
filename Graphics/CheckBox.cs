@@ -169,16 +169,14 @@ namespace DinaFramework.Graphics
             Color color = Locked ? LockedColor
                                  : (State == CheckBoxState.Checked ? CheckedColor : UncheckedColor);
 
+            bool filled = State == CheckBoxState.Checked && texture == null;
+
+            Texture2D pixel = ServiceLocator.Get<Texture2D>(ServiceKeys.Texture1px)
+                ?? throw new InvalidOperationException("Texture1px n'est pas enregistré dans le ServiceLocator.");
+            spritebatch.DrawRectangle(pixel, _checkBoxRect, color, isFilled: filled);
+
             if (texture != null)
-            {
                 spritebatch.Draw(texture, _checkBoxRect, color);
-            }
-            else
-            {
-                Texture2D pixel = ServiceLocator.Get<Texture2D>(ServiceKeys.Texture1px)
-                    ?? throw new InvalidOperationException("Texture1px n'est pas enregistré dans le ServiceLocator.");
-                spritebatch.DrawRectangle(pixel, _checkBoxRect, color, isFilled: State == CheckBoxState.Checked);
-            }
         }
 
         /// <summary>

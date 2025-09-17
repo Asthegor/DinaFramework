@@ -64,15 +64,15 @@ namespace DinaFramework.Graphics
             }
             _onlyDigit = onlyDigit;
 
-            Vector2 pos = Vector2.Zero;
-
-            _placeHolder = new Text(font, placeholder, placeholdercolor, pos + offset / 2);
-            _panel = new Panel(pos, dimensions, backgroundcolor, bordercolor, thickness);
-            _text = new Text(font, content, color, pos + offset / 2);
+            _panel = new Panel(Vector2.Zero, dimensions, backgroundcolor, bordercolor, thickness);
+            _placeHolder = new Text(font, placeholder, placeholdercolor, offset);
+            _text = new Text(font, content, color, offset);
+            Vector2 textPos = offset + new Vector2(0, (dimensions.Y - _placeHolder.Dimensions.Y) / 2);
+            _placeHolder.Position = _text.Position = textPos;
 
             if (dimensions == default)
             {
-                _panel.Dimensions = _placeHolder.Dimensions + offset;
+                _panel.Dimensions = _placeHolder.Dimensions + offset * 2;
                 _text.Dimensions = _placeHolder.Dimensions;
                 Dimensions = _panel.Dimensions;
             }

@@ -52,6 +52,7 @@ namespace DinaFramework.Graphics
 
             UpdateTextPosition();
             _text.Dimensions = Dimensions;
+            Visible = true;
         }
 
         /// <summary>
@@ -79,6 +80,7 @@ namespace DinaFramework.Graphics
             LinkPanelEvents();
             RegisterOnClick(onClick);
             RegisterOnHover(onHover);
+            Visible = true;
         }
 
         /// <summary>
@@ -250,7 +252,7 @@ namespace DinaFramework.Graphics
             if (Locked && _lockedColor != Color.Transparent)
                 _background.BackgroundColor = _lockedColor;
 
-            if (_isHovered && _hover != null)
+            if (_background.IsHovered() && _hover != null)
                 _hover.Draw(spritebatch);
             else
                 _background.Draw(spritebatch);
