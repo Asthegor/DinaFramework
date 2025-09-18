@@ -105,6 +105,8 @@ namespace DinaFramework.Menus
                 CurrentItem?.Deselection?.Invoke(CurrentItem);
                 if (value != null)
                     _currentitemindex = _items.IndexOf(value);
+                else
+                    _currentitemindex = -1;
                 CurrentItem?.Selection?.Invoke(CurrentItem);
             }
         }
