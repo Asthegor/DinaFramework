@@ -18,7 +18,7 @@ namespace DinaFramework.Graphics
         private const float DELAY_KEY_STROKE = 0.5f;
         private const float REPEAT_INTERVAL = 0.25f;  // Intervalle entre les répétitions
 
-        private readonly Group _inputTextGroup = [];
+        //private readonly Group _inputTextGroup = [];
         private readonly Panel _panel;
         private readonly Text _placeHolder;
         private readonly Text _text;
@@ -27,6 +27,8 @@ namespace DinaFramework.Graphics
         private bool _isActive;
 
         private readonly bool _onlyDigit;
+        private int _zorder;
+        private Vector2 _offset;
 
         private MouseState _oldMouseState;
         private KeyboardState _oldKeyboardState;
@@ -53,9 +55,9 @@ namespace DinaFramework.Graphics
         /// <param name="placeholder">Texte de remplacement.</param>
         /// <param name="placeholdercolor">Couleur du texte de remplacement.</param>
         /// <param name="onlyDigit">Indique si la zone de saisie ne doit contenir que des chiffres (par défaut : false).</param>
-        public InputText(SpriteFont font, string content, Color color, string placeholder, Color placeholdercolor, 
+        public InputText(SpriteFont font, string content, Color color, string placeholder, Color placeholdercolor,
                          Vector2 position, Vector2 dimensions, Vector2 offset,
-                         Color backgroundcolor, Color bordercolor, int thickness = 1, 
+                         Color backgroundcolor, Color bordercolor, int thickness = 1,
                          bool onlyDigit = false)
         {
             if (string.IsNullOrEmpty(content) && string.IsNullOrEmpty(placeholder))
@@ -63,18 +65,18 @@ namespace DinaFramework.Graphics
                 throw new ArgumentException("Au moins l’un des deux paramètres 'content' ou 'placeholder' doit être renseigné.");
             }
             _onlyDigit = onlyDigit;
+            _offset = offset;
 
             _panel = new Panel(Vector2.Zero, dimensions, backgroundcolor, bordercolor, thickness);
-            _placeHolder = new Text(font, placeholder, placeholdercolor, offset);
-            _text = new Text(font, content, color, offset);
+            _placeHolder = new Text(font, placeholder, placeholdercolor, _offset);
+            _text = new Text(font, content, color, _offset);
             Vector2 textPos = offset + new Vector2(0, (dimensions.Y - _placeHolder.Dimensions.Y) / 2);
             _placeHolder.Position = _text.Position = textPos;
 
             if (dimensions == default)
             {
-                _panel.Dimensions = _placeHolder.Dimensions + offset * 2;
+                _panel.Dimensions = _placeHolder.Dimensions + _offset * 2;
                 _text.Dimensions = _placeHolder.Dimensions;
-                Dimensions = _panel.Dimensions;
             }
 
             if (string.IsNullOrEmpty(placeholder))
@@ -82,15 +84,17 @@ namespace DinaFramework.Graphics
 
 
             _cursor = new Text(font, "|", color);
-            _cursor.SetTimers(0.5f, 1f, -1); //0.5s d'attente, 1s d'affichage, -1: boucle infinie
+            _cursor.SetTimers(0.25f, 0.75f, -1); //0.25s d'attente, 0.75s d'affichage, -1: boucle infinie
+            UpdateCursorPosition();
             _cursor.Visible = false;
 
-            _inputTextGroup.Add(_panel);
-            _inputTextGroup.Add(_text);
-            _inputTextGroup.Add(_placeHolder);
-            _inputTextGroup.Add(_cursor);
+            //_inputTextGroup.Add(_panel);
+            //_inputTextGroup.Add(_text);
+            //_inputTextGroup.Add(_placeHolder);
+            //_inputTextGroup.Add(_cursor);
 
-            _inputTextGroup.Position = position;
+            //_inputTextGroup.Position = position;
+            Position = position;
 
             _isActive = false;
         }
@@ -113,16 +117,49 @@ namespace DinaFramework.Graphics
         /// <summary>
         /// Position du champ de texte.
         /// </summary>
-        public Vector2 Position { get => _inputTextGroup.Position; set => _inputTextGroup.Position = value; }
+        //public Vector2 Position { get => _inputTextGroup.Position; set => _inputTextGroup.Position = value; }
+        public Vector2 Position
+        {
+            get => _panel.Position;
+            set
+            {
+                _panel.Position = value;
+                _placeHolder.Position = value + _offset;
+                _text.Position = value + _offset;
+                UpdateCursorPosition();
+            }
+        }
         /// <summary>
         /// Dimensions du champ de texte.
         /// </summary>
-        public Vector2 Dimensions { get => _inputTextGroup.Dimensions; set => _inputTextGroup.Dimensions = value; }
+        //public Vector2 Dimensions { get => _inputTextGroup.Dimensions; set => _inputTextGroup.Dimensions = value; }
+        public Vector2 Dimensions
+        {
+            get => _panel.Dimensions;
+            set
+            {
+                _panel.Dimensions = value;
+                _placeHolder.Dimensions = value - _offset * 2;
+                _text.Dimensions = value - _offset * 2;
+            }
+        }
 
         /// <summary>
         /// Ordre d'affichage (Z-order) de la zone de saisie.
         /// </summary>
-        public int ZOrder { get => _inputTextGroup.ZOrder; set => _inputTextGroup.ZOrder = value; }
+        //public int ZOrder { get => _inputTextGroup.ZOrder; set => _inputTextGroup.ZOrder = value; }
+        public int ZOrder
+        {
+            get => _zorder;
+            set
+            {
+                _zorder = value;
+                _placeHolder.ZOrder = value;
+                _text.ZOrder = value;
+                _cursor.ZOrder = value;
+                _panel.ZOrder = value;
+            }
+        }
 
         /// <summary>
         /// Met à jour l'état du champ de texte en fonction du temps écoulé et des entrées utilisateur.
@@ -139,7 +176,8 @@ namespace DinaFramework.Graphics
 
             double elapsedTime = gametime.ElapsedGameTime.TotalSeconds;
 
-            _inputTextGroup?.Update(gametime);
+            //_inputTextGroup?.Update(gametime);
+            _panel.Update(gametime);
 
             if (_oldMouseState.LeftButton == ButtonState.Pressed && mouseState.LeftButton == ButtonState.Released)
             {
@@ -150,8 +188,8 @@ namespace DinaFramework.Graphics
 
                 if (_panel.IsClicked())
                 {
-                    UpdateCursorPosition();
                     _cursor.Visible = true;
+                    UpdateCursorPosition();
                     _placeHolder.Visible = false;
                     _isActive = true;
                 }
@@ -159,6 +197,7 @@ namespace DinaFramework.Graphics
 
             if (_isActive)
             {
+                _cursor.Update(gametime);
 
                 foreach (Keys key in Enum.GetValues<Keys>())
                 {
@@ -206,7 +245,17 @@ namespace DinaFramework.Graphics
             if (!_visible)
                 return;
 
-            _inputTextGroup.Draw(spritebatch);
+            //_inputTextGroup.Draw(spritebatch);
+            _panel.Draw(spritebatch);
+
+
+            if (_isActive)
+                _cursor.Draw(spritebatch);
+            else if (string.IsNullOrEmpty(_text.Content))
+                _placeHolder.Draw(spritebatch);
+
+            _text.Draw(spritebatch);
+
         }
 
         private void ProcessKey(Keys key, KeyboardState state)
@@ -215,11 +264,18 @@ namespace DinaFramework.Graphics
             if (!string.IsNullOrEmpty(character))
             {
                 _text.Content += character;
-                _cursor.Position = _text.Position + new Vector2(_text.Dimensions.X + 1, 0);
             }
             else if (key == Keys.Back && _text.Content.Length > 0)
             {
                 _text.Content = _text.Content[..^1];
+                if (string.IsNullOrEmpty(_text.Content))
+                    _placeHolder.Visible = true;
+            }
+            else if (key == Keys.Enter)
+            {
+                _isActive = false;
+                _cursor.Visible = false;
+                _oldKeyboardState = state;
             }
             UpdateCursorPosition();
         }
