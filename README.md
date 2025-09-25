@@ -69,7 +69,7 @@ DinaFramework is a framework built on top of [MonoGame](https://github.com/MonoG
 - **Extensions**: Methods for performing conversions (ToPoint and ToVector2).
 - **Functions**: General utilities for various operations.
 - **Graphics**: Tools for managing and rendering graphical elements.
-- **LevelManager**: Loading and managing game levels, compatible with [Tiled](https://www.mapeditor.org/).
+- **LevelManager**: Loading and managing game levels from [Tiled](https://www.mapeditor.org/).
 - **Menus**: Structures for creating and managing in-game menus.
 - **Scenes**: Management of different game scenes or states.
 - **Screen**: Resolution management.
