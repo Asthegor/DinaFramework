@@ -101,7 +101,16 @@ namespace DinaFramework.Graphics
         /// <summary>
         /// Texte contenu dans le champ de texte.
         /// </summary>
-        public string Content { get => _text.Content; set => _text.Content = value; }
+        public string Content
+        {
+            get => _text.Content;
+            set
+            {
+                _text.Content = value;
+                if (string.IsNullOrEmpty(_text.Content))
+                    _placeHolder.Visible = true;
+            }
+        }
         /// <summary>
         /// Couleur de fond du champ de texte.
         /// </summary>

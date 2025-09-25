@@ -14,12 +14,16 @@ namespace DinaFramework.Extensions
     /// </summary>
     public static class ConvertExtensions
     {
+        #region Vector2
         /// <summary>
         /// Convertit un vecteur 2D en un point entier.
         /// </summary>
         /// <param name="vector">Le vecteur à convertir.</param>
         /// <returns>Un Point représentant les coordonnées entières du vecteur.</returns>
         public static Point ToPoint(this Vector2 vector) => new Point(Convert.ToInt32(vector.X), Convert.ToInt32(vector.Y));
+        #endregion
+
+        #region Point
         /// <summary>
         /// Récupère les dimensions d'une texture sous forme d'un vecteur 2D.
         /// </summary>
@@ -31,7 +35,9 @@ namespace DinaFramework.Extensions
             ArgumentNullException.ThrowIfNull(texture, nameof(texture));
             return new Vector2(texture.Width, texture.Height);
         }
+        #endregion
 
+        #region SpriteBatch
         /// <summary>
         /// Dessine les contours d’un rectangle à l’aide d’une texture, d’une couleur et d’une épaisseur.
         /// Le contour est composé de 4 segments : haut, bas, gauche et droite.
@@ -133,7 +139,6 @@ namespace DinaFramework.Extensions
             using Texture2D arcBitmap = sb.CreateArcBitmap(color, new Rectangle((int)rect.X, (int)rect.Y, (int)radius * 2, (int)radius * 2), radius, startAngle, endAngle);
             sb.Draw(arcBitmap, new Rectangle(rect.X, rect.Y, (int)radius * 2, (int)radius * 2), color);
         }
-
         private static Texture2D CreateArcBitmap(this SpriteBatch sb, Color color, Rectangle arcRect, float radius, float startAngle, float endAngle)
         {
             Texture2D bitmap = new Texture2D(sb.GraphicsDevice, arcRect.Width, arcRect.Height);
@@ -163,6 +168,9 @@ namespace DinaFramework.Extensions
             bitmap.SetData(data);
             return bitmap;
         }
+        #endregion
+
+        #region Dictionary
         /// <summary>
         /// Compares two dictionaries and returns a list of keys whose values differ between them.
         /// </summary>
@@ -194,5 +202,7 @@ namespace DinaFramework.Extensions
             }
             return [..  modifiedKeys];
         }
+        #endregion
+
     }
 }

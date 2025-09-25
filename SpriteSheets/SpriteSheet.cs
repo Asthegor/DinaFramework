@@ -9,12 +9,13 @@ namespace DinaFramework.SpriteSheets
     /// Représente une feuille de sprite (spritesheet) contenant une texture et un ensemble de régions nommées.
     /// Permet d'accéder facilement aux sous-textures par leur nom et de gérer les informations de la spritesheet.
     /// </summary>
-    public class SpriteSheet
+    /// <param name="name">nom de la spritesheet</param>
+    public class SpriteSheet(string name)
     {
         /// <summary>
         /// Obtient le nom de la spritesheet.
         /// </summary>
-        public string Name { get; private set; } = string.Empty;
+        public string Name { get; private set; } = name;
 
         /// <summary>
         /// Obtient la texture associée à cette spritesheet.

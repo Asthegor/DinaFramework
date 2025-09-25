@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Xml.Linq;
 
 namespace DinaFramework.SpriteSheets
@@ -25,7 +26,7 @@ namespace DinaFramework.SpriteSheets
         private static readonly Dictionary<string, Texture2D> textureCache = [];
         private static readonly Dictionary<string, Texture2D> subTextureCache = [];
 
-        private static ParsedSheet LoadSpriteSheet(ContentManager content, string xmlPath, string texturePath)
+        private static ParsedSheet LoadSpriteSheet(ContentManager content, string texturePath)
         {
 
             // Charger la texture avec cache
@@ -34,11 +35,12 @@ namespace DinaFramework.SpriteSheets
                 texture = content.Load<Texture2D>(texturePath);
                 textureCache[texturePath] = texture;
             }
-
-            var parsedSheet = new ParsedSheet(texture) { Name = texturePath };
+            var spritesheetname = Path.GetFileName(texturePath);
+            var parsedSheet = new ParsedSheet(texture) { Name = spritesheetname };
 
             // Charger le XML
             XDocument doc;
+            var xmlPath = Path.Combine(content.RootDirectory, texturePath + ".xml");
             using (var stream = TitleContainer.OpenStream(xmlPath))
                 doc = XDocument.Load(stream);
 
@@ -72,15 +74,15 @@ namespace DinaFramework.SpriteSheets
         /// <exception cref="ArgumentNullException">
         /// Lancée si <paramref name="content"/> est null.
         /// </exception>
-        public static SpriteSheet Load(ContentManager content, string xmlPath, string texturePath)
+        public static SpriteSheet Load(ContentManager content, string texturePath)
         {
             ArgumentNullException.ThrowIfNull(content, nameof(content));
-            var parsedSheet = LoadSpriteSheet(content, xmlPath, texturePath);
+            var parsedSheet = LoadSpriteSheet(content, texturePath);
             if (parsedSheet.FullTexture == null)
                 throw new InvalidOperationException("La texture de la spritesheet n'a pas pu être chargée.");
-            var spriteSheet = new SpriteSheet()
+            var spriteSheet = new SpriteSheet(parsedSheet.Name)
             {
-                Texture = parsedSheet.FullTexture!
+                Texture = parsedSheet.FullTexture!,
             };
             foreach (var kvp in parsedSheet.Regions)
                 spriteSheet.Regions[kvp.Key] = kvp.Value;
