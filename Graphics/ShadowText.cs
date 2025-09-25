@@ -1,7 +1,6 @@
 ﻿using DinaFramework.Core;
 using DinaFramework.Enums;
 using DinaFramework.Interfaces;
-using DinaFramework.Translation;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -13,10 +12,10 @@ namespace DinaFramework.Graphics
     /// <summary>
     /// Représente un texte avec une ombre, permettant de gérer la couleur, la position, l'alignement et les effets de temporisation.
     /// </summary>
-    public class ShadowText : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<ShadowText>
+    public class ShadowText : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<ShadowText>, IDrawingElement
     {
-        private Text _text;
-        private Text _shadow;
+        private readonly Text _text;
+        private readonly Text _shadow;
         Vector2 _offset;
         /// <summary>
         /// Initialise une nouvelle instance de la classe ShadowText avec les paramètres spécifiés.
@@ -71,7 +70,7 @@ namespace DinaFramework.Graphics
         /// </summary>
         public string Content
         {
-            get { return TranslationManager.GetTranslation(_text.Content); }
+            get { return _text.Content; }
             set
             {
                 _shadow.Content = value;
@@ -160,28 +159,31 @@ namespace DinaFramework.Graphics
         /// Obtient les dimensions du texte sans prendre en compte l'ombre.
         /// </summary>
         public Vector2 TextDimensions => _text.TextDimensions;
+
+        /// <summary>
+        /// La police du texte avec une ombre.
+        /// </summary>
+        public SpriteFont Font
+        {
+            get => _text.Font;
+            set
+            {
+                _text.Font = value;
+                _shadow.Font = value;
+            }
+        }
+
         /// <summary>
         /// Crée une copie de l'objet ShadowText avec les mêmes valeurs.
         /// </summary>
         /// <returns>Une nouvelle instance de ShadowText.</returns>
         public ShadowText Copy()
         {
-            return new ShadowText()
+            return new ShadowText(_text.Font, Content, Color, Position, ShadowColor, Offset, zorder: ZOrder)
             {
-                _offset = _offset,
-                _shadow = _shadow?.Copy(),
-                _text = _text?.Copy(),
-                Color = Color,
-                Content = Content,
                 Dimensions = Dimensions,
-                Offset = Offset,
-                Position = Position,
-                ShadowColor = ShadowColor,
                 Visible = Visible,
-                ZOrder = ZOrder
             };
         }
-
-        private ShadowText() { }
     }
 }

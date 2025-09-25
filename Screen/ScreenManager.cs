@@ -1,5 +1,5 @@
 ﻿using DinaFramework.Enums;
-using DinaFramework.Interfaces;
+using DinaFramework.Events;
 using DinaFramework.Services;
 
 using Microsoft.Xna.Framework;
@@ -8,8 +8,6 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DinaFramework.Screen
 {
@@ -20,24 +18,55 @@ namespace DinaFramework.Screen
     /// Cette classe centralise la gestion de l'affichage pour éviter de disperser la logique dans plusieurs composants.
     /// Elle est enregistrée dans le ServiceLocator pour être facilement accessible dans tout le projet.
     /// </remarks>
-    public class ScreenManager
+    public sealed class ScreenManager
     {
         private readonly GraphicsDeviceManager _graphics;
+        private readonly GameWindow _window;
+        private Point _currentResolution;
 
         /// <summary>
         /// Initialise une nouvelle instance de la classe ScreenManager et l'enregistre éventuellement dans le ServiceLocator.
         /// </summary>
         /// <param name="graphics"> L'instance de GraphicsDeviceManager utilisée pour modifier les paramètres d'affichage.</param>
-        private ScreenManager(GraphicsDeviceManager graphics)
+        /// <param name="window"></param>
+        private ScreenManager(GraphicsDeviceManager graphics, GameWindow window)
         {
             _graphics = graphics ?? throw new ArgumentNullException(nameof(graphics));
+            _window = window ?? throw new ArgumentNullException(nameof(window));
+            _window.ClientSizeChanged += HandleResize!;
+            _currentResolution = new Point(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
         }
 
+        private static List<Point>? _allowedResolutions;
+        private static List<DisplayMode>? _cachedResolutions;
+        /// <summary>
+        /// Définit la liste des résolutions autorisées pour le jeu.
+        /// </summary>
+        public static void SetAllowedResolutions(IEnumerable<Point>? resolutions)
+        {
+            _allowedResolutions = resolutions?.ToList();
+
+            var all = GraphicsAdapter.DefaultAdapter.SupportedDisplayModes;
+
+            if (_allowedResolutions == null || _allowedResolutions.Count == 0)
+                _cachedResolutions = null;
+            else
+                _cachedResolutions = [.. all.Where(r => _allowedResolutions.Any(a => a.X == r.Width && a.Y == r.Height))];
+        }
         /// <summary>
         /// Permet de récupérer la liste des résolutions de la carte graphique.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<DisplayMode> AvailableResolutions => GraphicsAdapter.DefaultAdapter.SupportedDisplayModes;
+        public static IEnumerable<DisplayMode> AvailableResolutions
+        {
+            get
+            {
+                if (_cachedResolutions != null)
+                    return _cachedResolutions;
+                return GraphicsAdapter.DefaultAdapter.SupportedDisplayModes;
+            }
+        }
+
 
         /// <summary>
         /// Permet de savoir si l'affiche est en mode plein écran (true) ou fenêtré (false).
@@ -47,13 +76,34 @@ namespace DinaFramework.Screen
         /// <summary>
         /// Retourne la résolution actuelle.
         /// </summary>
-        public Point CurrentResolution => new Point(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
-
+        public Point CurrentResolution => _currentResolution;
 
         /// <summary>
         /// Actions lors du changement de résolution.
         /// </summary>
-        public event Action<Vector2> OnResolutionChanged;
+        public event EventHandler<ScreenManagerEventArgs>? OnResolutionChanged;
+
+        /// <summary>
+        /// Crée une instance de ScreenManager et l'enregistre dans le ServiceLocator.
+        /// </summary>
+        /// <param name="graphics"></param>
+        /// <param name="window"></param>
+        public static void Initialize(GraphicsDeviceManager graphics, GameWindow window)
+        {
+            ServiceLocator.Register(ServiceKeys.ScreenManager, new ScreenManager(graphics, window));
+        }
+
+        private void HandleResize(object sender, EventArgs e)
+        {
+            int newWidth = _window.ClientBounds.Width;
+            int newHeight = _window.ClientBounds.Height;
+
+            if (newWidth != _graphics.PreferredBackBufferWidth ||
+                newHeight != _graphics.PreferredBackBufferHeight)
+            {
+                SetResolution(newWidth, newHeight);
+            }
+        }
 
         /// <summary>
         /// Définit la résolution d'affichage du jeu.
@@ -65,7 +115,8 @@ namespace DinaFramework.Screen
             _graphics.PreferredBackBufferWidth = width;
             _graphics.PreferredBackBufferHeight = height;
             _graphics.ApplyChanges();
-            OnResolutionChanged?.Invoke(new Vector2(width, height));
+            _currentResolution = new Point(_graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
+            OnResolutionChanged?.Invoke(this, new ScreenManagerEventArgs(this));
         }
 
         /// <summary>
@@ -74,18 +125,20 @@ namespace DinaFramework.Screen
         /// <param name="isChecked"></param>
         public void SetFullScreen(bool isChecked)
         {
+            if (_graphics.IsFullScreen == isChecked)
+                return;
+
             _graphics.IsFullScreen = isChecked;
+            _window.IsBorderless = isChecked;
             _graphics.ApplyChanges();
+            if (!isChecked)
+            {
+                _graphics.IsFullScreen = isChecked;
+                _window.IsBorderless = isChecked;
+                _graphics.ApplyChanges();
+            }
         }
 
-        /// <summary>
-        /// Crée une instance de ScreenManager et l'enregistre dans le ServiceLocator.
-        /// </summary>
-        /// <param name="graphics"></param>
-        public static void Initialize(GraphicsDeviceManager graphics)
-        {
-            ServiceLocator.Register(ServiceKey.ScreenManager, new ScreenManager(graphics));
-        }
     }
 
 }

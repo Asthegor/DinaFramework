@@ -1,36 +1,48 @@
-﻿#pragma warning disable CA1002 // Ne pas exposer de listes génériques
-#pragma warning disable CS1591 // Commentaire XML manquant pour le type ou le membre visible publiquement
-namespace DinaFramework.Functions
+﻿namespace DinaFramework.Functions
 {
     using Microsoft.Xna.Framework.Graphics;
 
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Globalization;
     using System.Resources;
-
+    /// <summary>
+    /// Fournit des outils pour valider la compatibilité entre les chaînes d’une ressource localisée
+    /// et les caractères pris en charge par une <see cref="SpriteFont"/>.
+    /// </summary>
     public static class SpriteFontValidator
     {
-        public static List<(string Key, string Value, char InvalidChar)> CheckResourceValuesWithSpriteFont(SpriteFont font, Type resourceType, string cultureCode)
+        /// <summary>
+        /// Vérifie toutes les chaînes d’une ressource localisée pour une culture donnée,
+        /// et retourne la liste des entrées contenant du premier caractère non supporté par la <see cref="SpriteFont"/>.
+        /// </summary>
+        /// <param name="font">Police <see cref="SpriteFont"/> utilisée pour vérifier les caractères disponibles.</param>
+        /// <param name="resourceType">Type de la classe ressource (.resx) contenant les traductions.</param>
+        /// <param name="cultureCode">Code de culture (ex. "fr-FR", "en-US").</param>
+        /// <returns>
+        /// Une liste de tuples contenant la clé de ressource, sa valeur et le premier caractère invalide rencontré.
+        /// </returns>
+        /// <exception cref="ArgumentException">
+        /// Lancée si le code culture est vide, ou si la classe ressource ne contient pas de <see cref="ResourceManager"/>.
+        /// </exception>
+        public static IReadOnlyList<(string Key, string Value, char InvalidChar)> CheckResourceValuesWithSpriteFont(SpriteFont font, Type resourceType, string cultureCode)
         {
+            ArgumentNullException.ThrowIfNull(font);
             if (string.IsNullOrWhiteSpace(cultureCode))
                 throw new ArgumentException("Code culture invalide", nameof(cultureCode));
 
             // Préparer les caractères supportés
-            HashSet<char> supportedChars = [.. font?.Characters];
+            HashSet<char> supportedChars = [.. font.Characters];
 
             // Obtenir le ResourceManager de la classe de ressources
-            var property = resourceType?.GetProperty("ResourceManager",
-                System.Reflection.BindingFlags.Static |
-                System.Reflection.BindingFlags.NonPublic |
-                System.Reflection.BindingFlags.Public);
+            var property = (resourceType?.GetProperty("ResourceManager",
+                                                      System.Reflection.BindingFlags.Static |
+                                                      System.Reflection.BindingFlags.NonPublic |
+                                                      System.Reflection.BindingFlags.Public))
+                           ?? throw new ArgumentException("La classe fournie ne contient pas de ResourceManager.");
 
-            if (property == null)
-                throw new ArgumentException("La classe fournie ne contient pas de ResourceManager.");
-
-            var manager = property.GetValue(null) as ResourceManager;
-            if (manager == null)
-                throw new ArgumentException("Impossible d’obtenir le ResourceManager à partir de la classe fournie.");
+            var manager = property.GetValue(null) as ResourceManager ?? throw new ArgumentException("Impossible d’obtenir le ResourceManager à partir de la classe fournie.");
 
             // Charger la culture (langue)
             CultureInfo culture = new CultureInfo(cultureCode);
@@ -39,11 +51,11 @@ namespace DinaFramework.Functions
             List<(string Key, string Value, char InvalidChar)> errors = [];
 
             // Obtenir toutes les clés de la ressource
-            ResourceSet resourceSet = manager.GetResourceSet(culture, true, true);
-            foreach (System.Collections.DictionaryEntry entry in resourceSet)
+            ResourceSet resourceSet = manager.GetResourceSet(culture, true, true)!;
+            foreach (DictionaryEntry entry in resourceSet)
             {
-                string key = entry.Key as string;
-                string value = entry.Value as string;
+                string? key = entry.Key as string;
+                string? value = entry.Value as string;
 
                 if (key == null || value == null)
                     continue;
@@ -63,6 +75,3 @@ namespace DinaFramework.Functions
     }
 
 }
-
-#pragma warning restore CS1591 // Commentaire XML manquant pour le type ou le membre visible publiquement
-#pragma warning restore CA1002 // Ne pas exposer de listes génériques

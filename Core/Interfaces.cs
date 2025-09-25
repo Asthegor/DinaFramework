@@ -1,6 +1,11 @@
-﻿#pragma warning disable CS1591 // Commentaire XML manquant pour le type ou le membre visible publiquement
+﻿#pragma warning disable CS1591 // Les interfaces sont documentées via le summary de l'interface, pas chaque membre abstrait
+#pragma warning disable CA1040 // Interfaces vides intentionnelles pour le typage ou la composition d'autres interfaces
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+
+using System;
+using System.Collections.Generic;
 
 namespace DinaFramework.Interfaces
 {
@@ -8,7 +13,7 @@ namespace DinaFramework.Interfaces
     /// Définit un objet de jeu complet comprenant le chargement, la réinitialisation, la mise à jour et l'affichage.
     /// </summary>
     public interface IFullGameObject : ILoad, IReset, IUpdate, IDraw
-    {}
+    { }
     /// <summary>
     /// Définit un objet de jeu comprenant la mise à jour et l'affichage'.
     /// </summary>
@@ -16,10 +21,15 @@ namespace DinaFramework.Interfaces
     { }
 
     /// <summary>
+    /// Représente un élément ayant une position, des dimensions et un ordre Z et pouvant se dessiner.
+    /// </summary>
+    public interface IDrawingElement : IElement, IDraw
+    { }
+    /// <summary>
     /// Représente un élément ayant une position, des dimensions et un ordre Z.
     /// </summary>
     public interface IElement : IPosition, IDimensions, IZOrder
-    {}
+    { }
     /// <summary>
     /// Définit une propriété pour gérer l'ordre d'affichage (Z-order).
     /// </summary>
@@ -108,11 +118,34 @@ namespace DinaFramework.Interfaces
         public abstract Vector2 Flip { get; set; }
     }
     /// <summary>
+    /// Définit une interface de base pour les arguments d'événements personnalisés.
+    /// </summary>
+#pragma warning disable CA1711 // Interface utilisée par des classes qui héritent de System.EventArgs; le nom "IEventArgs" est donc approprié.
+    public interface IEventArgs { }
+#pragma warning disable CA1711
+    /// <summary>
+    /// Définit une interface pour un objet cliquable avec des arguments d'événement personnalisés.
+    /// </summary>
+    public interface IClickable<TEventArgs> where TEventArgs : IEventArgs
+    {
+        public event EventHandler<TEventArgs>? OnClicked;
+    }
+    /// <summary>
     /// Définit une méthode pour vérifier si un objet est cliqué.
     /// </summary>
     public interface IClickable
     {
         public abstract bool IsClicked();
+    }
+    public interface  IHovered
+    {
+        public abstract bool IsHovered();
+    }
+    public interface IHovered<TEventArgs> where TEventArgs : IEventArgs
+    {
+        public event EventHandler<TEventArgs>? OnHovered;
+        internal abstract void RestoreOriginalValues(List<string> modifiedKeys);
+        internal Dictionary<string, object> SaveValues();
     }
     /// <summary>
     /// Définit une interface pour un objet textuel ayant des dimensions spécifiques.
@@ -145,4 +178,5 @@ namespace DinaFramework.Interfaces
         public abstract bool Locked { get; set; }
     }
 }
-#pragma warning restore CS1591 // Commentaire XML manquant pour le type ou le membre visible publiquement
+#pragma warning restore CA1040
+#pragma warning restore CS1591

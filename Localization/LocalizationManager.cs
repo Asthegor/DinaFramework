@@ -6,19 +6,25 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
+using System.Resources;
 
-namespace DinaFramework.Translation
+namespace DinaFramework.Localization
 {
     /// <summary>
     /// Gère la traduction des chaînes de texte dans l'application, permettant de récupérer des traductions pour différentes langues.
     /// </summary>
-    public static class TranslationManager
+    public static class LocalizationManager
     {
-        private static readonly List<Type> _listStrings = [];
+        private static readonly Dictionary<string, string> _cache = [];
+        private static readonly List<ResourceManager> _resourceManagers = [];
         private static readonly List<Assembly> _assemblies = [];
-        private static string[] _availableLanguages;
+        private static string[] _availableLanguages = [];
         private static bool _loaded;
         private static bool _updated;
+
+        //private static readonly List<Type> _listStrings = [];
+
+        private static CultureInfo _currentCulture = CultureInfo.CurrentUICulture;
 
         /// <summary>
         /// Vérifie si les valeurs de traduction ont été chargées.
@@ -35,37 +41,31 @@ namespace DinaFramework.Translation
         /// </summary>
         public static string CurrentLanguage
         {
-            get => CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
+            get => _currentCulture.TwoLetterISOLanguageName;
             set
             {
-                var culture = new CultureInfo(value);
-                CultureInfo.CurrentCulture = culture;
-                foreach (var strings in _listStrings)
-                {
-                    foreach (var method in strings.GetRuntimeMethods())
-                    {
-                        if (method.Name == "set_Culture")
-                        {
-                            method.Invoke(null, [culture]);
-                            break;
-                        }
-                    }
-                }
+                _currentCulture = new CultureInfo(value);
                 _updated = true;
+                _cache.Clear();
             }
         }
 
         /// <summary>
         /// Ajoute une classe contenant des traductions.
         /// </summary>
-        /// <param name="valueClass">La classe contenant les traductions à ajouter.</param>
-        public static void SetValues(Type valueClass)
+        /// <param name="resourceClass">La classe contenant les traductions à ajouter.</param>
+        public static void Register(Type resourceClass)
         {
-            ArgumentNullException.ThrowIfNull(valueClass);
-            _listStrings.Add(valueClass);
-            _assemblies.Add(valueClass.Assembly);
+            ArgumentNullException.ThrowIfNull(resourceClass);
+
+            var prop = resourceClass.GetProperty("ResourceManager", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public) ?? throw new InvalidOperationException($"La classe {resourceClass.Name} ne contient pas de ResourceManager.");
+            var rm = prop.GetValue(null) as ResourceManager
+                ?? throw new InvalidOperationException($"La classe {resourceClass.Name} ne fournit pas de ResourceManager valide.");
+            _resourceManagers.Add(rm);
+
+            _assemblies.Add(resourceClass.Assembly);
             _loaded = true;
-            SearchAvailableLanguages();
+            _availableLanguages = SearchAvailableLanguages();
         }
 
         /// <summary>
@@ -75,18 +75,23 @@ namespace DinaFramework.Translation
         /// <returns>La traduction correspondant à la clé, ou la clé elle-même si non trouvée.</returns>
         public static string GetTranslation(string key)
         {
-            if (_listStrings.Count == 0)
-                return key;
+            if (_cache.TryGetValue(key, out var cached))
+                return cached;
 
-            foreach (var strings in _listStrings)
+            foreach (var rm in _resourceManagers)
             {
-                foreach (var method in strings.GetRuntimeMethods())
+                try
                 {
-                    if (method.Name == $"get_{key}")
+                    var translation = rm.GetString(key, _currentCulture);
+                    if (!string.IsNullOrEmpty(translation))
                     {
-                        string res = (string)method.Invoke(null, null);
-                        return res;
+                        _cache[key] = translation;
+                        return translation;
                     }
+                }
+                catch (MissingManifestResourceException)
+                {
+                    // Ignore cette exception si la ressource n'est pas trouvée
                 }
             }
             return key;
@@ -100,12 +105,10 @@ namespace DinaFramework.Translation
         /// <returns>La traduction pour la culture spécifiée.</returns>
         public static string GetTranslation(string key, string culture)
         {
-            var previousLanguage = CurrentLanguage;
-            CurrentLanguage = culture;
-
+            var previous = _currentCulture;
+            _currentCulture = new CultureInfo(culture);
             var translation = GetTranslation(key);
-            CurrentLanguage = previousLanguage;
-
+            _currentCulture = previous;
             return translation;
         }
 
@@ -138,44 +141,37 @@ namespace DinaFramework.Translation
         /// Récupère la liste des cultures disponibles via les assemblies satellites.
         /// </summary>
         /// <returns>Un tableau des langues disponibles.</returns>
-        public static string[] GetAvailableLanguages() => _availableLanguages;
+        public static string[] GetAvailableLanguages() => _availableLanguages ?? [];
 
         private static string[] SearchAvailableLanguages()
         {
-            var cultures = new List<string>();
-
+            var cultures = new HashSet<string>();
             foreach (var assembly in _assemblies)
             {
-                var assemblyPath = Path.GetDirectoryName(assembly.Location);
-                AddCulturesFromSubdirectories(assemblyPath, cultures, assembly);
+                var dir = Path.GetDirectoryName(assembly.Location);
+                if (dir != null)
+                    AddCulturesFromSubdirectories(dir, cultures, assembly);
             }
+            return [.. cultures];
 
-            _availableLanguages = [.. cultures];
-            return _availableLanguages;
         }
 
-        private static void AddCulturesFromSubdirectories(string directoryPath, List<string> cultures, Assembly assembly)
+        private static void AddCulturesFromSubdirectories(string directoryPath, HashSet<string> cultures, Assembly assembly)
         {
             foreach (var directory in Directory.GetDirectories(directoryPath))
             {
                 var cultureName = Path.GetFileName(directory);
-
                 try
                 {
-                    // Tenter de créer la culture sans provoquer d'erreur si le nom est invalide
                     var culture = new CultureInfo(cultureName);
                     var satellitePath = Path.Combine(directory, $"{assembly.GetName().Name}.resources.dll");
                     if (File.Exists(satellitePath))
-                    {
                         cultures.Add(cultureName);
-                    }
                 }
                 catch (CultureNotFoundException)
                 {
-                    // Ignorer les dossiers non valides, mais ne bloquer pas la recherche des autres sous-répertoires
+                    // Ignorer les dossiers non valides, mais ne pas bloquer la recherche des autres sous-répertoires
                 }
-
-                // Appel récursif pour les sous-répertoires
                 AddCulturesFromSubdirectories(directory, cultures, assembly);
             }
         }

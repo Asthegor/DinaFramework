@@ -7,35 +7,31 @@ namespace DinaFramework.Internal
 {
     internal static class InternalAssets
     {
-        private static Texture2D _circle;
-        private static Texture2D _logo;
-
-        /// <summary>
-        /// Texture d’un coin arrondi (1 quadrant, en PNG transparent).
-        /// </summary>
+        private static Texture2D? _circle;
+        private static Texture2D? _logo;
+        private static Texture2D? _dropDownArrow;
         public static Texture2D Circle(GraphicsDevice device)
         {
-            if (_circle == null)
-            {
-                Assembly assembly = typeof(InternalAssets).Assembly;
-                using Stream stream = assembly.GetManifestResourceStream("DinaFramework.Resources.CircleMask.png");
-                if (stream == null)
-                    throw new FileNotFoundException("CircleMask.png introuvable dans les ressources embarquées.");
-                _circle = Texture2D.FromStream(device, stream);
-            }
+            _circle ??= GetInternalResource(device, "CircleMask.png");
             return _circle;
         }
         public static Texture2D Logo(GraphicsDevice device)
         {
-            if (_logo == null)
-            {
-                Assembly assembly = typeof(InternalAssets).Assembly;
-                using Stream stream = assembly.GetManifestResourceStream("DinaFramework.Resources.Logo.png");
-                if (stream == null)
-                    throw new FileNotFoundException("Logo.png introuvable dans les ressources embarquées.");
-                _logo = Texture2D.FromStream(device, stream);
-            }
+            _logo ??= GetInternalResource(device, "Logo.png");
             return _logo;
+        }
+        public static Texture2D DropDownArrow(GraphicsDevice device)
+        {
+            _dropDownArrow ??= GetInternalResource(device, "DropDownArrow.png");
+            return _dropDownArrow;
+        }
+        private static Texture2D GetInternalResource(GraphicsDevice device, string filename)
+        {
+            Assembly assembly = typeof(InternalAssets).Assembly;
+            using Stream? stream = assembly.GetManifestResourceStream($"DinaFramework.Resources.{filename}");
+            return stream == null
+                ? throw new FileNotFoundException($"{filename} introuvable dans les ressources embarquées.")
+                : Texture2D.FromStream(device, stream);
         }
     }
 }

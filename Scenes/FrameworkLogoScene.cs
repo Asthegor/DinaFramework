@@ -1,18 +1,15 @@
-﻿using DinaFramework.Interfaces;
-using DinaFramework.Internal;
+﻿using DinaFramework.Internal;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using System;
-using System.ComponentModel;
 
 namespace DinaFramework.Scenes
 {
     /// <summary>
     /// Scène d’introduction affichant le logo du framework avec un fondu enchaîné.
     /// </summary>
-    [EditorBrowsable(EditorBrowsableState.Never)]
     internal sealed class FrameworkLogoScene(SceneManager sceneManager) : Scene(sceneManager)
     {
         private const float WAIT_FADE_DELAY = 2f;
@@ -21,7 +18,7 @@ namespace DinaFramework.Scenes
         private float _timer;
         private bool _fading;
 
-        private Texture2D logo;
+        private readonly Texture2D logo = InternalAssets.Logo(sceneManager.GraphicsDevice);
         private Rectangle rect;
 
         private Color color;
@@ -31,12 +28,13 @@ namespace DinaFramework.Scenes
         /// </summary>
         public override void Load()
         {
-            logo = InternalAssets.Logo(SceneManager.GraphicsDevice);
+            //logo = InternalAssets.Logo(SceneManager.GraphicsDevice) 
+            //    ?? throw new InvalidOperationException("Impossible de charger le logo du framework.");
 
             (float screenW, float screenH) = SceneManager.ScreenDimensions;
 
-            float maxWidth = screenW * 0.8f;
-            float maxHeight = screenH * 0.8f;
+            float maxWidth = screenW * 0.4f;
+            float maxHeight = screenH * 0.4f;
 
             float ratioX = maxWidth / logo.Width;
             float ratioY = maxHeight / logo.Height;

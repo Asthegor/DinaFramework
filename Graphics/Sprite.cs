@@ -267,17 +267,14 @@ namespace DinaFramework.Graphics
         /// <returns>Une nouvelle instance de Sprite avec les mêmes propriétés.</returns>
         public Sprite Copy()
         {
-            return new Sprite()
+            return new Sprite(Texture, Color, Position)
             {
-                Color = Color,
                 Dimensions = Dimensions,
                 Flip = Flip,
                 Origin = Origin,
-                Position = Position,
                 Rectangle = Rectangle,
                 Rotation = Rotation,
                 Scale = Scale,
-                Texture = Texture,
                 Visible = Visible,
                 ZOrder = ZOrder,
                 _color = _color,
@@ -290,7 +287,5 @@ namespace DinaFramework.Graphics
                 _visible = _visible,
             };
         }
-
-        private Sprite() { }
     }
 }

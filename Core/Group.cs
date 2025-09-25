@@ -1,7 +1,11 @@
-﻿using DinaFramework.Interfaces;
+﻿using DinaFramework.Extensions;
+using DinaFramework.Graphics;
+using DinaFramework.Interfaces;
+using DinaFramework.Services;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 
 using System;
 using System.Collections;
@@ -12,13 +16,17 @@ namespace DinaFramework.Core
     /// <summary>
     /// Représente un groupe d'éléments, gérant leur affichage, visibilité, couleur et interactions.
     /// </summary>
-    public class Group : Base, IDraw, IVisible, IEnumerator, IEnumerable, ICollide, IUpdate, IClickable, IColor
+    public class Group : Base, IDraw, IVisible, IEnumerable<IElement>, ICollide, IUpdate, IColor, IClickable, IHovered
     {
-        private List<IElement> _elements = [];
+        private readonly List<IElement> _elements = [];
         private int index;
         private Rectangle _rect;
         private bool _visible;
         private Color _color;
+        private readonly Texture2D _pixel;
+        private IDrawingElement? _title;
+        private Rectangle? _titleRect;
+        private bool _hovered;
 
         /// <summary>
         /// Initialise une nouvelle instance de la classe Group avec les propriétés spécifiées.
@@ -30,6 +38,8 @@ namespace DinaFramework.Core
         {
             _color = Color.White;
             Visible = true;
+            _pixel = ServiceLocator.Get<Texture2D>(ServiceKeys.Texture1px)
+                ?? throw new InvalidOperationException("Le service Texture1px n'est pas disponible.");
         }
         /// <summary>
         /// Initialise une nouvelle instance de la classe Group en copiant les éléments d'un autre groupe.
@@ -43,10 +53,18 @@ namespace DinaFramework.Core
         public Group(Group group, bool duplicate = true)
         {
             ArgumentNullException.ThrowIfNull(group);
+            _pixel = ServiceLocator.Get<Texture2D>(ServiceKeys.Texture1px)
+                ?? throw new InvalidOperationException("Le service Texture1px n'est pas disponible.");
+
+            _elements = [];
             foreach (var item in group._elements)
             {
                 if (duplicate)
-                    _elements.Add((IElement)Activator.CreateInstance(item.GetType(), item));
+                {
+                    IElement element = (IElement?)Activator.CreateInstance(item.GetType(), item)
+                        ?? throw new InvalidOperationException($"Impossible de dupliquer l'élément de type {item.GetType().Name}.");
+                    _elements.Add(element);
+                }
                 else
                     _elements.Add(item);
             }
@@ -78,6 +96,7 @@ namespace DinaFramework.Core
                 UpdateDimensions();
             SortElements();
         }
+
         /// <summary>
         /// Obtient ou définit la position du groupe. La modification de la position déplace également ses éléments.
         /// </summary>
@@ -90,8 +109,11 @@ namespace DinaFramework.Core
                 foreach (var element in _elements)
                 {
                     if (element is IPosition item)
-                        item.Position = new Vector2(item.Position.X + offset.X, item.Position.Y + offset.Y);
+                        item.Position += offset;
                 }
+                if (_title != null)
+                    _title.Position += offset;
+
                 base.Position = value;
                 _rect.Location = new Point(Convert.ToInt32(value.X), Convert.ToInt32(value.Y));
             }
@@ -133,7 +155,7 @@ namespace DinaFramework.Core
             get => _color;
             set
             {
-                foreach(var element in _elements)
+                foreach (var element in _elements)
                 {
                     if (element is IColor elemcolor)
                         elemcolor.Color = value;
@@ -151,12 +173,15 @@ namespace DinaFramework.Core
             foreach (var item in _elements)
             {
                 if (item is IClickable itemclickable)
-                    if (itemclickable.IsClicked() == true)
-                        return true;
+                    return itemclickable.IsClicked();
             }
             return false;
         }
-
+        /// <summary>
+        /// Vérifie si un élément du groupe est cliqué.
+        /// </summary>
+        /// <returns>True si un élément est cliqué, sinon false.</returns>
+        public bool IsHovered() => _hovered;
         /// <summary>
         /// Obtient le nombre d'éléments dans le groupe.
         /// </summary>
@@ -177,11 +202,10 @@ namespace DinaFramework.Core
         /// <summary>
         /// Retourne un énumérateur pour parcourir les éléments du groupe.
         /// </summary>
-        public IEnumerator GetEnumerator()
-        {
-            Reset();
-            return this;
-        }
+        public IEnumerator<IElement> GetEnumerator() => _elements.GetEnumerator();
+
+        // Implémentation non générique obligatoire par IEnumerable
+        IEnumerator IEnumerable.GetEnumerator() => _elements.GetEnumerator();
 
         /// <summary>
         /// Vérifie si le groupe entre en collision avec un autre élément.
@@ -194,6 +218,113 @@ namespace DinaFramework.Core
                 return false;
             return Rectangle.Intersects(item.Rectangle);
         }
+        /// <summary>
+        /// Active ou désactive l’affichage d’un cadre autour du groupe.
+        /// </summary>
+        public bool HasFrame { get; set; }
+        /// <summary>
+        /// Couleur du cadre ou du fond si <see cref="HasFrame"/> est activé.
+        /// </summary>
+        public Color FrameColor { get; set; } = new Color(50, 50, 50, 200);
+        /// <summary>
+        /// Épaisseur du cadre.
+        /// </summary>
+        public int FrameThickness { get; set; } = 2;
+        /// <summary>
+        /// Espacement supplémentaire appliqué autour des éléments
+        /// lorsque le cadre est dessiné.
+        /// </summary>
+        public int FramePadding { get; set; } = 8;
+        /// <summary>
+        /// Ajoute un titre au groupe.
+        /// </summary>
+        /// <param name="font">Police du titre.</param>
+        /// <param name="text">Texte du titre.</param>
+        /// 
+        /// <param name="textcolor">Couleur du titre.</param>
+        /// <param name="shadowcolor">Couleur de l'ombre (facultatif).</param>
+        /// <param name="shadowoffset">Décalage de l'ombre (facultatif).</param>
+        /// <param name="framecolor">Couleur du cadre (facultatif).</param>
+        /// <param name="framepadding">Espacement supplémentaire appliqué autour des éléments.</param>
+        /// <param name="framethickness">Épaisseur du cadre.</param>
+        /// <param name="zorder">Ordre de superposition du titre (facultatif).</param>
+        /// <returns>L'élément titre ajouté.</returns>
+        public IDrawingElement AddTitle(SpriteFont font, string text, Color textcolor, Color? framecolor = null, int? framepadding = null, int? framethickness = null, Color? shadowcolor = null, Vector2? shadowoffset = null, int zorder = 0)
+        {
+            ArgumentNullException.ThrowIfNull(font, nameof(font));
+            if (_title != null)
+                _title = null;
+            // Ajout du cadre
+            HasFrame = true;
+            FrameColor = framecolor ?? new Color(50, 50, 50, 200);
+            FramePadding = framepadding ?? 8;
+            if (FramePadding < font.LineSpacing / 2)
+                FramePadding = font.LineSpacing / 2 + 1;
+            FrameThickness = framethickness ?? 2;
+
+            if (shadowcolor.HasValue && shadowoffset.HasValue)
+                _title = new ShadowText(font, text, textcolor, Vector2.Zero, shadowcolor.Value, shadowoffset.Value, zorder: zorder);
+            else
+                _title = new Text(font, text, textcolor, Vector2.Zero, zorder: zorder);
+
+            Rectangle bounds = CalculateBounds();
+            bounds.Inflate(FramePadding, FramePadding);
+
+            // alignement : centré en haut
+            float titleX = bounds.X + FramePadding * 2;
+            float titleY = bounds.Y - _title.Dimensions.Y / 2f;
+
+            _title.Position = new Vector2(titleX, titleY);
+            _titleRect = new Rectangle((int)titleX, (int)titleY, (int)_title.Dimensions.X, (int)_title.Dimensions.Y);
+
+            return _title;
+        }
+        /// <summary>
+        /// Ajoute un titre à partir d'un élément déjà créé.
+        /// </summary>
+        /// <param name="title">L'élément titre à ajouter.</param>
+        /// <param name="framecolor">Couleur du cadre (facultatif).</param>
+        /// <param name="framepadding">Espacement supplémentaire appliqué autour des éléments.</param>
+        /// <param name="framethickness">Épaisseur du cadre.</param>
+        /// <returns>L'élément titre ajouté.</returns>
+        public IDrawingElement AddTitle(IDrawingElement title, Color? framecolor = null, int? framepadding = null, int? framethickness = null)
+        {
+            ArgumentNullException.ThrowIfNull(title, nameof(title));
+            if (_title != null)
+                _title = null;
+            _title = title;
+            // Ajout du cadre
+            HasFrame = true;
+            FrameColor = framecolor ?? new Color(50, 50, 50, 200);
+            FramePadding = framepadding ?? 8;
+            FrameThickness = framethickness ?? 2;
+
+            Rectangle bounds = CalculateBounds();
+            bounds.Inflate(FramePadding, FramePadding);
+
+            // alignement : centré en haut
+            float titleX = bounds.X + (bounds.Width - _title.Dimensions.X) / 2f;
+            float titleY = bounds.Y - _title.Dimensions.Y / 2f;
+
+            _title.Position = new Vector2(titleX, titleY);
+            _titleRect = new Rectangle((int)titleX, (int)titleY, (int)_title.Dimensions.X, (int)_title.Dimensions.Y);
+
+            return _title;
+        }
+
+        /// <summary>
+        /// Permet d'ajouter un cadre au groupe.
+        /// </summary>
+        /// <param name="framecolor">Couleur du cadre.</param>
+        /// <param name="framepadding">Espacement supplémentaire appliqué autour des éléments.</param>
+        /// <param name="framethickness">Épaisseur du cadre.</param>
+        public void AddFrame(Color framecolor, int framepadding, int framethickness)
+        {
+            HasFrame = true;
+            FrameColor = framecolor;
+            FramePadding = framepadding;
+            FrameThickness = framethickness;
+        }
 
         /// <summary>
         /// Dessine les éléments du groupe.
@@ -204,11 +335,61 @@ namespace DinaFramework.Core
             if (!Visible)
                 return;
 
+            if (HasFrame)
+            {
+                Rectangle bounds = CalculateBounds();
+                bounds.Inflate(FramePadding, FramePadding);
+
+                if (_titleRect.HasValue)
+                {
+                    var titleRect = _titleRect.Value;
+                    int t = FrameThickness;
+
+                    // cadre avec trou
+                    spritebatch.DrawRectangle(_pixel, new Rectangle(bounds.X, bounds.Y, titleRect.Left, t), FrameColor, t);
+                    int rightX = bounds.X + titleRect.Right + titleRect.Left + FramePadding;
+                    int rightWidth = bounds.Right - rightX;
+                    spritebatch.DrawRectangle(_pixel, new Rectangle(rightX, bounds.Y, rightWidth, t), FrameColor, t);
+                    spritebatch.DrawRectangle(_pixel, new Rectangle(bounds.X, bounds.Bottom - t, bounds.Width, t), FrameColor, t);
+                    spritebatch.DrawRectangle(_pixel, new Rectangle(bounds.X, bounds.Y, t, bounds.Height), FrameColor, t);
+                    spritebatch.DrawRectangle(_pixel, new Rectangle(bounds.Right - t, bounds.Y, t, bounds.Height), FrameColor, t);
+                }
+                else
+                {
+                    spritebatch.DrawRectangle(_pixel, bounds, FrameColor, FrameThickness, isFilled: false);
+                }
+            }
+            if (_title is IDraw drawingTitle)
+                drawingTitle.Draw(spritebatch);
+
             foreach (var element in _elements)
             {
                 if (element is IDraw draw)
                     draw.Draw(spritebatch);
             }
+        }
+        private Rectangle CalculateBounds()
+        {
+            if (_elements.Count == 0)
+                return Rectangle.Empty;
+
+            int minX = int.MaxValue, minY = int.MaxValue;
+            int maxX = int.MinValue, maxY = int.MinValue;
+
+            foreach (var element in _elements)
+            {
+                Rectangle bounds = new Rectangle(element.Position.ToPoint(), element.Dimensions.ToPoint());
+                if (bounds.Left < minX)
+                    minX = bounds.Left;
+                if (bounds.Top < minY)
+                    minY = bounds.Top;
+                if (bounds.Right > maxX)
+                    maxX = bounds.Right;
+                if (bounds.Bottom > maxY)
+                    maxY = bounds.Bottom;
+            }
+
+            return new Rectangle(minX, minY, maxX - minX, maxY - minY);
         }
         /// <summary>
         /// Trie les éléments du groupe par ordre d'affichage (Z-order).
@@ -276,6 +457,13 @@ namespace DinaFramework.Core
         /// <param name="gametime">Temps de jeu actuel.</param>
         public void Update(GameTime gametime)
         {
+            MouseState ms = Mouse.GetState();
+            Rectangle groupRect = new Rectangle((int)Position.X, (int)Position.Y, (int)Dimensions.X, (int)Dimensions.Y);
+            if (groupRect.Contains(ms.Position))
+                _hovered = true;
+            else
+                _hovered = false;
+
             foreach (var elem in _elements)
             {
                 if (elem is IUpdate uelem)

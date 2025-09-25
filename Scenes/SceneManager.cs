@@ -1,6 +1,9 @@
-﻿using DinaFramework.Controls;
+﻿using DinaFramework.Events;
 using DinaFramework.Exceptions;
+using DinaFramework.Functions;
+using DinaFramework.Inputs;
 using DinaFramework.Interfaces;
+using DinaFramework.Internal;
 using DinaFramework.Screen;
 using DinaFramework.Services;
 
@@ -10,10 +13,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace DinaFramework.Scenes
@@ -23,94 +23,20 @@ namespace DinaFramework.Scenes
     /// Cette classe est un gestionnaire central pour les scènes, les ressources et la gestion des écrans de chargement.
     /// Elle garantit qu'une seule instance de la classe existe pendant l'exécution du jeu (Singleton).
     /// </summary>
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public class SceneManager : IResource
+    public sealed class SceneManager : IResource, IDisposable
     {
-        /// <summary>
-        /// Indique si la fenêtre du jeu a actuellement le focus.
-        /// </summary>
-        public static bool HasFocus { get; set; }
-
-
-        private static SceneManager _singleton;
-        private static readonly object _mutex = new object();
-        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-
-        private readonly Dictionary<string, object> _values = [];
-        private readonly Dictionary<SceneKey, Scene> _scenes = [];
-
-        private readonly Game _game;
-
-        private ContentManager _content;
-        private Scene _currentScene;
-        private SceneKey _currentSceneName;
-        private Scene _loadingScreen;
-        private ScreenManager _screenManager;
-        private bool _currentSceneLoaded;
-        private float _loadingProgress;
-        private BlendState _blendState = BlendState.AlphaBlend;
-        private bool _temporaryBlendState;
-
-        //private SceneTransitionManager _transitionManager;
-        //private bool _transitionActive;
-
-        private bool _frameworkLogoShown;
-        private SceneKey _nextSceneName;
-        private bool _nextSceneWithLoading;
-
-        private bool _ownsContent;
-
-        // Propriétés
-        /// <summary>
-        /// Obtient ou définit la visibilité de la souris dans la fenêtre du jeu.
-        /// </summary>
-        public bool IsMouseVisible { get => _game.IsMouseVisible; set => _game.IsMouseVisible = value; }
-        /// <summary>
-        /// Obtient ou définit le progrès du chargement, compris entre 0 et 1.
-        /// </summary>
-        public float LoadingProgress { get => _loadingProgress; set => _loadingProgress = value; }
-        /// <summary>
-        /// Obtient les dimensions de l'écran du jeu sous forme de Vector2 (largeur et hauteur).
-        /// </summary>
-        public Vector2 ScreenDimensions => _screenManager.CurrentResolution.ToVector2();
-        /// <summary>
-        /// Obtient le contrôleur du joueur pour gérer les entrées du joueur.
-        /// </summary>
-        public PlayerController Controller { get; set; }
-        /// <summary>
-        /// Obtient le périphérique graphique.
-        /// </summary>
-        public GraphicsDevice GraphicsDevice { get; private set; }
-        /// <summary>
-        /// Obtient ou définit le SpriteBatch utilisé pour dessiner les sprites 2D.
-        /// </summary>
-        public SpriteBatch SpriteBatch { get; set; }
-        /// <summary>
-        /// Obtient le ContentManager utilisé pour charger et gérer les ressources du jeu.
-        /// </summary>
-        public ContentManager Content { get => _content; private set => _content = value; }
-        /// <summary>
-        /// Obtient le nom de la scène courante.
-        /// </summary>
-        public SceneKey CurrentSceneName => _currentSceneName;
-        /// <summary>
-        /// Obtient la scène courante.
-        /// </summary>
-        public Scene CurrentScene => _currentScene;
-
-        // Méthodes statiques
+        #region === Initialisation & Singleton ===
         /// <summary>
         /// Obtient l'instance unique du SceneManager. Si l'instance n'existe pas, elle est créée.
         /// </summary>
         /// <param key="game">L'instance du jeu utilisée pour initialiser le gestionnaire de scènes.</param>
-        /// <returns>L'instance unique du SceneManager.</returns>
         public static void Initialize(Game game)
         {
             ArgumentNullException.ThrowIfNull(game);
             lock (_mutex)
             {
                 _singleton ??= new SceneManager(game);
-                ServiceLocator.Register(ServiceKey.SceneManager, _singleton);
+                ServiceLocator.Register(ServiceKeys.SceneManager, _singleton);
             }
         }
         /// <summary>
@@ -125,16 +51,8 @@ namespace DinaFramework.Scenes
         public SceneManager CreateNewInstance(string contentRootDirectory = "")
         {
             if (string.IsNullOrEmpty(contentRootDirectory))
-                return new SceneManager(this);
+                return new SceneManager(this, Content.RootDirectory);
             return new SceneManager(this, contentRootDirectory);
-        }
-        /// <summary>
-        /// Constructeur de copie pour créer une nouvelle instance de SceneManager à partir d'une instance existante.
-        /// Cette version utilise le même Content que le projet d'origine.
-        /// </summary>
-        /// <param name="source"></param>
-        private SceneManager(SceneManager source) : this(source, source.Content.RootDirectory)
-        {
         }
         /// <summary>
         /// Constructeur de copie pour créer une nouvelle instance de SceneManager à partir d'une instance existante,
@@ -149,93 +67,43 @@ namespace DinaFramework.Scenes
 
             _game = source._game;
             GraphicsDevice = source.GraphicsDevice;
-            Content = new ContentManager(_game.Services, contentRootDirectory);
-            _ownsContent = true;
+            _content = new ContentManager(_game.Services, contentRootDirectory);
 
-            _screenManager = ServiceLocator.Get<ScreenManager>(ServiceKey.ScreenManager);
-            _screenManager.OnResolutionChanged += HandleResolutionChanged;
+            _screenManager = ServiceLocator.Get<ScreenManager>(ServiceKeys.ScreenManager);
+            if (_screenManager == null)
+                throw new InvalidOperationException("ScreenManager non enregistré dans le ServiceLocator.");
+            _screenManager.OnResolutionChanged += (sender, e) => HandleSceneManagerResolutionChanged();
+
+            _frameworkLogoShown = true;
+            _updateInputManager = false;
 
             _currentScene = null;
             _loadingScreen = null;
-            Controller = DefaultControls.DefaultKeyboard;
         }
-
-        /// <summary>
-        /// Permet de décharger les ressources des scènes.
-        /// </summary>
-        public void Unload()
+        private SceneManager(Game game)
         {
-            // On indique que les scènes n'ont pas été chargée afin que Load soit relancé lors de la prochaine utilisation de la scène.
-            foreach(Scene scene in _scenes.Values)
-                scene.Loaded = false;
+            _game = game;
+            _content = game.Content;
+            GraphicsDevice = game.GraphicsDevice;
+            _currentScene = null;
+            _loadingScreen = null;
+            _screenManager = ServiceLocator.Get<ScreenManager>(ServiceKeys.ScreenManager);
+            if (_screenManager == null)
+                throw new InvalidOperationException("ScreenManager non enregistré dans le ServiceLocator.");
+            _screenManager.OnResolutionChanged += (sender, e) => HandleSceneManagerResolutionChanged();
 
-            // On libère les ressources du ContentManager.
-            Content?.Unload();
+            var pixel = new Texture2D(GraphicsDevice, 1, 1);
+            pixel.SetData([Color.White]);
+
+            _updateInputManager = true;
+
+            // Enregistrement des textures dans le ServiceLocator
+            ServiceLocator.Register(ServiceKeys.Texture1px, pixel);
+            ServiceLocator.Register(ServiceKeys.DropDownArrow, InternalAssets.DropDownArrow(GraphicsDevice));
         }
+        #endregion
 
-        /// <summary>
-        /// Charge un objet depuis un fichier crypté et le désérialise dans le type spécifié.
-        /// </summary>
-        /// <typeparam key="T">Le type de l'objet à charger.</typeparam>
-        /// <param key="filePath">Le chemin du fichier crypté.</param>
-        /// <returns>L'objet désérialisé, ou la valeur par défaut si le fichier n'existe pas ou est vide.</returns>
-        public static T LoadObjectFromEncryptFile<T>(string filePath)
-        {
-            if (File.Exists(filePath))
-            {
-                string encryptString = File.ReadAllText(filePath);
-                if (string.IsNullOrEmpty(encryptString))
-                    return default;
-                string jsonString = DLACryptographie.EncryptDecrypt.DecryptText(encryptString);
-                return JsonSerializer.Deserialize<T>(jsonString, _jsonOptions);
-            }
-
-            return default;
-        }
-        /// <summary>
-        /// Sauvegarde un objet dans un fichier en format crypté, avec possibilité de remplacer le fichier existant.
-        /// </summary>
-        /// <typeparam key="T">Le type de l'objet à sauvegarder.</typeparam>
-        /// <param key="obj">L'objet à sauvegarder.</param>
-        /// <param key="fileFullname">Le chemin complet du fichier.</param>
-        /// <param key="overwritten">Indique si le fichier doit être écrasé.</param>
-        /// <returns>Vrai si l'objet a été sauvegardé avec succès, sinon faux.</returns>
-        public static bool SaveObjectToFile<T>(T obj, string fileFullname, bool overwritten = true)
-        {
-            try
-            {
-                string jsonString = JsonSerializer.Serialize(obj, _jsonOptions);
-                string encryptString = DLACryptographie.EncryptDecrypt.EncryptText(jsonString);
-
-                if (overwritten)
-                    File.WriteAllText(fileFullname, encryptString);
-                else
-                    File.AppendAllText(fileFullname, encryptString);
-                return true;
-            }
-            catch (Exception ex) when (!(ex is OutOfMemoryException || ex is StackOverflowException))
-            {
-                return false;
-            }
-        }
-
-        // Méthodes publiques
-        /// <summary>
-        /// Ajoute une ressource dans le gestionnaire de ressources, ou la met à jour si elle existe déjà.
-        /// </summary>
-        /// <typeparam key="T">Le type de la ressource.</typeparam>
-        /// <param key="resourceName">Le nom de la ressource.</param>
-        /// <param key="resource">La ressource à ajouter ou mettre à jour.</param>
-        /// <returns>Vrai si la ressource a été ajoutée ou mise à jour, sinon faux.</returns>
-        public bool AddResource<T>(string resourceName, T resource)
-        {
-            if (!_values.TryAdd(resourceName, resource))
-            {
-                _values[resourceName] = resource;
-                return true;
-            }
-            return false;
-        }
+        #region === Scènes ===
         /// <summary>
         /// Permet d'ajouter une scène au gestionnaire de scènes avec une clé spécifique.
         /// </summary>
@@ -244,13 +112,13 @@ namespace DinaFramework.Scenes
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="DuplicateDictionaryKeyException"></exception>
         /// <exception cref="ArgumentNullException"></exception>
-        public void AddScene(SceneKey key, Func<Scene> sceneFactory)
+        public void AddScene(Key<SceneTag> key, Func<Scene> sceneFactory)
         {
-            if (key.Equals(default(SceneKey)) || string.IsNullOrEmpty(key.ToString()))
+            if (key.Equals(default) || string.IsNullOrEmpty(key.Value))
                 throw new ArgumentException("SceneKey cannot be null or empty.", nameof(key));
 
             if (_scenes.ContainsKey(key))
-                throw new DuplicateDictionaryKeyException(key.ToString());
+                throw new DuplicateDictionaryKeyException(key.Value);
 
             if (sceneFactory == null)
                 throw new ArgumentNullException(nameof(sceneFactory), "SceneFactory cannot be null.");
@@ -259,57 +127,13 @@ namespace DinaFramework.Scenes
             _scenes[key] = sceneFactory();
         }
         /// <summary>
-        /// Dessine la scène actuelle ou l'écran de chargement si la scène n'est pas encore chargée.
-        /// </summary>
-        /// <param key="spritebatch">Le SpriteBatch utilisé pour dessiner.</param>
-        public void Draw(SpriteBatch spritebatch)
-        {
-            if (spritebatch != null)
-            {
-                spritebatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
-                if (!_currentSceneLoaded)
-                    _loadingScreen?.Draw(spritebatch);
-                else if (_currentScene != null && _currentSceneLoaded && _currentScene.Loaded)
-                    _currentScene.Draw(spritebatch);
-                spritebatch.End();
-            }
-        }
-        /// <summary>
-        /// Quitte le jeu.
-        /// </summary>
-        public void Exit() { _game.Exit(); }
-        /// <summary>
-        /// Récupère une ressource par son nom dans le gestionnaire de ressources.
-        /// </summary>
-        /// <typeparam key="T">Le type de la ressource à récupérer.</typeparam>
-        /// <param key="resourceName">Le nom de la ressource.</param>
-        /// <returns>La ressource du type spécifié.</returns>
-        /// <exception cref="KeyNotFoundException">Lancé lorsque la ressource n'est pas trouvée.</exception>
-        public T GetResource<T>(string resourceName)
-        {
-            if (_values.TryGetValue(resourceName, out object value))
-                return (T)value;
-            throw new KeyNotFoundException($"Resource '{resourceName}' not found in the resource manager.");
-        }
-        /// <summary>
-        /// Définit l'écran de chargement actuel à un type spécifique implémentant ILoadingScreen.
-        /// </summary>
-        /// <typeparam key="T">Le type de l'écran de chargement.</typeparam>
-        public void LoadingScreen<T>() where T : Scene, ILoadingScreen
-        {
-            Type type = typeof(T);
-            if (!Scene.IsAssignableFrom(type))
-                throw new InvalidSceneTypeException(type);
-            _loadingScreen = (Scene)Activator.CreateInstance(type, this);
-        }
-        /// <summary>
         /// Supprime une scène du gestionnaire de scènes par son nom.
         /// </summary>
         /// <param key="name">Le nom de la scène à supprimer.</param>
         /// <exception cref="ArgumentException">Lancé lorsque le nom est vide.</exception>
-        public void RemoveScene(SceneKey name)
+        public void RemoveScene(Key<SceneTag> name)
         {
-            if (!_scenes.TryGetValue(name, out Scene value))
+            if (!_scenes.TryGetValue(name, out Scene? value))
                 throw new KeyNotFoundException($"The scene '{name}' does not exist and cannot be removed.");
 
             if (_currentScene == value)
@@ -317,39 +141,12 @@ namespace DinaFramework.Scenes
 
             _scenes.Remove(name);
         }
-
         /// <summary>
-        /// Supprime une ressource du gestionnaire de ressources par son nom.
+        /// Définit la scène actuelle à une nouvelle scène par son nom, avec un écran de chargement optionnel.
         /// </summary>
-        /// <param key="resourceName">Le nom de la ressource à supprimer.</param>
-        public void RemoveResource(string resourceName) { _values.Remove(resourceName); }
-        /// <summary>
-        /// Réinitialise l'écran de chargement avec un nouveau message.
-        /// </summary>
-        /// <param key="message">Le message à afficher sur l'écran de chargement.</param>
-        public void ResetLoadingScreen(string message)
-        {
-            _loadingScreen.Reset();
-            if (_loadingScreen is ILoadingScreen ls)
-                ls.Text = message;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param key="blendState"></param>
-        /// <param key="temporary"></param>
-        public void SetBlendState(BlendState blendState, bool temporary = true)
-        {
-            _blendState = blendState ?? BlendState.AlphaBlend;
-            _temporaryBlendState = temporary;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param key="name"></param>
-        /// <param key="withLoadingScreen"></param>
-        public async void SetCurrentScene(SceneKey name, bool withLoadingScreen = false)
+        /// <param key="name">Le nom de la scène à définir comme actuelle.</param>
+        /// <param key="withLoadingScreen">Indique si un écran de chargement doit être affiché pendant la transition.</param>
+        public async void SetCurrentScene(Key<SceneTag> name, bool withLoadingScreen = false)
         {
             // Interception du premier appel utilisateur
             if (!_frameworkLogoShown)
@@ -359,34 +156,23 @@ namespace DinaFramework.Scenes
                 _nextSceneWithLoading = withLoadingScreen;
 
                 // Ajoute la scène interne du framework (non visible par l’utilisateur)
-                if (!_scenes.ContainsKey(SceneKey.FrameworkLogo))
-                    _scenes[SceneKey.FrameworkLogo] = new FrameworkLogoScene(this); // Pas besoin de type public
+                if (!_scenes.ContainsKey(SceneKeys.FrameworkLogo))
+                    AddScene(SceneKeys.FrameworkLogo, () => new FrameworkLogoScene(this));
 
-                BaseSetCurrentScene(SceneKey.FrameworkLogo, false); // Pas d'écran de chargement
-
+                DinaFunctions.FireAndForget(BaseSetCurrentScene(SceneKeys.FrameworkLogo, false));
                 return;
             }
 
-            await BaseSetCurrentScene(name, withLoadingScreen);
+            await BaseSetCurrentScene(name, withLoadingScreen).ConfigureAwait(false);
         }
-
-        /// <summary>
-        /// Définit la scène actuelle à une nouvelle scène par son nom, avec un écran de chargement optionnel.
-        /// </summary>
-        /// <param key="name">Le nom de la scène à définir comme actuelle.</param>
-        /// <param key="withLoadingScreen">Indique si un écran de chargement doit être affiché pendant la transition.</param>
-        private async Task BaseSetCurrentScene(SceneKey name, bool withLoadingScreen = false)
+        private async Task BaseSetCurrentScene(Key<SceneTag> name, bool withLoadingScreen = false)
         {
-            if (!_scenes.TryGetValue(name, out Scene value))
+            if (!_scenes.TryGetValue(name, out Scene? value))
             {
                 Trace.WriteLine("The scene '" + name + "' does not exists.");
                 _currentScene = null;
                 return;
             }
-
-            _currentScene?.Dispose(); // Dispose de l'ancienne scène si elle existe
-
-            ControllerKey.ResetAllKeys();
 
             _currentScene = _scenes[name];
             _currentSceneName = name;
@@ -408,11 +194,11 @@ namespace DinaFramework.Scenes
                 }
                 // Reset de la scène courante de manière asynchrone
                 await Task.Run(() =>
-                    {
-                        _currentScene.Reset();
-                        _currentSceneLoaded = true;
-                        _currentScene.Visible = true;
-                    }).ConfigureAwait(false);
+                {
+                    _currentScene.Reset();
+                    _currentSceneLoaded = true;
+                    _currentScene.Visible = true;
+                }).ConfigureAwait(false);
             }
             else
             {
@@ -425,71 +211,366 @@ namespace DinaFramework.Scenes
                 _currentSceneLoaded = true;
             }
         }
+        internal void ContinueToNextScene()
+        {
+            SetCurrentScene(_nextSceneName, _nextSceneWithLoading);
+        }
         /// <summary>
         /// Met à jour la scène actuelle ou l'écran de chargement avec le temps de jeu spécifié.
         /// </summary>
         /// <param key="gameTime">Le temps de jeu utilisé pour mettre à jour la scène.</param>
         public void Update(GameTime gameTime)
         {
+            if (_updateInputManager)
+                InputManager.Update();
             if (!_currentSceneLoaded)
                 _loadingScreen?.Update(gameTime);
             else if (_currentScene != null && _currentScene.Loaded)
                 _currentScene.Update(gameTime);
         }
-
-        internal void EndSpritebatch()
+        /// <summary>
+        /// Dessine la scène actuelle ou l'écran de chargement si la scène n'est pas encore chargée.
+        /// </summary>
+        /// <param key="spritebatch">Le SpriteBatch utilisé pour dessiner.</param>
+        public void Draw(SpriteBatch spritebatch, bool withBeginEnd = false)
         {
-            SpriteBatch.End();
-            SpriteBatch.GraphicsDevice.SetRenderTarget(null);
+            if (spritebatch == null)
+                return;
 
-            SpriteBatch.Begin(SpriteSortMode.Deferred, _blendState);
-
-            if (_temporaryBlendState)
+            if (withBeginEnd)
             {
-                _blendState = BlendState.AlphaBlend;
-                _temporaryBlendState = false;
+                BeginSpriteBatch(spritebatch);
+                DrawCurrentScene(spritebatch);
+                EndSpriteBatch(spritebatch);
+            }
+            else
+            {
+                DrawCurrentScene(spritebatch);
+            }
+        }
+        private void DrawCurrentScene(SpriteBatch spritebatch)
+        {
+            if (!_currentSceneLoaded)
+                _loadingScreen?.Draw(spritebatch);
+            else if (_currentScene != null && _currentSceneLoaded && _currentScene.Loaded)
+                _currentScene.Draw(spritebatch);
+        }
+        #endregion
+
+        #region === Écran de chargement ===
+        /// <summary>
+        /// Définit l'écran de chargement actuel à un type spécifique implémentant ILoadingScreen.
+        /// </summary>
+        /// <typeparam key="T">Le type de l'écran de chargement.</typeparam>
+        public void LoadingScreen<T>() where T : Scene, ILoadingScreen
+        {
+            Type type = typeof(T);
+            if (!Scene.IsAssignableFrom(type))
+                throw new InvalidSceneTypeException(type);
+            _loadingScreen = (Scene)Activator.CreateInstance(type, this)!;
+        }
+        /// <summary>
+        /// Réinitialise l'écran de chargement (progression) et modifie le message affiché.
+        /// </summary>
+        /// <param name="message">Message affiché dans l'écran de chargement.</param>
+        public void ResetLoadingScreen(string message)
+        {
+            _loadingScreen?.Reset();
+            if (_loadingScreen is ILoadingScreen ls)
+                ls.Text = message;
+        }
+        #endregion
+
+        #region === Gestion des ressources ===
+        /// <summary>
+        /// Ajoute une ressource dans le gestionnaire de ressources, ou la met à jour si elle existe déjà.
+        /// </summary>
+        /// <typeparam key="T">Le type de la ressource.</typeparam>
+        /// <param key="resourceName">Le nom de la ressource.</param>
+        /// <param key="resource">La ressource à ajouter ou mettre à jour.</param>
+        /// <returns>Vrai si la ressource a été ajoutée ou mise à jour, sinon faux.</returns>
+        public bool AddResource<T>(string resourceName, T resource)
+        {
+            if (resource == null)
+                throw new ArgumentNullException(nameof(resource), "Resource cannot be null.");
+            if (!_values.TryAdd(resourceName, resource))
+            {
+                _values[resourceName] = resource;
+                return true;
+            }
+            return false;
+        }
+        /// <summary>
+        /// Récupère une ressource par son nom dans le gestionnaire de ressources.
+        /// </summary>
+        /// <typeparam key="T">Le type de la ressource à récupérer.</typeparam>
+        /// <param key="resourceName">Le nom de la ressource.</param>
+        /// <returns>La ressource du type spécifié.</returns>
+        /// <exception cref="KeyNotFoundException">Lancé lorsque la ressource n'est pas trouvée.</exception>
+        public T GetResource<T>(string resourceName)
+        {
+            if (_values.TryGetValue(resourceName, out var value))
+                return (T)value;
+            throw new KeyNotFoundException($"Resource '{resourceName}' not found in the resource manager.");
+        }
+        /// <summary>
+        /// Supprime une ressource du gestionnaire de ressources par son nom.
+        /// </summary>
+        /// <param key="resourceName">Le nom de la ressource à supprimer.</param>
+        public void RemoveResource(string resourceName) { _values.Remove(resourceName); }
+        /// <summary>
+        /// Permet de décharger les ressources des scènes.
+        /// </summary>
+        public void Unload()
+        {
+            // On indique que les scènes n'ont pas été chargée afin que Load soit relancé lors de la prochaine utilisation de la scène.
+            foreach (Scene scene in _scenes.Values)
+                scene.Loaded = false;
+
+            // On libère les ressources du ContentManager.
+            Content?.Unload();
+        }
+        #endregion
+
+        #region === SpriteBatch / Rendu ===
+        /// <summary>
+        /// Met à jour les paramètres actuels utilisés pour le rendu des sprites via un <see cref="SpriteBatch"/>.
+        /// Chaque paramètre est optionnel ; si aucun paramètre n’est fourni, les valeurs actuelles restent inchangées.
+        /// </summary>
+        /// <param name="sortMode">Le mode de tri des sprites. Si null, conserve la valeur actuelle.</param>
+        /// <param name="blendState">L'état de mélange des couleurs. Si null, conserve la valeur actuelle.</param>
+        /// <param name="samplerState">L'état de l'échantillonneur pour le filtrage des textures. Si null, conserve la valeur actuelle.</param>
+        /// <param name="depthStencilState">L'état de profondeur/stencil pour le rendu. Si null, conserve la valeur actuelle.</param>
+        /// <param name="rasterizerState">L'état de rasterisation pour le rendu. Si null, conserve la valeur actuelle.</param>
+        /// <param name="effect">L'effet (shader) à appliquer lors du rendu. Si null, conserve la valeur actuelle.</param>
+        /// <param name="matrix">La matrice de transformation pour le rendu des sprites. Si null, conserve la valeur actuelle.</param>
+
+        public void SetSpriteBatchParameters(
+            SpriteSortMode? sortMode = null,
+            BlendState? blendState = null,
+            SamplerState? samplerState = null,
+            DepthStencilState? depthStencilState = null,
+            RasterizerState? rasterizerState = null,
+            Effect? effect = null,
+            Matrix? matrix = null)
+        {
+            _currentSpriteSortMode = sortMode ?? _currentSpriteSortMode;
+            _currentBlendState = blendState ?? _currentBlendState;
+            _currentSamplerState = samplerState ?? _currentSamplerState;
+            _currentDepthStencilState = depthStencilState ?? _currentDepthStencilState;
+            _currentRasterizerState = rasterizerState ?? _currentRasterizerState;
+            _currentEffect = effect ?? _currentEffect;
+            _currentMatrix = matrix ?? _currentMatrix;
+        }
+        /// <summary>
+        /// Démarre le rendu des sprites en utilisant le <see cref="SpriteBatch"/> fourni et les paramètres actuellement configurés.
+        /// </summary>
+        /// <param name="spritebatch">Le SpriteBatch utilisé pour le rendu. Si null, la méthode ne fait rien.</param>
+        public void BeginSpriteBatch(SpriteBatch spritebatch)
+        {
+            spritebatch?.Begin(
+                _currentSpriteSortMode,
+                _currentBlendState,
+                _currentSamplerState,
+                _currentDepthStencilState,
+                _currentRasterizerState,
+                _currentEffect,
+                _currentMatrix
+                );
+        }
+        /// <summary>
+        /// Termine le rendu des sprites sur le <see cref="SpriteBatch"/> fourni.
+        /// </summary>
+        /// <param name="spritebatch">Le SpriteBatch utilisé pour le rendu. Si null, la méthode ne fait rien.</param>
+        public static void EndSpriteBatch(SpriteBatch spritebatch)
+        {
+            spritebatch?.End();
+        }
+        /// <summary>
+        /// Crée un RenderTarget2D avec les dimensions spécifiées.
+        /// </summary>
+        /// <param name="dimensions">Les dimensions du RenderTarget2D à créer.</param>
+        /// <returns>Le RenderTarget2D créé.</returns>
+        public RenderTarget2D CreateRenderTarget2D(Point dimensions)
+        {
+            return new RenderTarget2D(GraphicsDevice, dimensions.X, dimensions.Y);
+        }
+
+        /// <summary>
+        /// Configure le <see cref="GraphicsDevice"/> pour dessiner sur un <see cref="RenderTarget2D"/> spécifique,
+        /// puis démarre le rendu des sprites avec le <see cref="SpriteBatch"/> fourni.
+        /// </summary>
+        /// <param name="spritebatch">Le SpriteBatch utilisé pour le rendu. Ne peut pas être null.</param>
+        /// <param name="renderTarget">Le RenderTarget2D sur lequel dessiner. Ne peut pas être null.</param>
+        public void BeginSpriteBatchRenderTarget(SpriteBatch spritebatch, RenderTarget2D renderTarget)
+        {
+            ArgumentNullException.ThrowIfNull(spritebatch, nameof(spritebatch));
+            ArgumentNullException.ThrowIfNull(renderTarget, nameof(renderTarget));
+            spritebatch.GraphicsDevice.SetRenderTarget(renderTarget);
+            BeginSpriteBatch(spritebatch);
+        }
+        /// <summary>
+        /// Termine le rendu avec le <see cref="SpriteBatch"/> sur un <see cref="RenderTarget2D"/> 
+        /// et rétablit le <see cref="GraphicsDevice"/> pour dessiner sur l'écran principal.
+        /// </summary>
+        /// <param name="spritebatch">Le SpriteBatch utilisé pour le rendu. Ne peut pas être null.</param>
+        public static void EndSpriteBatchRenderTarget(SpriteBatch spritebatch)
+        {
+            ArgumentNullException.ThrowIfNull(spritebatch, nameof(spritebatch));
+            EndSpriteBatch(spritebatch);
+            spritebatch.GraphicsDevice.SetRenderTarget(null);
+        }
+        /// <summary>
+        /// Permet de remettre les paramèetres du SpriteBatch aux valeurs par défaut.
+        /// </summary>
+        public void ResetSpriteBatchParameters()
+        {
+            _currentSpriteSortMode = _defaultSpriteSortMode;
+            _currentBlendState = _defaultBlendState;
+            _currentSamplerState = _defaultSamplerState;
+            _currentDepthStencilState = _defaultDepthStencilState;
+            _currentRasterizerState = _defaultRasterizerState;
+            _currentEffect = _defaultEffect;
+            _currentMatrix = _defaultMatrix;
+        }
+        #endregion
+
+        #region === Utilitaires ===
+        /// <summary>
+        /// Quitte le jeu.
+        /// </summary>
+        public void Exit() { _game.Exit(); }
+
+        /// <summary>
+        /// Événement déclenché lorsque la résolution de la scène change.
+        /// Les abonnés peuvent réagir à ce changement pour ajuster le rendu ou l'interface.
+        /// </summary>
+#pragma warning disable CS0067
+        public event EventHandler<SceneEventArgs>? OnResolutionChanged;
+#pragma warning restore CS0067
+
+        private void HandleSceneManagerResolutionChanged()
+        {
+            if (_currentScene != null)
+            {
+                Unload();
+                _currentScene.Dispose();
+                _currentScene.Load();
+                _currentScene.Loaded = true;
+                _currentSceneLoaded = true;
+            }
+        }
+        #endregion
+
+        #region === Attributs & membres internes ===
+        // Singleton interne
+        private static SceneManager? _singleton;
+        private static readonly object _mutex = new object();
+
+        // Game et Content
+        private readonly Game _game;
+        private readonly ContentManager _content;
+
+        // Scènes
+        private readonly Dictionary<Key<SceneTag>, Scene> _scenes = [];
+        private Scene? _currentScene;
+        private Key<SceneTag> _currentSceneName;
+        private Scene? _loadingScreen;
+        private bool _currentSceneLoaded;
+        private float _loadingProgress;
+        private bool _frameworkLogoShown;
+        private readonly bool _updateInputManager;
+        private Key<SceneTag> _nextSceneName;
+        private bool _nextSceneWithLoading;
+
+        // Ressources
+        private readonly Dictionary<string, object> _values = [];
+
+        // Screen & RenderTarget
+        private readonly ScreenManager? _screenManager;
+        private Color _backgroundcolor;
+
+        // SpriteBatch parameters
+        private BlendState? _currentBlendState = BlendState.AlphaBlend;
+        private SpriteSortMode _currentSpriteSortMode = SpriteSortMode.Deferred;
+        private SamplerState? _currentSamplerState;
+        private DepthStencilState? _currentDepthStencilState;
+        private RasterizerState? _currentRasterizerState;
+        private Effect? _currentEffect;
+        private Matrix? _currentMatrix;
+#pragma warning disable CS0649
+        private readonly BlendState? _defaultBlendState = BlendState.AlphaBlend;
+        private readonly SpriteSortMode _defaultSpriteSortMode = SpriteSortMode.Deferred;
+        private readonly SamplerState? _defaultSamplerState;
+        private readonly DepthStencilState? _defaultDepthStencilState;
+        private readonly RasterizerState? _defaultRasterizerState;
+        private readonly Effect? _defaultEffect;
+        private readonly Matrix? _defaultMatrix;
+#pragma warning restore CS0649
+        #endregion
+
+        #region === Propriétés publiques ===
+        /// <summary>
+        /// Indique si la fenêtre du jeu a actuellement le focus.
+        /// </summary>
+        public static bool HasFocus { get; set; }
+        /// <summary>
+        /// Obtient ou définit la visibilité de la souris dans la fenêtre du jeu.
+        /// </summary>
+        public bool IsMouseVisible { get => _game.IsMouseVisible; set => _game.IsMouseVisible = value; }
+        /// <summary>
+        /// Obtient ou définit le progrès du chargement, compris entre 0 et 1.
+        /// </summary>
+        public float LoadingProgress { get => _loadingProgress; set => _loadingProgress = value; }
+        /// <summary>
+        /// Obtient les dimensions de l'écran du jeu sous forme de Vector2 (largeur et hauteur).
+        /// </summary>
+        public Vector2 ScreenDimensions
+        {
+            get
+            {
+                if (_screenManager == null)
+                    throw new InvalidOperationException("ScreenManager non enregistré dans le ServiceLocator.");
+                return _screenManager.CurrentResolution.ToVector2();
             }
         }
 
-        internal void ContinueToNextScene()
-        {
-            SetCurrentScene(_nextSceneName, _nextSceneWithLoading);
-        }
-
-        // Fonctions privées
-        private SceneManager(Game game)
-        {
-            _game = game;
-            Content = game.Content;
-            GraphicsDevice = game.GraphicsDevice;
-            _currentScene = null;
-            _loadingScreen = null;
-            _screenManager = ServiceLocator.Get<ScreenManager>(ServiceKey.ScreenManager);
-
-            _screenManager.OnResolutionChanged += HandleResolutionChanged;
-
-            // Par défaut, on utilise le clavier
-            Controller = DefaultControls.DefaultKeyboard;
-
-            var pixel = new Texture2D(GraphicsDevice, 1, 1);
-            pixel.SetData([Color.White]);
-            ServiceLocator.Register(ServiceKey.Texture1px, pixel);
-        }
+        /// <summary>
+        /// Obtient le nom de la scène courante.
+        /// </summary>
+        public Key<SceneTag> CurrentSceneName => _currentSceneName;
+        /// <summary>
+        /// Obtient la scène courante.
+        /// </summary>
+        public Scene? CurrentScene => _currentScene;
+        /// <summary>
+        /// Obtient le ContentManager utilisé pour charger et gérer les ressources du jeu.
+        /// </summary>
+        public ContentManager Content => _content;
+        /// <summary>
+        /// Obtient ou définit la couleur de fond utilisée pour le rendu des scènes.
+        /// </summary>
+        public Color BackgroundColor { get => _backgroundcolor; set => _backgroundcolor = value; }
+        /// <summary>
+        /// Obtient le périphérique graphique.
+        /// </summary>
+        public GraphicsDevice GraphicsDevice { get; private set; }
+        /// <summary>
+        /// Obtient ou définit le SpriteBatch utilisé pour dessiner les sprites 2D.
+        /// </summary>
+        public SpriteBatch? SpriteBatch { get; set; }
+        #endregion
 
         /// <summary>
-        /// 
+        /// Libère les ressources utilisées par le SceneManager.
         /// </summary>
-        public event Action<Vector2> OnResolutionChanged;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param key="newResolution"></param>
-        private void HandleResolutionChanged(Vector2 newResolution)
+        public void Dispose()
         {
-            OnResolutionChanged?.Invoke(newResolution);
+            _content.Dispose();
+            _currentBlendState?.Dispose();
+            _defaultBlendState?.Dispose();
+            _defaultSamplerState?.Dispose();
         }
-
     }
 }
 

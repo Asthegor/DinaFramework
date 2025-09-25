@@ -288,7 +288,7 @@ namespace DinaFramework.Graphics
             set => _delay = value;
         }
         /// <summary>
-        /// L.incrément de progression automatique.
+        /// L'incrément de progression automatique.
         /// </summary>
         public float Increment
         {

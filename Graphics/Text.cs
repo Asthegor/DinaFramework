@@ -1,10 +1,12 @@
 ﻿using DinaFramework.Core;
 using DinaFramework.Enums;
+using DinaFramework.Events;
 using DinaFramework.Interfaces;
-using DinaFramework.Translation;
+using DinaFramework.Localization;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 
 using System;
 
@@ -13,7 +15,9 @@ namespace DinaFramework.Graphics
     /// <summary>
     /// Représente un texte à afficher avec des options de temporisation et d'alignement.
     /// </summary>
-    public class Text : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<Text>, IElement
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1724: Type names should not match namespaces",
+        Justification = "Text est clair dans le contexte du framework. Pas d'utilisation de System.Drawing dans le framework.")]
+    public class Text : Base, IUpdate, IDraw, IColor, IVisible, IText, ICopyable<Text>, IDrawingElement
     {
         private SpriteFont _font;
         private string _content;
@@ -33,7 +37,7 @@ namespace DinaFramework.Graphics
         private bool _wait;
         private bool _displayed;
 
-        private string _wrappedContent;
+        private string _wrappedContent = string.Empty;
 
         /// <summary>
         /// Le contenu du texte.
@@ -45,14 +49,6 @@ namespace DinaFramework.Graphics
             {
                 _content = value;
                 WrapText();
-                //Vector2 currentDim = Dimensions;
-                //string str = TranslationManager.GetTranslation(value);
-                //Vector2 textDim = _font.MeasureString(str);
-                //if (currentDim.X < textDim.X)
-                //    currentDim.X = textDim.X;
-                //if (currentDim.Y < textDim.Y)
-                //    currentDim.Y = textDim.Y;
-                //Dimensions = currentDim;
             }
         }
         /// <summary>
@@ -128,12 +124,13 @@ namespace DinaFramework.Graphics
             ArgumentNullException.ThrowIfNull(font);
 
             _font = font;
-            Content = content;
+            _content = content;
             _color = color;
             _wait = false;
             _displayposition = position;
             Position = position;
-            Dimensions = _font.MeasureString(TranslationManager.GetTranslation(Content));
+            Dimensions = _font.MeasureString(LocalizationManager.GetTranslation(Content));
+            WrapText();
             SetAlignments(horizontalalignment, verticalalignment);
             ZOrder = zorder;
             _displayed = true;
@@ -151,22 +148,43 @@ namespace DinaFramework.Graphics
             _displayTime = displayTime;
             _nbLoops = nbLoops;
 
-            _displayed = false;
-            _wait = false;
-            if (waitTime == 0.0f)
-                _displayed = true;
-            else if (waitTime > 0.0f)
+            _timerWaitTime = 0.0f;
+            _timerDisplayTime = 0.0f;
+
+            if (displayTime == 0f)
+            {
+                _displayed = false;
+                _wait = false;
+            }
+            else if (waitTime > 0f)
+            {
+                _displayed = false;
                 _wait = true;
+            }
+            else
+            {
+                _displayed = true;
+                _wait = false;
+            }
+            //_displayed = false;
+            //_wait = false;
+            //if (waitTime == 0.0f)
+            //    _displayed = true;
+            //else if (waitTime > 0.0f)
+            //    _wait = true;
         }
         /// <summary>
         /// Obtient les dimensions du texte à partir de la police et du contenu.
         /// </summary>
-        //public Vector2 TextDimensions => _font.MeasureString(TranslationManager.GetTranslation(Content));
         public Vector2 TextDimensions => _font?.MeasureString(_wrappedContent ?? "") ?? Vector2.Zero;
         /// <summary>
         /// Permet d'indiquer si on veut ou non que le texte revienne automatiquement à la ligne.
         /// </summary>
         public bool Wrap { get; set; }
+        /// <summary>
+        /// Déclenche les événements lorsque le panneau est survolé.
+        /// </summary>
+        public event EventHandler<TextEventArgs>? OnHovered;
 
         /// <summary>
         /// Définit les alignements horizontal et vertical du texte.
@@ -188,13 +206,10 @@ namespace DinaFramework.Graphics
             ArgumentNullException.ThrowIfNull(spritebatch);
             if (_visible && _displayed)
             {
-                //Vector2 scale = TextDimensions / Dimensions;
-                //spritebatch.DrawString(_font, TranslationManager.GetTranslation(Content), _displayposition, _color, 0, Vector2.Zero, Vector2.One, SpriteEffects.None, 0);
-
                 if (Wrap)
                     spritebatch.DrawString(_font, _wrappedContent ?? "", _displayposition, _color);
                 else
-                    spritebatch.DrawString(_font, TranslationManager.GetTranslation(Content), _displayposition, _color);
+                    spritebatch.DrawString(_font, LocalizationManager.GetTranslation(Content), _displayposition, _color);
             }
         }
         /// <summary>
@@ -205,42 +220,53 @@ namespace DinaFramework.Graphics
         {
             ArgumentNullException.ThrowIfNull(gametime);
 
-            if (_visible)
+            if (!Visible)
+                return;
+
+            float dt = (float)gametime.ElapsedGameTime.TotalSeconds;
+
+            if (_wait)
             {
-                float dt = (float)gametime.ElapsedGameTime.TotalSeconds;
-                if (_wait)
+                _timerWaitTime += dt;
+                if (_timerWaitTime > _waitTime)
                 {
-                    _timerWaitTime += dt;
-                    if (_timerWaitTime > _waitTime)
+                    _timerWaitTime = 0.0f;
+                    _wait = false;
+                    //_displayed = true;
+                    _displayed = _displayTime != 0f;
+                }
+            }
+            else if (_displayed)
+            {
+                if (_displayTime > 0)
+                {
+                    _timerDisplayTime += dt;
+                    if (_timerDisplayTime >= _displayTime)
                     {
-                        _timerWaitTime = 0.0f;
-                        _wait = false;
-                        _displayed = true;
+                        _timerDisplayTime = 0.0f;
+                        _displayed = false;
+
+                        if (_nbLoops > 0)
+                        {
+                            _nbLoops--;
+                            if (_nbLoops == 0)
+                                return;
+                        }
+
+                        if (_nbLoops != 0 && _waitTime > 0f)
+                            _wait = true;
+                        else if (_nbLoops != 0 && _waitTime <= 0f)
+                            _displayed = true;
                     }
                 }
-                else if (_displayed)
+
+                if (_displayed && new Rectangle(Position.ToPoint(), Dimensions.ToPoint()).Contains(Mouse.GetState().Position))
                 {
-                    if (_nbLoops != 0)
-                    {
-                        _timerDisplayTime += dt;
-                        if (_timerDisplayTime > _displayTime)
-                        {
-                            _timerDisplayTime = 0.0f;
-                            _displayed = false;
-                            _wait = true;
-                            if (_nbLoops > 0)
-                                _nbLoops--;
-                            if (_nbLoops == 0)
-                                _wait = false;
-                        }
-                    }
+                    OnHovered?.Invoke(this, new TextEventArgs(this));
                 }
             }
         }
-        /// <summary>
-        /// Permet de repositionner le texte.
-        /// </summary>
-        public void UpdateDisplayPosition()
+        private void UpdateDisplayPosition()
         {
             Vector2 offset = new Vector2();
 
@@ -263,32 +289,22 @@ namespace DinaFramework.Graphics
         /// <returns>Une nouvelle instance de Text avec les mêmes propriétés.</returns>
         public Text Copy()
         {
-            return new Text()
+            return new Text(Font, Content, Color, Position, _halign, _valign, ZOrder)
             {
-                _color = _color,
-                _content = _content,
                 _displayed = _displayed,
                 _displayposition = _displayposition,
                 _displayTime = _displayTime,
                 _font = _font,
-                _halign = _halign,
-                _valign = _valign,
                 _nbLoops = _nbLoops,
                 _timerDisplayTime = _timerDisplayTime,
                 _timerWaitTime = _timerWaitTime,
                 _visible = _visible,
                 _wait = _wait,
                 _waitTime = _waitTime,
-                Color = Color,
-                Content = Content,
                 Dimensions = Dimensions,
-                Position = Position,
                 Visible = Visible,
-                ZOrder = ZOrder
             };
         }
-        private Text() { }
-
         private void WrapText()
         {
             if (_font == null || string.IsNullOrEmpty(_content))
@@ -297,7 +313,7 @@ namespace DinaFramework.Graphics
                 return;
             }
 
-            string raw = TranslationManager.GetTranslation(_content);
+            string raw = LocalizationManager.GetTranslation(_content);
             float maxWidth = Dimensions.X;
 
             if (maxWidth <= 0f)

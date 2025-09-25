@@ -1,5 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Microsoft.Xna.Framework;
+
+using System;
+using System.Diagnostics;
+using System.Globalization;
+using System.Threading.Tasks;
 
 namespace DinaFramework.Functions
 {
@@ -66,23 +70,51 @@ namespace DinaFramework.Functions
 
             return false;
         }
-
-        /// <summary>
-        /// Mélange pseudo-aléatoire pour usage non sécurisé (logique de jeu). 
-        /// Utilise <see cref="System.Random"/> ; l'avertissement CA5394 est supprimé car non pertinent ici.
-        /// </summary>
-        /// <param name="list">La liste à mélanger.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA5394:Do not use insecure randomness", Justification = "Utilisation sans impact sécurité pour le tirage de règles de jeu")]
-        private static void Shuffle(List<int> list)
+        internal static void FireAndForget(Task task)
         {
-            Random rng = new();
-            for (int i = list.Count - 1; i > 0; i--)
+            ArgumentNullException.ThrowIfNull(task);
+            task.ContinueWith(t =>
             {
-                int swapIndex = rng.Next(i + 1);
-                (list[i], list[swapIndex]) = (list[swapIndex], list[i]);
-            }
+                if (t.Exception != null)
+                    Trace.WriteLine("Exception in fire-and-forget task: " + t.Exception);
+            }, TaskScheduler.Default);
         }
 
+        #region Color
+        /// <summary>
+        /// Convertit une couleur hexadécimale en Color MonoGame.
+        /// Format accepté : RRGGBB ou AARRGGBB, avec ou sans '#'.
+        /// </summary>
+        public static Color FromHex(string hex)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(hex);
 
+            hex = hex.Trim();
+            if (string.IsNullOrWhiteSpace(hex))
+                return Color.Transparent;
+
+            hex = hex.TrimStart('#');
+
+            if (hex.Length == 6)
+            {
+                byte r = byte.Parse(hex.AsSpan(0, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                byte g = byte.Parse(hex.AsSpan(2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                byte b = byte.Parse(hex.AsSpan(4, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                return new Color(r, g, b);
+            }
+            else if (hex.Length == 8)
+            {
+                byte a = byte.Parse(hex.AsSpan(0, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                byte r = byte.Parse(hex.AsSpan(2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                byte g = byte.Parse(hex.AsSpan(4, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                byte b = byte.Parse(hex.AsSpan(6, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                return new Color(r, g, b, a);
+            }
+            else
+            {
+                throw new ArgumentException($"Format hex invalide : {hex}");
+            }
+        }
+        #endregion
     }
 }

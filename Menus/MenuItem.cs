@@ -14,36 +14,47 @@ namespace DinaFramework.Menus
     /// Représente un élément de menu interactif qui peut être sélectionné, désélectionné et activé.
     /// Implémente les interfaces IDraw, IPosition, IDimensions, IElement, IVisible et IColor.
     /// </summary>
-    public class MenuItem : IDraw, IPosition, IDimensions, IElement, IVisible, IColor
+    public sealed class MenuItem : IDraw, IPosition, IDimensions, IElement, IVisible, IColor, IUpdate
     {
         private bool _visible;
         private readonly object _item;
-        Func<MenuItem, MenuItem> _selection;
-        Func<MenuItem, MenuItem> _deselection;
-        Func<MenuItem, MenuItem> _activation;
+        private Func<MenuItem, MenuItem>? _selection;
+        private Func<MenuItem, MenuItem>? _deselection;
+        private Func<MenuItem, MenuItem>? _activation;
+        private Color _disabledColor = Color.DarkGray;
+        //private Dictionary<string, object> _originalValues = new Dictionary<string, object>();
+        //private List<string> _modifiedValues = [];
+        //private bool hasBeenRestored;
+        //private bool _hoverOriginalSaved;
+        //private bool saveCalled;
+        private bool _isHovered;
+        private bool _wasHovered;
+        private bool _isClicked;
+        private bool _wasClicked;
+
         /// <summary>
         /// Fonction exécutée lors de la sélection de l'élément de menu.
         /// </summary>
-        public Func<MenuItem, MenuItem> Selection
+        public Func<MenuItem, MenuItem>? Selection
         {
             get { return _selection; }
-            set { _selection = value; }
+            set { _selection = value!; }
         }
         /// <summary>
         /// Fonction exécutée lors de la désélection de l'élément de menu.
         /// </summary>
-        public Func<MenuItem, MenuItem> Deselection
+        public Func<MenuItem, MenuItem>? Deselection
         {
             get { return _deselection; }
-            set { _deselection = value; }
+            set { _deselection = value!; }
         }
         /// <summary>
         /// Fonction exécutée lors de l'activation (validation) de l'élément de menu.
         /// </summary>
-        public Func<MenuItem, MenuItem> Activation
+        public Func<MenuItem, MenuItem>? Activation
         {
             get { return _activation; }
-            set { _activation = value; }
+            set { _activation = value!; }
         }
 
         /// <summary>
@@ -132,6 +143,14 @@ namespace DinaFramework.Menus
             }
         }
         /// <summary>
+        /// Couleur lorsque le MenuItem est déactivé.
+        /// </summary>
+        public Color DisableColor
+        {
+            get => _disabledColor;
+            set => _disabledColor = value;
+        }
+        /// <summary>
         /// Le contenu du texte associé à l'élément de menu.
         /// </summary>
         public string Content
@@ -140,7 +159,7 @@ namespace DinaFramework.Menus
             {
                 if (_item is Text textitem)
                     return textitem.Content;
-                return default;
+                return string.Empty;
             }
             set
             {
@@ -166,12 +185,14 @@ namespace DinaFramework.Menus
             {
                 if (_item is Text textitem)
                     return textitem.Font;
-                return null;
+                throw new InvalidOperationException("L'item n'est pas un Text");
             }
             set
             {
                 if (_item is Text textitem)
                     textitem.Font = value;
+                else
+                    throw new InvalidOperationException("L'item n'est pas un Text");
             }
         }
 
@@ -188,9 +209,9 @@ namespace DinaFramework.Menus
         /// <param name="halign">Alignement horizontal (optionnel).</param>
         /// <param name="valign">Alignement vertical (optionnel).</param>
         public MenuItem(SpriteFont font, string text, Color color,
-                        Func<MenuItem, MenuItem> selection = null,
-                        Func<MenuItem, MenuItem> deselection = null,
-                        Func<MenuItem, MenuItem> activation = null,
+                        Func<MenuItem, MenuItem>? selection = null,
+                        Func<MenuItem, MenuItem>? deselection = null,
+                        Func<MenuItem, MenuItem>? activation = null,
                         Vector2 position = default,
                         HorizontalAlignment halign = HorizontalAlignment.Left, VerticalAlignment valign = VerticalAlignment.Top) :
             this(new Text(font, text, color, position, halign, valign, 0), selection, deselection, activation, position)
@@ -205,39 +226,21 @@ namespace DinaFramework.Menus
         /// <param name="activation">Fonction d'activation (optionnelle).</param>
         /// <param name="position">Position de l'élément (optionnelle).</param>
         public MenuItem(object item,
-                        Func<MenuItem, MenuItem> selection = null,
-                        Func<MenuItem, MenuItem> deselection = null,
-                        Func<MenuItem, MenuItem> activation = null,
+                        Func<MenuItem, MenuItem>? selection = null,
+                        Func<MenuItem, MenuItem>? deselection = null,
+                        Func<MenuItem, MenuItem>? activation = null,
                         Vector2 position = default)
         {
             _item = item;
             if (_item is IPosition positem)
                 positem.Position = position;
-            Selection = selection;
-            Deselection = deselection;
-            Activation = activation;
+            _selection = selection;
+            _deselection = deselection;
+            _activation = activation;
             Visible = true;
             State = MenuItemState.Enable;
         }
-        //public void Draw(SpriteBatch spritebatch)
-        //{
-        //    if (_visible)
-        //    {
-        //        Color previousColor = Color.White;
-        //        if (_item is IColor colorItem)
-        //        {
-        //            previousColor = colorItem.Color;
-        //            if (State == MenuItemState.Disable)
-        //                colorItem.Color = Color.DarkGray;
-        //        }
 
-        //        if (_item is IDraw item)
-        //            item.Draw(spritebatch);
-
-        //        if (_item is IColor colorItem2)
-        //            colorItem2.Color = previousColor;
-        //    }
-        //}
         /// <summary>
         /// Dessine l'élément de menu à l'écran, en respectant sa visibilité et son état.
         /// </summary>
@@ -247,16 +250,102 @@ namespace DinaFramework.Menus
             if (!_visible || _item is not IDraw drawableItem)
                 return;
 
-            IColor colorItem = _item as IColor;
-            Color? originalColor = colorItem?.Color;
+            IColor? coloredItem = _item as IColor;
+            Color? originalColor = coloredItem?.Color;
 
-            if (colorItem != null && State == MenuItemState.Disable)
-                colorItem.Color = Color.DarkGray;
+            if (coloredItem != null && State == MenuItemState.Disable)
+                coloredItem.Color = _disabledColor;
 
             drawableItem.Draw(spritebatch);
 
-            if (colorItem != null && originalColor.HasValue)
-                colorItem.Color = originalColor.Value;
+            if (coloredItem != null && originalColor.HasValue)
+                coloredItem.Color = originalColor.Value;
         }
+
+        /// <summary>
+        /// Met à jour l'état de l'élément de menu en fonction du temps de jeu.
+        /// </summary>
+        /// <param name="gametime"></param>
+        public void Update(GameTime gametime)
+        {
+            if (State == MenuItemState.Disable || _item is not IUpdate updateItem)
+                return;
+
+            updateItem.Update(gametime);
+            UpdateHover();
+            UpdateClick();
+        }
+        private void UpdateHover()
+        {
+            if (_item is not IHovered hoveredItem)
+                return;
+
+            _isHovered = hoveredItem.IsHovered();
+
+            if (_isHovered && !_wasHovered)
+                Selection?.Invoke(this);
+            else if (!_isHovered && _wasHovered)
+                Deselection?.Invoke(this);
+
+            _wasHovered = _isHovered;
+        }
+
+        private void UpdateClick()
+        {
+            if (_item is not IClickable clickableItem)
+                return;
+
+            _isClicked = clickableItem.IsClicked();
+
+            if (_isClicked && !_wasClicked)
+                Activation?.Invoke(this);
+
+            _wasClicked = _isClicked;
+        }
+
+
+
+        //private Dictionary<string, object> SaveValues()
+        //{
+        //    Dictionary<string, object> values = [];
+        //    // Récupère toutes les propriétés publiques du Panel et les enregistre dans le dictionnaire.
+        //    Type type = _item.GetType();
+        //    PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+        //    foreach (PropertyInfo property in properties)
+        //    {
+        //        var value = property.GetValue(this);
+        //        if (value != null)
+        //            values[property.Name] = value;
+        //    }
+        //    return values;
+        //}
+        //private void RestoreOriginalValues(List<string> modifiedKeys)
+        //{
+        //    ArgumentNullException.ThrowIfNull(modifiedKeys, nameof(modifiedKeys));
+        //    if (modifiedKeys.Count == 0)
+        //    {
+        //        foreach (KeyValuePair<string, object> pair in _originalValues)
+        //        {
+        //            // Utilise la réflexion pour définir la valeur de la propriété correspondante.
+        //            PropertyInfo? property = this.GetType().GetProperty(pair.Key);
+        //            if (property != null)
+        //                property.SetValue(this, pair.Value);
+        //        }
+        //    }
+        //    else
+        //    {
+        //        foreach (string key in modifiedKeys)
+        //        {
+        //            if (_originalValues.ContainsKey(key))
+        //            {
+        //                PropertyInfo? property = this.GetType().GetProperty(key);
+        //                if (property != null)
+        //                    property.SetValue(this, _originalValues[key]);
+        //            }
+        //        }
+        //    }
+        //}
+
     }
 }

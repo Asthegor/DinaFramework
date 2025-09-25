@@ -1,5 +1,7 @@
-﻿using DinaFramework.Exceptions;
+﻿using DinaFramework.Events;
+using DinaFramework.Exceptions;
 using DinaFramework.Interfaces;
+using DinaFramework.Services;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -17,23 +19,17 @@ namespace DinaFramework.Scenes
     /// Elle permet de gérer les ressources, les dimensions de l'écran, le rendu et les transitions entre les scènes.
     /// Les classes dérivées doivent implémenter les méthodes abstraites Load, Reset, Update, et Draw.
     /// </remarks>
-    /// <remarks>
-    /// Initialise une nouvelle instance de la classe Scene avec un gestionnaire de scènes spécifié.
-    /// </remarks>
-    /// <param name="sceneManager">Le gestionnaire de scènes à associer à cette scène.</param>
-    /// <remarks>
-    /// La Scene est automatiquement créée lorsqu'on l'ajoute au gestionnaire de scènes par la fonction AddScene.
-    /// </remarks>
     public abstract class Scene : IFullGameObject, IResource
     {
         /// <summary>
-        /// 
+        /// Initialise une nouvelle instance de la classe <see cref="Scene"/> et lie la scène au gestionnaire de scènes spécifié.
+        /// S'abonne également à l'événement de changement de résolution pour que la scène puisse réagir aux modifications de l'écran.
         /// </summary>
-        /// <param name="sceneManager"></param>
+        /// <param name="sceneManager">Le <see cref="SceneManager"/> qui gère cette scène.</param>
         protected Scene(SceneManager sceneManager)
         {
             SceneManager = sceneManager;
-            SceneManager.OnResolutionChanged += HandleResolutionChanged;
+            SceneManager.OnResolutionChanged += (sender, e) => HandleSceneResolutionChanged(e.Scene);
         }
 
         private bool _isSpritebatchBegin;
@@ -63,7 +59,7 @@ namespace DinaFramework.Scenes
         /// <summary>
         /// Obtient le SpriteBatch utilisé pour dessiner les éléments graphiques de cette scène.
         /// </summary>
-        protected SpriteBatch SpriteBatch => SceneManager.SpriteBatch;
+        protected SpriteBatch? SpriteBatch => SceneManager.SpriteBatch;
         /// <summary>
         /// Obtient ou définit le progrès du chargement de la scène, compris entre 0 et 1.
         /// </summary>
@@ -136,17 +132,8 @@ namespace DinaFramework.Scenes
         /// Définit la scène actuelle à une nouvelle scène par son nom, avec ou sans écran de chargement.
         /// </summary>
         /// <param name="name">Le nom de la scène à définir comme actuelle.</param>
-        /// <param name="options">Options pour la transition de la scène.</param>
-        //protected void SetCurrentScene(string name, SceneTransitionOptions options)
-        //{
-        //    sceneManager.SetCurrentScene(name, options);
-        //}
-        /// <summary>
-        /// Définit la scène actuelle à une nouvelle scène par son nom, avec ou sans écran de chargement.
-        /// </summary>
-        /// <param name="name">Le nom de la scène à définir comme actuelle.</param>
         /// <param name="withLoadingScreen">Indique si un écran de chargement doit être affiché pendant la transition.</param>
-        protected void SetCurrentScene(SceneKey name, bool withLoadingScreen = false)
+        protected void SetCurrentScene(Key<SceneTag> name, bool withLoadingScreen = false)
         {
             SceneManager.SetCurrentScene(name, withLoadingScreen);
         }
@@ -178,17 +165,11 @@ namespace DinaFramework.Scenes
         /// <summary>
         /// Commence le processus de dessin des sprites, avec des options personnalisables.
         /// </summary>
-        /// <param name="sortMode">Le mode de tri des sprites.</param>
-        /// <param name="blendState">L'état de fusion des sprites.</param>
-        /// <param name="samplerState">L'état de l'échantillonneur.</param>
-        /// <param name="depthStencilState">L'état du stencil de profondeur.</param>
-        /// <param name="rasterizerState">L'état du rasterizer.</param>
-        /// <param name="effect">L'effet appliqué aux sprites.</param>
-        /// <param name="transformMatrix">La matrice de transformation à appliquer aux sprites.</param>
-        protected void BeginSpritebatch(SpriteSortMode sortMode = SpriteSortMode.Deferred, BlendState blendState = null, SamplerState samplerState = null, DepthStencilState depthStencilState = null, RasterizerState rasterizerState = null, Effect effect = null, Matrix? transformMatrix = null)
+        /// <param name="spritebatch">Spritebatch</param>
+        protected void BeginSpritebatch(SpriteBatch spritebatch)
         {
-            SceneManager.SpriteBatch.End();
-            SceneManager.SpriteBatch.Begin(sortMode, blendState, samplerState, depthStencilState, rasterizerState, effect, transformMatrix);
+            SceneManager.EndSpriteBatch(spritebatch);
+            SceneManager.BeginSpriteBatch(spritebatch);
             _isSpritebatchBegin = true;
         }
         /// <summary>
@@ -203,12 +184,12 @@ namespace DinaFramework.Scenes
         /// <summary>
         /// Termine le processus de dessin des sprites.
         /// </summary>
-        protected void EndSpritebatch()
+        protected void EndSpritebatch(SpriteBatch spritebatch)
         {
             if (!_isSpritebatchBegin)
                 throw new SpriteBatchNotBeginException();
 
-            SceneManager.EndSpritebatch();
+            SceneManager.EndSpriteBatch(spritebatch);
             _isSpritebatchBegin = false;
         }
 
@@ -216,15 +197,16 @@ namespace DinaFramework.Scenes
         // Gestion du changement de résolution de l'écran
 
         /// <summary>
-        /// 
+        /// Événement déclenché lorsque la résolution de la scène change.
+        /// Les abonnés peuvent réagir à ce changement pour ajuster le rendu ou l'interface.
         /// </summary>
-        public event Action<Vector2> OnResolutionChanged;
-        private void HandleResolutionChanged(Vector2 newResolution)
+        public event EventHandler<SceneEventArgs>? OnResolutionChanged;
+        private void HandleSceneResolutionChanged(Scene scene)
         {
-            OnResolutionChanged?.Invoke(newResolution);
+            OnResolutionChanged?.Invoke(scene, new SceneEventArgs(scene));
         }
         /// <summary>
-        /// 
+        /// Détache tous les abonnés à l'événement <see cref="OnResolutionChanged"/>.
         /// </summary>
         public virtual void Dispose()
         {
