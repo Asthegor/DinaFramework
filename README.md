@@ -30,11 +30,11 @@ DinaFramework est un framework développé à partir de [MonoGame](https://githu
 
    ```bash
    git clone https://github.com/Asthegor/DinaFramework.git
-Ouvrez le fichier DinaFramework.sln avec Visual Studio.
+2. Ouvrez le fichier DinaFramework.sln avec Visual Studio.
 
-Restaurez les packages NuGet nécessaires.
+3. Restaurez les packages NuGet nécessaires.
 
-Utilisation
+## Utilisation
 Compilez le projet DinaFramework.
 
 Ajoutez la DLL générée DinaFramework.dll à votre projet.
@@ -43,17 +43,17 @@ Ajoutez une référence à la dll DinaFramework.dll dans votre projet de jeu.
 
 Vous n'avez plus qu'à utiliser les fonctionnalités du framework lors du développement de votre jeu.
 
-Documentation
+## Documentation
 La documentation détaillée est en cours de développement.
 Une première version est tout de même disponible ici : [Documentation DinaFramework](https://dinacsharp.lacombedominique.com/documentation/)
 
-Contributions
+## Contributions
 Les contributions sont les bienvenues. Veuillez ouvrir des issues pour signaler des problèmes ou proposer des améliorations.
 
-Licence
+## Licence
 Ce projet est sous licence MIT.
 
-Notes
+## Notes
 Si vous utilisez ces sources, merci de mentionner cette page dans les crédits de votre jeu ou bien dans le fork que vous créez.
 
 ---
@@ -89,11 +89,11 @@ DinaFramework is a framework built on top of [MonoGame](https://github.com/MonoG
 
    ```bash
    git clone https://github.com/Asthegor/DinaFramework.git
-Open the DinaFramework.sln file in Visual Studio.
+2. Open the DinaFramework.sln file in Visual Studio.
 
-Restore the necessary NuGet packages.
+3. Restore the necessary NuGet packages.
 
-Usage
+## Usage
 Build the DinaFramework project.
 
 Add the generated DinaFramework.dll to your game project.
@@ -102,15 +102,15 @@ Reference DinaFramework.dll in your project.
 
 You can now use all framework features when developing your game.
 
-Documentation
+## Documentation
 Detailed documentation is in progress.
 A first version is available here: [DinaFramework Documentation](https://dinacsharp.lacombedominique.com/documentation/)
 
-Contributions
+## Contributions
 Contributions are welcome. Please submit pull requests or open issues to report problems or suggest improvements.
 
-License
+## License
 This project is licensed under the MIT License.
 
-Notes
+## Notes
 If you use these sources, please mention this page in your game credits or in your fork.
