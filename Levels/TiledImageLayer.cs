@@ -17,6 +17,6 @@ namespace DinaFramework.Levels
         public Color Transparency { get; set; }
         public List<IProperty> Properties { get; set; }
         public bool Visible { get; set; }
-
+        public string Parent { get; internal set; } = string.Empty;
     }
 }

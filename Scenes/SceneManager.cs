@@ -307,11 +307,12 @@ namespace DinaFramework.Scenes
         /// <param key="resourceName">Le nom de la ressource.</param>
         /// <returns>La ressource du type spécifié.</returns>
         /// <exception cref="KeyNotFoundException">Lancé lorsque la ressource n'est pas trouvée.</exception>
-        public T GetResource<T>(string resourceName)
+        public T? GetResource<T>(string resourceName)
         {
             if (_values.TryGetValue(resourceName, out var value))
                 return (T)value;
-            throw new KeyNotFoundException($"Resource '{resourceName}' not found in the resource manager.");
+            Trace.WriteLine($"Resource '{resourceName}' not found in the resource manager.");
+            return default;
         }
         /// <summary>
         /// Supprime une ressource du gestionnaire de ressources par son nom.

@@ -1,6 +1,4 @@
-﻿using Microsoft.Xna.Framework.Graphics;
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace DinaFramework.Levels
 {
@@ -14,5 +12,6 @@ namespace DinaFramework.Levels
         public uint[] Data { get; set; }
         public List<IProperty> Properties { get; set; }
         public bool Visible { get; set; }
+        public string Parent { get; internal set; } = string.Empty;
     }
 }

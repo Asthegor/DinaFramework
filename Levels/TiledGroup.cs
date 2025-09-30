@@ -1,6 +1,4 @@
-﻿using Microsoft.Xna.Framework.Graphics;
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace DinaFramework.Levels
 {
@@ -21,11 +19,25 @@ namespace DinaFramework.Levels
         /// <summary>
         /// Indique si le groupe est visible.
         /// </summary>
-        public bool Visible { get; set; }
+        public bool Visible
+        {
+            get => _visible;
+            set
+            {
+                _visible = value;
+                foreach (var layer in _datas)
+                    layer.Visible = value;
+            }
+        }
+        private bool _visible;
         /// <summary>
         /// Liste des propriétés personnalisées associées au groupe.
         /// </summary>
-        public List<IProperty> Properties { get; set; } = [];
+        public IReadOnlyList<IProperty> Properties { get; set; } = [];
+        /// <summary>
+        /// Parent du groupe. Si le groupe est au niveau racine, cette valeur est une chaîne vide.
+        /// </summary>
+        public string Parent { get; internal set; } = string.Empty;
 
         /// <summary>
         /// Calques de tuiles contenus dans ce groupe.

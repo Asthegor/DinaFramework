@@ -35,12 +35,13 @@ namespace DinaFramework.Levels
         /// </summary>
         /// <param name="tmxPath">Chemin du fichier .tmx.</param>
         /// <param name="embedded">Indique si la ressource est embarquée dans l’assembly.</param>
+        /// <param name="assembly">Nom de l'assembly</param>
         /// <returns>Un objet Level prêt à être utilisé.</returns>
-        public Level Load(string tmxPath, bool embedded = false)
+        public Level Load(string tmxPath, bool embedded = false, Assembly? assembly = null)
         {
             if (embedded)
             {
-                Assembly assembly = typeof(LevelManager).Assembly;
+                ArgumentNullException.ThrowIfNull(assembly, nameof(assembly));
                 using Stream? stream = assembly.GetManifestResourceStream(tmxPath);
                 if (stream == null)
                     throw new FileNotFoundException($"{tmxPath} introuvable dans les ressources embarquées.");
@@ -85,11 +86,11 @@ namespace DinaFramework.Levels
                         break;
                     case "objectgroup":
                         TiledObjectGroup layerobjectgroup = LoadObjectGroup(element);
-                        level.AddObject(layerobjectgroup);
+                        level.AddObjectGroup(layerobjectgroup);
                         break;
                     case "imagelayer":
                         TiledImageLayer imagelayer = LoadImageLayer(element);
-                        level.AddImage(imagelayer);
+                        level.AddImageLayer(imagelayer);
                         break;
                 }
             }
@@ -166,9 +167,10 @@ namespace DinaFramework.Levels
         }
         private TiledGroup LoadGroup(XElement element)
         {
+            var name = GetAttribute(element, "name", string.Empty);
             TiledGroup newGroup = new TiledGroup()
             {
-                Name = GetAttribute(element, "name", string.Empty),
+                Name = name,
                 Opacity = GetAttribute(element, "opacity", 1f),
                 Properties = GetProperties(element),
                 Visible = GetAttribute(element, "visible", true),
@@ -179,18 +181,22 @@ namespace DinaFramework.Levels
                 {
                     case "group":
                         TiledGroup childGroup = LoadGroup(child);
+                        childGroup.Parent = name;
                         newGroup.AddGroup(childGroup);
                         break;
                     case "layer":
                         TiledLayer layer = LoadLayer(child);
+                        layer.Parent = name;
                         newGroup.AddLayer(layer);
                         break;
                     case "objectgroup":
                         TiledObjectGroup objectgroup = LoadObjectGroup(child);
+                        objectgroup.Parent = name;
                         newGroup.AddObject(objectgroup);
                         break;
                     case "imagelayer":
                         var imagelayer = LoadImageLayer(child);
+                        imagelayer.Parent = name;
                         newGroup.AddImage(imagelayer);
                         break;
                 }
@@ -199,11 +205,11 @@ namespace DinaFramework.Levels
         }
         private static TiledObjectGroup LoadObjectGroup(XElement element)
         {
-            // TODO: à contrôler
+            var name = GetAttribute(element, "name", string.Empty);
 
             TiledObjectGroup newObjectGroup = new TiledObjectGroup()
             {
-                Name = GetAttribute(element, "name", string.Empty),
+                Name = name,
                 Opacity = GetAttribute(element, "opacity", 1f),
                 Visible = GetAttribute(element, "visible", true),
             };
@@ -222,15 +228,18 @@ namespace DinaFramework.Levels
                 {
                     Enum.TryParse(objectType.ToString(), true, out tiledObjectType);
                 }
-                
+
                 TiledObject tiledObject = new TiledObject()
                 {
+                    ID = GetAttribute(child, "id", 0),
                     Name = GetAttribute(child, "name", string.Empty),
-                    Type = GetAttribute(child, "type", string.Empty),
+                    Class = GetAttribute(child, "type", string.Empty),
                     GID = GetAttribute(child, "gid", 0u),
                     Bounds = new Rectangle(x, y, width, height),
                     Rotation = GetAttribute(child, "rotation", 0f),
                     Shape = tiledObjectType,
+                    Properties = GetProperties(child),
+                    Parent = name,
                 };
                 newObjectGroup.AddObject(tiledObject);
             }
@@ -301,6 +310,7 @@ namespace DinaFramework.Levels
             {
                 foreach (var property in child.Elements())
                 {
+                    var id = GetAttribute(property, "id", 0);
                     var name = GetAttribute(property, "name", string.Empty);
                     var type = GetAttribute(property, "type", TiledPropertyType.String);
                     switch (type)
@@ -309,70 +319,84 @@ namespace DinaFramework.Levels
                         {
                             TiledProperty<bool> tiledproperty = new TiledProperty<bool>()
                             {
+                                ID = id,
                                 Name = name,
                                 Type = type,
                                 Value = GetAttribute(property, "value", false)
                             };
+                            properties.Add(tiledproperty);
                             break;
                         }
                         case TiledPropertyType.Color:
                         {
                             TiledProperty<Color> tiledproperty = new TiledProperty<Color>()
                             {
+                                ID = id,
                                 Name = name,
                                 Type = type,
                                 Value = GetAttribute(property, "value", Color.Transparent)
                             };
+                            properties.Add(tiledproperty);
                             break;
                         }
                         case TiledPropertyType.File:
                         {
                             TiledProperty<string> tiledproperty = new TiledProperty<string>()
                             {
+                                ID = id,
                                 Name = name,
                                 Type = type,
                                 Value = GetAttribute(property, "value", string.Empty)
                             };
+                            properties.Add(tiledproperty);
                             break;
                         }
                         case TiledPropertyType.Float:
                         {
                             TiledProperty<float> tiledproperty = new TiledProperty<float>()
                             {
+                                ID = id,
                                 Name = name,
                                 Type = type,
                                 Value = GetAttribute(property, "value", 0f)
                             };
+                            properties.Add(tiledproperty);
                             break;
                         }
                         case TiledPropertyType.Int:
                         {
                             TiledProperty<int> tiledproperty = new TiledProperty<int>()
                             {
+                                ID = id,
                                 Name = name,
                                 Type = type,
                                 Value = GetAttribute(property, "value", 0)
                             };
+                            properties.Add(tiledproperty);
                             break;
                         }
                         case TiledPropertyType.Object:
                         {
                             TiledProperty<int> tiledproperty = new TiledProperty<int>()
                             {
+                                ID = id,
                                 Name = name,
                                 Type = type,
                                 Value = GetAttribute(property, "value", 0)
                             };
+                            properties.Add(tiledproperty);
                             break;
                         }
                         case TiledPropertyType.String:
                         {
                             TiledProperty<string> tiledproperty = new TiledProperty<string>()
                             {
+                                ID = id,
                                 Name = name,
                                 Type = type,
                                 Value = GetAttribute(property, "value", string.Empty)
                             };
+                            properties.Add(tiledproperty);
                             break;
                         }
                     }

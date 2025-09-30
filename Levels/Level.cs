@@ -1,6 +1,4 @@
-﻿using DinaFramework.Services;
-
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using System;
@@ -46,6 +44,12 @@ namespace DinaFramework.Levels
         /// Opacité globale du niveau.
         /// </summary>
         public int Opacity { get; set; }
+        /// <summary>
+        /// Échelle de rendu du niveau.
+        /// </summary>
+        public Vector2 Scale { get; set; } = Vector2.One;
+
+        public Vector2 Offset { get; set; } = Vector2.Zero;
 
 
         private readonly List<TiledTileset> _tilesets = [];
@@ -105,9 +109,10 @@ namespace DinaFramework.Levels
         /// <summary>
         /// Ajoute un groupe d’objets au niveau.
         /// </summary>
-        public void AddObject(TiledObjectGroup obj)
+        public void AddObjectGroup(TiledObjectGroup obj)
         {
             _objects.Add(obj);
+            _datas.Add(obj);
         }
 
         /// <summary>
@@ -122,7 +127,7 @@ namespace DinaFramework.Levels
         /// <summary>
         /// Ajoute un calque d’image au niveau.
         /// </summary>
-        public void AddImage(TiledImageLayer image)
+        public void AddImageLayer(TiledImageLayer image)
         {
             _images.Add(image);
             _datas.Add(image);
@@ -130,7 +135,6 @@ namespace DinaFramework.Levels
         /// <summary>
         /// Dessine l’ensemble des calques du niveau.
         /// </summary>
-        /// <param name="spritebatch">SpriteBatch utilisé pour le rendu.</param>
         public void Draw(SpriteBatch spritebatch)
         {
             ArgumentNullException.ThrowIfNull(spritebatch, nameof(spritebatch));
@@ -141,17 +145,19 @@ namespace DinaFramework.Levels
         {
             foreach (var data in datas)
             {
+                if (data.Visible == false)
+                    continue;
+
                 if (data is TiledGroup tiledGroup)
                     DrawLayers(spritebatch, tiledGroup.Datas);
-                if (data is TiledLayer tiledLayer)
+                else if (data is TiledLayer tiledLayer)
                     DrawLayer(spritebatch, tiledLayer);
-                if (data is TiledObjectGroup tiledObjectGroup)
+                else if (data is TiledObjectGroup tiledObjectGroup)
                     DrawObjects(spritebatch, tiledObjectGroup);
-                if (data is TiledImageLayer tiledImageLayer)
+                else if (data is TiledImageLayer tiledImageLayer)
                     DrawImages(spritebatch, tiledImageLayer);
             }
         }
-
         private void DrawLayer(SpriteBatch spritebatch, TiledLayer tiledLayer)
         {
             for (int row = 0; row < Height; row++)
@@ -187,8 +193,8 @@ namespace DinaFramework.Levels
                     else
                         origin.Y += Math.Abs(diffHeight) > 0 ? diffHeight : 0;
 
-                    var rectDest = new Rectangle(x, y, tileset.TileWidth, tileset.TileHeight);
-
+                    var rectDest = new Rectangle((int)((x - -Offset.X) * Scale.X), (int)((y - Offset.Y) * Scale.Y), (int)(tileset.TileWidth * Scale.X), (int)(tileset.TileHeight * Scale.Y));
+                    
                     spritebatch.Draw(tileset.Image, rectDest, rectTile, Color.White * tiledLayer.Opacity, rotation, origin, effects, 1);
                 }
             }
@@ -226,7 +232,7 @@ namespace DinaFramework.Levels
                 else
                     origin.Y = tiledobject.Bounds.Height;
 
-                var rectDest = new Rectangle(x, y, tileset.TileWidth, tileset.TileHeight);
+                var rectDest = new Rectangle((int)((x - Offset.X) * Scale.X), (int)((y - Offset.Y) * Scale.Y), (int)(tileset.TileWidth * Scale.X), (int)(tileset.TileHeight * Scale.Y));
 
                 spritebatch.Draw(tileset.Image, rectDest, rectTile, Color.White * tiledObjectGroup.Opacity, rotation, origin, effects, 1);
             }
@@ -296,6 +302,297 @@ namespace DinaFramework.Levels
             }
 
             return ((int)numTile, rotation, sx, sy);
+        }
+
+        /// <summary>
+        /// Permet de récupérer un calque (layer, groupe, image) ou un groupe d’objets par son nom.
+        /// </summary>
+        public ILayer? GetLayer(string layerName)
+        {
+            foreach (var layer in _datas)
+            {
+                if (layer.Name.Equals(layerName, StringComparison.OrdinalIgnoreCase))
+                    return layer;
+                if (layer is TiledGroup group)
+                {
+                    var childLayer = GetLayer(group, layerName);
+                    if (childLayer != null)
+                        return childLayer;
+                }
+            }
+            return default;
+        }
+        private static ILayer? GetLayer(TiledGroup tiledGroup, string layerName)
+        {
+            foreach (var layer in tiledGroup.Datas)
+            {
+                if (layer.Name.Equals(layerName, StringComparison.OrdinalIgnoreCase))
+                    return layer;
+                if (layer is TiledGroup group)
+                {
+                    var childLayer = GetLayer(group, layerName);
+                    if (childLayer != null)
+                        return childLayer;
+                }
+            }
+            return default;
+        }
+        /// <summary>
+        /// Permet de récupérer l’ID de la tuile (tile) à une position donnée (x, y en pixels).
+        /// </summary>
+        public uint GetTileIdFromCoord(int x, int y)
+        {
+            int col = x / TileWidth;
+            int row = y / TileHeight;
+            int index = row * Width + col;
+            foreach (var layer in _datas)
+            {
+                if (layer is TiledGroup tiledGroup)
+                {
+                    var tileId = GetTileIdFromCoord(tiledGroup, x, y);
+                    if (tileId != 0)
+                        return tileId;
+                }
+                else if (layer is TiledLayer tiledLayer)
+                {
+                    var tileId = GetTileIdFromCoord(tiledLayer, x, y);
+                    if (tileId != 0)
+                        return tileId;
+                }
+            }
+            return 0;
+        }
+        private uint GetTileIdFromCoord(TiledGroup group, int x, int y)
+        {
+            foreach (var layer in group.Datas)
+            {
+                if (layer is TiledGroup tiledGroup)
+                {
+                    var tileId = GetTileIdFromCoord(tiledGroup, x, y);
+                    if (tileId != 0)
+                        return tileId;
+                }
+                else if (layer is TiledLayer tiledLayer)
+                {
+                    var tileId = GetTileIdFromCoord(tiledLayer, x, y);
+                    if (tileId != 0)
+                        return tileId;
+                }
+            }
+            return 0;
+        }
+        private uint GetTileIdFromCoord(TiledLayer layer, int x, int y)
+        {
+            int col = x / TileWidth;
+            int row = y / TileHeight;
+            int index = row * Width + col;
+            if (index < 0 || index >= layer.Data.Length)
+                return 0;
+            return layer.Data[index];
+        }
+
+        /// <summary>
+        /// Permet de récupérer la liste des objets (TiledObject) à une position donnée.
+        /// </summary>
+        public IReadOnlyList<TiledObject> GetObjectsFromCoord(int x, int y)
+        {
+            List<TiledObject> results = [];
+            foreach (var layer in _datas)
+            {
+                if (layer is TiledGroup tiledGroup)
+                {
+                    var objs = GetObjectsFromCoord(tiledGroup, x, y);
+                    results.AddRange(objs);
+                }
+                else if (layer is TiledObjectGroup tiledObjectGroup)
+                {
+                    var objs = GetObjectsFromCoord(tiledObjectGroup, x, y);
+                    results.AddRange(objs);
+                }
+            }
+            return results;
+        }
+        private static List<TiledObject> GetObjectsFromCoord(TiledGroup group, int x, int y)
+        {
+            List<TiledObject> results = [];
+            foreach (var layer in group.Datas)
+            {
+                if (layer is TiledGroup tiledGroup)
+                {
+                    var objs = GetObjectsFromCoord(tiledGroup, x, y);
+                    results.AddRange(objs);
+                }
+                else if (layer is TiledObjectGroup tiledObjectGroup)
+                {
+                    var objs = GetObjectsFromCoord(tiledObjectGroup, x, y);
+                    results.AddRange(objs);
+                }
+            }
+            return results;
+        }
+        private static List<TiledObject> GetObjectsFromCoord(TiledObjectGroup objectGroup, int x, int y)
+        {
+            List<TiledObject> results = [];
+            foreach (var obj in objectGroup.Objects)
+            {
+                if (obj.Bounds.Contains(x, y))
+                    results.Add(obj);
+            }
+            return results;
+        }
+        /// <summary>
+        /// Permet de récupérer un objet (TiledObject) par son nom.
+        /// </summary>
+        public TiledObject? GetObjectFromName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return default;
+
+            foreach (var layer in _datas)
+            {
+                if (layer is TiledGroup tiledGroup)
+                {
+                    var obj = GetObjectFromName(tiledGroup, name);
+                    if (obj != null)
+                        return obj;
+                }
+                else if (layer is TiledObjectGroup tiledObjectGroup)
+                {
+                    var obj = GetObjectFromName(tiledObjectGroup, name);
+                    if (obj != null)
+                        return obj;
+                }
+            }
+            return null;
+        }
+        private static TiledObject? GetObjectFromName(TiledGroup tiledGroup, string name)
+        {
+            foreach (var layer in tiledGroup.Datas)
+            {
+                if (layer is TiledGroup childGroup)
+                {
+                    var obj = GetObjectFromName(childGroup, name);
+                    if (obj != null)
+                        return obj;
+                }
+                else if (layer is TiledObjectGroup tiledObjectGroup)
+                {
+                    var obj = GetObjectFromName(tiledObjectGroup, name);
+                    if (obj != null)
+                        return obj;
+                }
+            }
+            return null;
+        }
+        private static TiledObject? GetObjectFromName(TiledObjectGroup objectGroup, string name)
+        {
+            foreach (var obj in objectGroup.Objects)
+            {
+                if (obj.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                    return obj;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Permet de récupérer la liste des objets (TiledObject) d’une certaine classe.
+        /// </summary>
+        public IReadOnlyList<TiledObject> GetObjectsFromClass(string className)
+        {
+            List<TiledObject> results = [];
+            foreach (var layer in _datas)
+            {
+                if (layer is TiledGroup tiledGroup)
+                {
+                    var objs = GetObjectsFromClass(tiledGroup, className);
+                    results.AddRange(objs);
+                }
+                else if (layer is TiledObjectGroup tiledObjectGroup)
+                {
+                    var objs = GetObjectsFromClass(tiledObjectGroup, className);
+                    results.AddRange(objs);
+                }
+            }
+            return results;
+        }
+        private static List<TiledObject> GetObjectsFromClass(TiledGroup tiledGroup, string className)
+        {
+            List<TiledObject> results = [];
+            foreach (var layer in tiledGroup.Datas)
+            {
+                if (layer is TiledGroup childGroup)
+                {
+                    var objs = GetObjectsFromClass(childGroup, className);
+                    results.AddRange(objs);
+                }
+                else if (layer is TiledObjectGroup tiledObjectGroup)
+                {
+                    var objs = GetObjectsFromClass(tiledObjectGroup, className);
+                    results.AddRange(objs);
+                }
+            }
+            return results;
+        }
+        private static List<TiledObject> GetObjectsFromClass(TiledObjectGroup objectGroup, string className)
+        {
+            List<TiledObject> results = [];
+            foreach (var obj in objectGroup.Objects)
+            {
+                if (obj.Class.Equals(className, StringComparison.OrdinalIgnoreCase))
+                    results.Add(obj);
+            }
+            return results;
+        }
+
+        /// <summary>
+        /// Permet de récupérer un objet (TiledObject) par son ID.
+        /// </summary>
+        public TiledObject? GetObjectFromId(int id)
+        {
+            foreach (var layer in _datas)
+            {
+                if (layer is TiledGroup tiledGroup)
+                {
+                    var obj = GetObjectFromId(tiledGroup, id);
+                    if (obj != null)
+                        return obj;
+                }
+                else if (layer is TiledObjectGroup tiledObjectGroup)
+                {
+                    var obj = GetObjectFromId(tiledObjectGroup, id);
+                    if (obj != null)
+                        return obj;
+                }
+            }
+            return null;
+        }
+        private static TiledObject? GetObjectFromId(TiledGroup tiledGroup, int id)
+        {
+            foreach (var layer in tiledGroup.Datas)
+            {
+                if (layer is TiledGroup childGroup)
+                {
+                    var obj = GetObjectFromId(childGroup, id);
+                    if (obj != null)
+                        return obj;
+                }
+                else if (layer is TiledObjectGroup tiledObjectGroup)
+                {
+                    var obj = GetObjectFromId(tiledObjectGroup, id);
+                    if (obj != null)
+                        return obj;
+                }
+            }
+            return null;
+        }
+        private static TiledObject? GetObjectFromId(TiledObjectGroup objectGroup, int id)
+        {
+            foreach (var obj in objectGroup.Objects)
+            {
+                if (obj.ID == id)
+                    return obj;
+            }
+            return null;
         }
     }
 }

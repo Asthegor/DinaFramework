@@ -85,7 +85,7 @@ namespace DinaFramework.Interfaces
     public interface IResource
     {
         public abstract bool AddResource<T>(string resourceName, T resource);
-        public abstract T GetResource<T>(string resourceName);
+        public abstract T? GetResource<T>(string resourceName);
         public abstract void RemoveResource(string resourceName);
     }
     /// <summary>
@@ -165,7 +165,7 @@ namespace DinaFramework.Interfaces
     /// <summary>
     /// Définit une méthode pour effectuer une copie d'un objet.
     /// </summary>
-    /// <typeparam name="T">Type de l'objet à copier.</typeparam>
+    /// <typeparam name="T">Class de l'objet à copier.</typeparam>
     public interface ICopyable<T>
     {
         public abstract T Copy();
